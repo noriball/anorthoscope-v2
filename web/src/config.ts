@@ -44,7 +44,7 @@ export const PAINT_SIZE = 800;
 /** 円の分割数（描画可能な扇形の数）の可動域 */
 export const DIV_MIN = 2;
 export const DIV_MAX = 8;
-export const DIV_DEFAULT = 4;
+export const DIV_DEFAULT = 5;
 /** localStorage ギャラリーのキー */
 export const GALLERY_KEY = "anortho.gallery.v1";
 
@@ -52,7 +52,7 @@ export const GALLERY_KEY = "anortho.gallery.v1";
 /** 分割数（圧縮先の扇形が円の何分の1か）の可動域。1/2〜1/16 */
 export const COMPRESS_DIV_MIN = 2;
 export const COMPRESS_DIV_MAX = 16;
-export const COMPRESS_DIV_DEFAULT = 4;
+export const COMPRESS_DIV_DEFAULT = 5;
 
 export interface Params {
   /** 全体速度スケール */
