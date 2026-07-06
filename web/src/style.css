@@ -54,26 +54,29 @@ body {
   bottom: 6%;
   transform: translateX(-50%);
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 18px 14px;
+  flex-direction: row;
+  align-items: flex-end;
+  gap: 14px;
+  padding: 10px 20px;
   background: rgba(0, 0, 0, 0.5);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 14px;
   backdrop-filter: blur(2px);
   user-select: none;
+  white-space: nowrap;
 }
 .rr-title {
+  align-self: center;
   font-size: 13px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--text-dim);
 }
-.rr-body {
-  display: flex;
-  align-items: flex-end;
-  gap: 14px;
+.rr-sep {
+  align-self: stretch;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.15);
+  margin: 2px 0;
 }
 .rr-cell {
   display: flex;

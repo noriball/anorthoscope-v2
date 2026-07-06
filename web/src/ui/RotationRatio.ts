@@ -1,4 +1,10 @@
-import { ROT_FACTOR_MAX, ROT_FACTOR_MIN, type Params } from "../config";
+import {
+  ROT_FACTOR_MAX,
+  ROT_FACTOR_MIN,
+  SLITS_MAX,
+  SLITS_MIN,
+  type Params,
+} from "../config";
 
 export interface RatioHooks {
   getParams(): Params;
@@ -6,19 +12,24 @@ export interface RatioHooks {
 }
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
-const round1 = (v: number) => Math.round(v * 10) / 10;
+/** step が整数刻みなら整数に、小数刻みなら小数第1位に丸める */
+const roundStep = (v: number, step: number) => (step >= 1 ? Math.round(v) : Math.round(v * 10) / 10);
 /** 整数はそのまま、小数のときだけ 1 桁表示（1 / -4 / 1.5） */
 const fmt = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(1));
 
+interface CellRange {
+  min: number;
+  max: number;
+  step: number;
+}
+
 /**
- * 2 パネルの間・下側に表示する回転比コントロール。
+ * 2 パネルの間・下側に表示する回転比＋スリット数コントロール（1行表示）。
  *
- *   ROTATION RATIO
- *   スリット        絵
- *   − [ 1 ] +   :   − [ -4 ] +
+ *   ROTATION RATIO   スリット + [ 1 ] −  ：  絵 + [ -4 ] −   |   スリット数 + [ 5 ] −
  *
- * 横並びの A : B で「比」であることを示す。数字の左右に − + を置くので
- * ポインタが数字に被らない。数字は直接入力でき、任意の値（±360）にできる。
+ * スリット数は重要な設定なので回転比と同列に並べ、常に見える位置に置く。
+ * 数字の左右に + − を置くのでポインタが数字に被らない。直接入力も可能。
  */
 export class RotationRatio {
   private readonly hooks: RatioHooks;
@@ -38,13 +49,12 @@ export class RotationRatio {
     title.className = "rr-title";
     title.textContent = "Rotation Ratio";
 
-    const body = document.createElement("div");
-    body.className = "rr-body";
-
+    const rotRange: CellRange = { min: ROT_FACTOR_MIN, max: ROT_FACTOR_MAX, step: 0.1 };
     const slit = this.cell(
       "スリット",
       () => this.hooks.getParams().slitRotFactor,
       (v) => this.hooks.setParams({ slitRotFactor: v }),
+      rotRange,
     );
     const colon = document.createElement("span");
     colon.className = "rr-colon";
@@ -53,14 +63,29 @@ export class RotationRatio {
       "絵",
       () => this.hooks.getParams().imageRotFactor,
       (v) => this.hooks.setParams({ imageRotFactor: v }),
+      rotRange,
     );
 
-    body.append(slit, colon, image);
-    root.append(title, body);
+    const sep = document.createElement("div");
+    sep.className = "rr-sep";
+
+    const slitCount = this.cell(
+      "スリット数",
+      () => this.hooks.getParams().numSlits,
+      (v) => this.hooks.setParams({ numSlits: v }),
+      { min: SLITS_MIN, max: SLITS_MAX, step: 1 },
+    );
+
+    root.append(title, slit, colon, image, sep, slitCount);
     parent.append(root);
   }
 
-  private cell(labelText: string, get: () => number, set: (v: number) => void): HTMLElement {
+  private cell(
+    labelText: string,
+    get: () => number,
+    set: (v: number) => void,
+    range: CellRange,
+  ): HTMLElement {
     const cell = document.createElement("div");
     cell.className = "rr-cell";
 
@@ -71,21 +96,21 @@ export class RotationRatio {
     const stepper = document.createElement("div");
     stepper.className = "rr-stepper";
 
-    const minus = stepButton("−", () => this.bump(get, set, -1));
-    const plus = stepButton("+", () => this.bump(get, set, +1));
+    const minus = stepButton("−", () => this.bump(get, set, -range.step, range));
+    const plus = stepButton("+", () => this.bump(get, set, range.step, range));
 
     const input = document.createElement("input");
     input.type = "number";
     input.className = "rr-value";
-    input.min = String(ROT_FACTOR_MIN);
-    input.max = String(ROT_FACTOR_MAX);
-    input.step = "0.1";
+    input.min = String(range.min);
+    input.max = String(range.max);
+    input.step = String(range.step);
     input.inputMode = "decimal";
     input.oninput = () => {
       if (input.value === "" || input.value === "-") return;
       const raw = Number(input.value);
       if (Number.isNaN(raw)) return;
-      set(clamp(round1(raw), ROT_FACTOR_MIN, ROT_FACTOR_MAX));
+      set(clamp(roundStep(raw, range.step), range.min, range.max));
     };
 
     stepper.append(plus, input, minus);
@@ -97,8 +122,8 @@ export class RotationRatio {
     return cell;
   }
 
-  private bump(get: () => number, set: (v: number) => void, d: number): void {
-    set(clamp(round1(get() + d), ROT_FACTOR_MIN, ROT_FACTOR_MAX));
+  private bump(get: () => number, set: (v: number) => void, d: number, range: CellRange): void {
+    set(clamp(roundStep(get() + d, range.step), range.min, range.max));
     this.update();
   }
 

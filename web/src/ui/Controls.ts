@@ -1,11 +1,4 @@
-import {
-  SLITS_MAX,
-  SLITS_MIN,
-  SPEED_MAX,
-  SPEED_MIN,
-  SPEED_STEP,
-  type Params,
-} from "../config";
+import { SPEED_MAX, SPEED_MIN, SPEED_STEP, type Params } from "../config";
 import type { Picture } from "../images";
 
 /** main.ts が提供する操作フック */
@@ -42,7 +35,6 @@ export class ControlBar {
   private lineBtn!: HTMLButtonElement;
   private plateBtn!: HTMLButtonElement;
 
-  private slitInput!: HTMLInputElement;
   private speedInput!: HTMLInputElement;
 
   constructor(root: HTMLElement, hooks: AppHooks) {
@@ -72,23 +64,15 @@ export class ControlBar {
     this.playBtn = this.button("⏸ 停止", () => this.hooks.togglePause(), "再生 / 停止");
     this.playBtn.classList.add("wide");
 
-    // --- 数値パラメータ（回転比は中央の大きな表示で操作） ---
-    this.slitInput = numberInput(SLITS_MIN, SLITS_MAX, 1);
+    // --- 数値パラメータ（回転比・スリット数は中央上の大きな表示で操作） ---
     this.speedInput = numberInput(SPEED_MIN, SPEED_MAX, SPEED_STEP);
 
-    this.slitInput.oninput = () =>
-      this.commitNumber(this.slitInput, SLITS_MIN, SLITS_MAX, 1, (v) =>
-        this.hooks.setParams({ numSlits: v }),
-      );
     this.speedInput.oninput = () =>
       this.commitNumber(this.speedInput, SPEED_MIN, SPEED_MAX, 0.1, (v) =>
         this.hooks.setParams({ speed: v }),
       );
 
-    const params = group(
-      field("スリットの本数", this.slitInput),
-      field("速度", this.speedInput, "×"),
-    );
+    const params = group(field("速度", this.speedInput, "×"));
 
     // --- アクション ---
     this.lineBtn = this.button("Line", () => this.toggleLine(), "赤ガイドライン表示");
@@ -172,7 +156,6 @@ export class ControlBar {
     this.counter.textContent = n ? `${idx + 1} / ${n}` : "—";
 
     // 入力欄はフォーカス中なら上書きしない（打鍵の邪魔をしない）
-    setInputUnlessFocused(this.slitInput, String(p.numSlits));
     setInputUnlessFocused(this.speedInput, p.speed.toFixed(1));
 
     // 3枚ナビ
