@@ -1,6 +1,7 @@
 import {
   ROT_FACTOR_MAX,
   ROT_FACTOR_MIN,
+  ROT_FACTOR_STEP,
   SLITS_MAX,
   SLITS_MIN,
   type Params,
@@ -52,7 +53,7 @@ export class RotationRatio {
     title.className = "rr-title";
     title.textContent = "Rotation Ratio";
 
-    const rotRange: CellRange = { min: ROT_FACTOR_MIN, max: ROT_FACTOR_MAX, step: 0.1 };
+    const rotRange: CellRange = { min: ROT_FACTOR_MIN, max: ROT_FACTOR_MAX, step: ROT_FACTOR_STEP };
     const slit = this.cell(
       "スリット",
       () => this.hooks.getParams().slitRotFactor,

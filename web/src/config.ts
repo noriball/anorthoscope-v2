@@ -29,7 +29,7 @@ export const SPEED_STEP = 0.1;
 
 export const ROT_FACTOR_MIN = -360;
 export const ROT_FACTOR_MAX = 360;
-export const ROT_FACTOR_STEP = 0.1;
+export const ROT_FACTOR_STEP = 1;
 
 export const SLITS_MIN = 1;
 export const SLITS_MAX = 20;
