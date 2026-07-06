@@ -1,0 +1,324 @@
+import {
+  BASE_OMEGA,
+  FADE_ALPHA,
+  STAGE_MAX_HEIGHT,
+  TRIM_HEIGHT,
+  TRIM_OFFSET,
+  type Params,
+} from "../config";
+import type { Picture } from "../images";
+
+/**
+ * アノルソスコープの描画エンジン。
+ *
+ * 設計上の要点（クラッシュ対策）:
+ *  - 内部解像度をステージ高さ STAGE_MAX_HEIGHT で頭打ちにし、表示は CSS で拡大。
+ *    プロジェクタの物理解像度に依存せず負荷が一定。
+ *  - オフスクリーン Canvas を使い回す。毎フレームの getImageData / 新規確保を行わず、
+ *    ストリップ抽出は drawImage のソース矩形クロップ（GPU 支援・無確保）で行う。
+ *  - requestAnimationFrame の delta-time で角度を進め、フレームレート非依存。
+ */
+export class Simulation {
+  private readonly view: HTMLCanvasElement;
+  private readonly vctx: CanvasRenderingContext2D;
+
+  // オフスクリーンバッファ（使い回し）
+  private readonly left = document.createElement("canvas");
+  private readonly right = document.createElement("canvas");
+  private readonly sample = document.createElement("canvas");
+  private readonly plate = document.createElement("canvas"); // スリット板（黒円盤＋透明窓）
+  private lctx!: CanvasRenderingContext2D;
+  private rctx!: CanvasRenderingContext2D;
+  private sctx!: CanvasRenderingContext2D;
+  private platectx!: CanvasRenderingContext2D;
+
+  // 内部解像度
+  private stageW = 0;
+  private stageH = 0;
+
+  private picture: Picture | null = null;
+  private scale = 1; // 画像表示スケール
+  private trimWidth = 0; // スリット長
+  private sampleSize = 0; // sample バッファ一辺
+  // 2 円の間に中央スペースを空けるための、各バッファ内での円盤中心 X
+  private leftCx = 0;
+  private rightCx = 0;
+  private plateR = 0; // スリット板の半径（回転画像を覆う）
+
+  // 蓄積される回転角
+  private imageAngle = 0;
+  private slitAngle = 0;
+
+  constructor(view: HTMLCanvasElement) {
+    this.view = view;
+    this.vctx = must(view.getContext("2d", { alpha: false }));
+    this.lctx = must(this.left.getContext("2d", { alpha: false }));
+    this.rctx = must(this.right.getContext("2d", { alpha: false }));
+    this.sctx = must(this.sample.getContext("2d", { alpha: true }));
+    this.platectx = must(this.plate.getContext("2d", { alpha: true }));
+  }
+
+  /** CSS 表示サイズ（px）に合わせて内部解像度を決め直す */
+  resize(cssW: number, cssH: number): void {
+    const dispW = Math.max(1, Math.floor(cssW));
+    const dispH = Math.max(1, Math.floor(cssH));
+
+    // 内部高さを上限で頭打ち。幅はアスペクト維持だが過大にならないよう制限
+    const h = Math.min(STAGE_MAX_HEIGHT, dispH);
+    const w = Math.min(Math.round((h * dispW) / dispH), STAGE_MAX_HEIGHT * 4);
+    this.stageW = Math.max(2, w);
+    this.stageH = Math.max(2, h);
+
+    // 表示解像度＝内部解像度（CSS で拡大表示）
+    this.view.width = this.stageW;
+    this.view.height = this.stageH;
+
+    const halfW = Math.floor(this.stageW / 2);
+    this.left.width = halfW;
+    this.left.height = this.stageH;
+    this.right.width = halfW;
+    this.right.height = this.stageH;
+    this.plate.width = halfW;
+    this.plate.height = this.stageH;
+
+    this.recomputeLayout();
+    this.reset();
+  }
+
+  setImage(picture: Picture | null): void {
+    this.picture = picture;
+    this.recomputeLayout();
+    this.reset();
+  }
+
+  /** 画像スケール・スリット長・sample バッファサイズ・円盤中心を再計算 */
+  private recomputeLayout(): void {
+    if (!this.picture || this.stageH === 0) return;
+    const halfW = this.left.width;
+
+    // 2 円の間に中央スペース（回転比パネル用）＋ 左右端の余白を空ける
+    const gap = Math.min(380, Math.max(240, this.stageW * 0.18));
+    const outerM = Math.max(28, this.stageW * 0.035); // ウィンドウ左右端の余白
+    const contentW = Math.max(20, halfW - gap / 2 - outerM);
+    this.leftCx = outerM + contentW / 2; // 左：外側に余白、中央側にギャップ
+    this.rightCx = gap / 2 + contentW / 2; // 右：中央側にギャップ、外側に余白
+
+    const { width: iw, height: ih } = this.picture;
+    this.scale = Math.min(contentW / iw, this.stageH / ih);
+    const dw = iw * this.scale;
+    const dh = ih * this.scale;
+    this.trimWidth = Math.max(1, Math.floor(Math.min(dw, dh) / 2) - TRIM_OFFSET);
+    // スリット窓（TRIM_OFFSET+trimWidth まで）よりほんの少しだけ大きい円盤
+    this.plateR = TRIM_OFFSET + this.trimWidth + 12;
+
+    // 回転した画像がはみ出さない一辺（対角）。中心にストリップ抽出領域が収まる
+    const diag = Math.ceil(Math.hypot(dw, dh)) + 2 * TRIM_OFFSET;
+    if (diag !== this.sampleSize) {
+      this.sampleSize = diag;
+      this.sample.width = diag;
+      this.sample.height = diag;
+    }
+  }
+
+  /** バッファを黒でクリアし角度を初期化 */
+  reset(): void {
+    this.imageAngle = 0;
+    this.slitAngle = 0;
+    clearBlack(this.lctx, this.left);
+    clearBlack(this.rctx, this.right);
+    this.composite(false, false);
+  }
+
+  /**
+   * 1 フレーム進める。
+   * @param dt   経過秒
+   * @param params 現在のパラメータ
+   * @param paused 停止中か
+   */
+  render(dt: number, params: Params, paused: boolean): void {
+    this.currentNumSlits = params.numSlits;
+    if (this.picture && !paused) {
+      this.advance(dt, params);
+      this.drawLeftPanel(params.slitPlate);
+      this.stampRightPanel(params);
+    }
+    this.composite(params.showGuideLines, params.slitPlate);
+  }
+
+  private advance(dt: number, p: Params): void {
+    const omega = BASE_OMEGA * p.speed * dt;
+    this.imageAngle += omega * p.imageRotFactor;
+    this.slitAngle += omega * p.slitRotFactor;
+  }
+
+  /** 左パネル：回転画像を描画。通常は黒背景＋残像、スリット板モードは白背景（残像なし） */
+  private drawLeftPanel(slitPlate: boolean): void {
+    const ctx = this.lctx;
+    const cx = this.leftCx;
+    const cy = this.left.height / 2;
+
+    if (slitPlate) {
+      // 白背景（スリット板を白地に見せる）。残像なし。画像は円盤内だけに描く
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, this.left.width, this.left.height);
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, this.plateR, 0, Math.PI * 2);
+      ctx.clip();
+      this.drawPictureRotated(ctx, cx, cy, this.imageAngle);
+      ctx.restore();
+    } else {
+      ctx.globalAlpha = FADE_ALPHA;
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, this.left.width, this.left.height);
+      ctx.globalAlpha = 1;
+      this.drawPictureRotated(ctx, cx, cy, this.imageAngle);
+    }
+  }
+
+  /** 右パネル：各スリットのストリップを抽出し、蓄積バッファへ配置 */
+  private stampRightPanel(p: Params): void {
+    const ctx = this.rctx;
+    // 蓄積フェード（スリット板モードでは白地へフェード）
+    ctx.globalAlpha = FADE_ALPHA;
+    ctx.fillStyle = p.slitPlate ? "#fff" : "#000";
+    ctx.fillRect(0, 0, this.right.width, this.right.height);
+    ctx.globalAlpha = 1;
+
+    if (!this.picture) return;
+
+    const cx = this.rightCx;
+    const cy = this.right.height / 2;
+    const sc = this.sampleSize / 2; // sample バッファ中心
+    const n = p.numSlits;
+
+    for (let i = 0; i < n; i++) {
+      const theta = (i * Math.PI * 2) / n;
+
+      // sample バッファに、スリット方向が水平になる向きで回転画像を描画
+      this.sctx.clearRect(0, 0, this.sampleSize, this.sampleSize);
+      this.drawPictureRotated(
+        this.sctx,
+        sc,
+        sc,
+        this.imageAngle - this.slitAngle - theta,
+      );
+
+      // 中心から +x 側の水平ストリップを、右パネルの該当スリット位置へ配置
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(this.slitAngle + theta);
+      ctx.drawImage(
+        this.sample,
+        sc + TRIM_OFFSET, // sx
+        sc - TRIM_HEIGHT / 2, // sy
+        this.trimWidth, // sw
+        TRIM_HEIGHT, // sh
+        TRIM_OFFSET, // dx
+        -TRIM_HEIGHT / 2, // dy
+        this.trimWidth, // dw
+        TRIM_HEIGHT, // dh
+      );
+      ctx.restore();
+    }
+  }
+
+  private drawPictureRotated(
+    ctx: CanvasRenderingContext2D,
+    cx: number,
+    cy: number,
+    angle: number,
+  ): void {
+    if (!this.picture) return;
+    const dw = this.picture.width * this.scale;
+    const dh = this.picture.height * this.scale;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(angle);
+    ctx.drawImage(this.picture.bitmap, -dw / 2, -dh / 2, dw, dh);
+    ctx.restore();
+  }
+
+  /** 可視 Canvas を再構成：左右バッファを貼り、スリット板 or 赤ガイドを上描き */
+  private composite(showGuides: boolean, slitPlate: boolean): void {
+    const ctx = this.vctx;
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, this.stageW, this.stageH);
+
+    const halfW = this.left.width;
+    ctx.drawImage(this.left, 0, 0);
+    ctx.drawImage(this.right, halfW, 0);
+
+    const cy = this.stageH / 2;
+
+    if (slitPlate && this.picture) {
+      // スリット板モード：左パネルに黒円盤＋透明スリット窓を重ねる（赤は出さない）
+      this.drawSlitPlate(this.leftCx, cy);
+    } else if (showGuides && this.picture) {
+      this.drawGuideLines(this.leftCx, cy); // 左パネル中心
+      this.drawGuideLines(halfW + this.rightCx, cy); // 右パネル中心
+    }
+  }
+
+  /** 左パネルに、黒い円盤＋透明のスリット窓（スリット板）を重ねる */
+  private drawSlitPlate(cx: number, cy: number): void {
+    const ctx = this.platectx;
+    const n = this.currentNumSlits;
+    ctx.clearRect(0, 0, this.plate.width, this.plate.height);
+
+    // 黒い円盤
+    ctx.globalCompositeOperation = "source-over";
+    ctx.fillStyle = "#000";
+    ctx.beginPath();
+    ctx.arc(cx, cy, this.plateR, 0, Math.PI * 2);
+    ctx.fill();
+
+    // スリット窓を切り抜く（透明化）
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(this.slitAngle);
+    for (let i = 0; i < n; i++) {
+      ctx.save();
+      ctx.rotate((i * Math.PI * 2) / n);
+      ctx.fillRect(TRIM_OFFSET, -TRIM_HEIGHT / 2, this.trimWidth, TRIM_HEIGHT);
+      ctx.restore();
+    }
+    ctx.restore();
+    ctx.globalCompositeOperation = "source-over";
+
+    this.vctx.drawImage(this.plate, 0, 0);
+  }
+
+  private drawGuideLines(cx: number, cy: number): void {
+    const ctx = this.vctx;
+    const n = this.currentNumSlits;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(this.slitAngle);
+    ctx.strokeStyle = "rgba(240,0,0,0.9)";
+    ctx.lineWidth = 1;
+    for (let i = 0; i < n; i++) {
+      ctx.save();
+      ctx.rotate((i * Math.PI * 2) / n);
+      ctx.strokeRect(TRIM_OFFSET, -TRIM_HEIGHT / 2, this.trimWidth, TRIM_HEIGHT);
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+
+  // composite 時にスリット数を知るための控え（render で更新）
+  private currentNumSlits = 4;
+}
+
+function must<T>(v: T | null): T {
+  if (!v) throw new Error("2D context unavailable");
+  return v;
+}
+
+function clearBlack(ctx: CanvasRenderingContext2D, c: HTMLCanvasElement): void {
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, c.width, c.height);
+}
