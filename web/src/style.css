@@ -54,54 +54,53 @@ body {
   bottom: 6%;
   transform: translateX(-50%);
   display: flex;
-  flex-direction: row;
-  align-items: flex-end;
-  gap: 14px;
-  padding: 10px 20px;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 16px 10px;
   background: rgba(0, 0, 0, 0.5);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 14px;
+  border-radius: 12px;
   backdrop-filter: blur(2px);
   user-select: none;
   white-space: nowrap;
 }
 .rr-title {
-  align-self: center;
-  font-size: 13px;
-  letter-spacing: 0.18em;
+  font-size: 11px;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--text-dim);
 }
-.rr-sep {
-  align-self: stretch;
-  width: 1px;
-  background: rgba(255, 255, 255, 0.15);
-  margin: 2px 0;
+.rr-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 10px;
 }
 .rr-cell {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
 }
 .rr-celllabel {
-  font-size: 13px;
+  font-size: 11px;
   color: var(--text);
 }
 .rr-stepper {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 .rr-step {
-  width: 30px;
-  height: 38px;
-  font-size: 20px;
+  width: 22px;
+  height: 28px;
+  font-size: 14px;
   line-height: 1;
   border: 1px solid var(--border);
   background: var(--panel);
   color: var(--text);
-  border-radius: 6px;
+  border-radius: 5px;
   cursor: pointer;
 }
 .rr-step:hover {
@@ -109,10 +108,10 @@ body {
   border-color: var(--border-hi);
 }
 .rr-value {
-  width: 74px;
-  height: 42px;
+  width: 52px;
+  height: 30px;
   padding: 0;
-  font-size: 34px;
+  font-size: 22px;
   font-weight: 700;
   text-align: center;
   background: transparent;
@@ -134,10 +133,10 @@ body {
   margin: 0;
 }
 .rr-colon {
-  font-size: 38px;
+  font-size: 24px;
   font-weight: 300;
   color: var(--text);
-  padding-bottom: 4px;
+  padding-bottom: 2px;
 }
 
 /* ===== 下部コントロールバー ===== */
