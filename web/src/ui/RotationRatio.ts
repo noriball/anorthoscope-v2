@@ -88,7 +88,7 @@ export class RotationRatio {
       set(clamp(round1(raw), ROT_FACTOR_MIN, ROT_FACTOR_MAX));
     };
 
-    stepper.append(minus, input, plus);
+    stepper.append(plus, input, minus);
     cell.append(label, stepper);
 
     this.refreshers.push(() => {
