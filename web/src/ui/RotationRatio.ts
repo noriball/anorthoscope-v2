@@ -114,12 +114,21 @@ export class RotationRatio {
     input.min = String(range.min);
     input.max = String(range.max);
     input.step = String(range.step);
-    input.inputMode = "decimal";
+    input.inputMode = range.step >= 1 ? "numeric" : "decimal";
     input.oninput = () => {
       if (input.value === "" || input.value === "-") return;
       const raw = Number(input.value);
       if (Number.isNaN(raw)) return;
       set(clamp(roundStep(raw, range.step), range.min, range.max));
+    };
+    // 入力欄から離れたら、丸められた実際の値を表示に反映する
+    // （例: 2.7 と打っても、確定後は 3 と表示し直す）
+    input.onblur = () => this.update();
+    input.onkeydown = (e) => {
+      if (e.key === "Enter") {
+        input.blur();
+        this.update();
+      }
     };
 
     stepper.append(plus, input, minus);

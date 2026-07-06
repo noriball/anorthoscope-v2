@@ -71,6 +71,8 @@ export class ControlBar {
       this.commitNumber(this.speedInput, SPEED_MIN, SPEED_MAX, 0.1, (v) =>
         this.hooks.setParams({ speed: v }),
       );
+    // 入力欄から離れたら、丸められた実際の値を表示に反映する
+    this.speedInput.onblur = () => this.update();
 
     const params = group(field("速度", this.speedInput, "×"));
 
