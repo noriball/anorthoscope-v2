@@ -41,7 +41,7 @@ export class ControlBar {
   private speedValueLabel!: HTMLSpanElement;
   private fadeInput!: HTMLInputElement;
   private bgColorButtons: Map<string, HTMLButtonElement> = new Map();
-  private currentBgColor = "#000000";
+  private lastBgColorHex = "#000000";
 
   constructor(root: HTMLElement, hooks: AppHooks) {
     this.root = root;
@@ -79,7 +79,7 @@ export class ControlBar {
     const bgColorButtons: HTMLElement[] = [];
     for (const preset of BG_PRESETS) {
       const btn = this.button("", () => {
-        this.currentBgColor = preset.hex;
+        this.lastBgColorHex = preset.hex;
         this.hooks.setBgColor(preset.hex);
         this.update();
       });
@@ -167,7 +167,7 @@ export class ControlBar {
 
     // 背景色ボタンの .on ハイライト
     this.bgColorButtons.forEach((btn, hex) =>
-      btn.classList.toggle("on", hex === this.currentBgColor)
+      btn.classList.toggle("on", hex === this.lastBgColorHex)
     );
   }
 }
