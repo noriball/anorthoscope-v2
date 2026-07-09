@@ -189,9 +189,9 @@ export class PaintEditor {
     return (Math.PI * 2) / this.divisions;
   }
 
-  private wedgePath(ctx: CanvasRenderingContext2D): void {
+  private wedgePath(ctx: CanvasRenderingContext2D, begin = true): void {
     const half = this.wedgeAngle / 2;
-    ctx.beginPath();
+    if (begin) ctx.beginPath();
     ctx.moveTo(CX, CY);
     ctx.arc(CX, CY, R, CENTER_ANGLE - half, CENTER_ANGLE + half);
     ctx.closePath();
@@ -407,7 +407,7 @@ export class PaintEditor {
 
   /** 透明背景の art（ImageData）を、背景色の円盤に合成して target へ描く */
   private compositeToDisc(target: CanvasRenderingContext2D, N: number, art: ImageData): void {
-    if (this.tmp.width !== N) this.tmp.width = this.tmp.height = N;
+    if (this.tmp.width !== N || this.tmp.height !== N) this.tmp.width = this.tmp.height = N;
     this.tctx.putImageData(art, 0, 0);
 
     target.clearRect(0, 0, N, N);
@@ -455,7 +455,7 @@ export class PaintEditor {
     ctx.save();
     ctx.beginPath();
     ctx.arc(CX, CY, R, 0, Math.PI * 2);
-    this.wedgePath(ctx); // 逆回りサブパスで穴を空ける（even-odd）
+    this.wedgePath(ctx, false); // 逆回りサブパスで穴を空ける（even-odd）
     ctx.fillStyle = "rgba(0,0,0,0.42)";
     ctx.fill("evenodd");
     ctx.restore();
