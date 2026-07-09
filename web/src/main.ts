@@ -45,6 +45,9 @@ function currentPicture(): Picture | null {
 }
 function applyCurrentImage(): void {
   sim.setImage(currentPicture());
+  // 一時停止中に選んでも、再生ボタンを押すまで絵が出ないのを防ぐため、
+  // 選択直後に一度だけ描画を強制する（dt=0 なので角度は進まない）
+  sim.render(0, state.params, false);
 }
 function setIndex(i: number): void {
   const n = state.images.length;
