@@ -231,6 +231,7 @@ body {
 .field-unit {
   font-size: 13px;
   color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
 }
 
 /* コントロール群 */

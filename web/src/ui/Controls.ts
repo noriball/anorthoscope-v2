@@ -26,16 +26,6 @@ export interface AppHooks {
   getIndex(): number;
 }
 
-const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
-
-/** step の刻み幅から表示すべき小数桁数を求める（1 → 0 桁、0.1 → 1 桁、0.005 → 3 桁） */
-function decimalsForStep(step: number): number {
-  if (step >= 1) return 0;
-  const s = step.toString();
-  const i = s.indexOf(".");
-  return i === -1 ? 0 : s.length - i - 1;
-}
-
 /** 全操作をボタンと数値入力に集約した下部コントロールバー */
 export class ControlBar {
   private readonly root: HTMLElement;
@@ -46,6 +36,7 @@ export class ControlBar {
   private plateBtn!: HTMLButtonElement;
 
   private speedInput!: HTMLInputElement;
+  private speedValueLabel!: HTMLSpanElement;
   private fadeInput!: HTMLInputElement;
 
   constructor(root: HTMLElement, hooks: AppHooks) {
@@ -66,13 +57,14 @@ export class ControlBar {
     this.playBtn.classList.add("wide");
 
     // --- 数値パラメータ（回転比・スリット数は中央上の大きな表示で操作） ---
-    this.speedInput = numberInput(SPEED_MIN, SPEED_MAX, SPEED_STEP);
-    this.speedInput.oninput = () =>
-      this.commitNumber(this.speedInput, SPEED_MIN, SPEED_MAX, SPEED_STEP, (v) =>
-        this.hooks.setParams({ speed: v }),
-      );
-    // 入力欄から離れたら、丸められた実際の値を表示に反映する
-    this.speedInput.onblur = () => this.update();
+    // 速度はスライダー＋数値表示（フェードと異なり、値を目視で把握したい操作のため）
+    this.speedInput = sliderInput(SPEED_MIN, SPEED_MAX, SPEED_STEP);
+    this.speedValueLabel = el("span", "field-unit");
+    this.speedInput.oninput = () => {
+      const v = Number(this.speedInput.value);
+      this.hooks.setParams({ speed: v });
+      this.speedValueLabel.textContent = `${v.toFixed(1)}×`;
+    };
 
     // フェードは数値表記なしのスライダー（左右にドラッグするだけ）
     this.fadeInput = sliderInput(FADE_MIN, FADE_MAX, FADE_STEP);
@@ -80,7 +72,7 @@ export class ControlBar {
       this.hooks.setParams({ fadeAlpha: Number(this.fadeInput.value) });
 
     const params = group(
-      field("速度", this.speedInput, "×"),
+      field("速度", this.speedInput, this.speedValueLabel),
       field("フェード", this.fadeInput),
     );
 
@@ -124,22 +116,6 @@ export class ControlBar {
     return b;
   }
 
-  private commitNumber(
-    input: HTMLInputElement,
-    lo: number,
-    hi: number,
-    step: number,
-    set: (v: number) => void,
-  ): void {
-    if (input.value === "" || input.value === "-") return; // 入力途中は無視
-    const raw = Number(input.value);
-    if (Number.isNaN(raw)) return;
-    const decimals = decimalsForStep(step);
-    const factor = 10 ** decimals;
-    const snapped = decimals === 0 ? Math.round(raw) : Math.round(raw * factor) / factor;
-    set(clamp(snapped, lo, hi));
-  }
-
   private toggleLine(): void {
     const p = this.hooks.getParams();
     this.hooks.setParams({ showGuideLines: !p.showGuideLines });
@@ -161,7 +137,8 @@ export class ControlBar {
     this.plateBtn.classList.toggle("on", p.slitPlate);
 
     // 入力欄はフォーカス中なら上書きしない（打鍵・ドラッグの邪魔をしない）
-    setInputUnlessFocused(this.speedInput, p.speed.toFixed(1));
+    setInputUnlessFocused(this.speedInput, String(p.speed));
+    this.speedValueLabel.textContent = `${p.speed.toFixed(1)}×`;
     setInputUnlessFocused(this.fadeInput, String(p.fadeAlpha));
   }
 }
@@ -188,29 +165,25 @@ function spacer(): HTMLElement {
   s.style.flex = "1 1 auto";
   return s;
 }
-function field(labelText: string, input: HTMLInputElement, unit?: string): HTMLElement {
+function field(labelText: string, input: HTMLInputElement, unit?: string | HTMLElement): HTMLElement {
   const wrap = el("label", "field");
   const l = el("span");
   l.textContent = labelText;
   if (unit) {
     const box = el("div", "field-inline");
-    const u = el("span", "field-unit");
-    u.textContent = unit;
+    let u: HTMLElement;
+    if (typeof unit === "string") {
+      u = el("span", "field-unit");
+      u.textContent = unit;
+    } else {
+      u = unit;
+    }
     box.append(input, u);
     wrap.append(l, box);
   } else {
     wrap.append(l, input);
   }
   return wrap;
-}
-function numberInput(min: number, max: number, step: number): HTMLInputElement {
-  const i = el("input", "num");
-  i.type = "number";
-  i.min = String(min);
-  i.max = String(max);
-  i.step = String(step);
-  i.inputMode = "decimal";
-  return i;
 }
 function sliderInput(min: number, max: number, step: number): HTMLInputElement {
   const i = el("input", "slider");
