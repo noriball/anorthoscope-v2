@@ -215,8 +215,8 @@ export class Simulation {
     const dw = iw * this.scale;
     const dh = ih * this.scale;
     this.trimWidth = Math.max(1, Math.floor(Math.min(dw, dh) / 2) - TRIM_OFFSET);
-    // スリット窓（TRIM_OFFSET+trimWidth まで）よりほんの少しだけ大きい円盤
-    this.plateR = TRIM_OFFSET + this.trimWidth + 12;
+    // 円盤は画像が通常表示で占めるのと同じ大きさ（赤いガイド枠と見た目の比率を揃える）
+    this.plateR = Math.min(contentW, this.stageH) / 2;
 
     // 回転した画像がはみ出さない一辺（対角）。中心にストリップ抽出領域が収まる
     const diag = Math.ceil(Math.hypot(dw, dh)) + 2 * TRIM_OFFSET;
