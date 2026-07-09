@@ -231,12 +231,12 @@ export class Simulation {
     }
   }
 
-  /** バッファを黒でクリアし角度を初期化 */
+  /** バッファを現在の背景色でクリアし角度を初期化 */
   reset(): void {
     this.imageAngle = 0;
     this.slitAngle = 0;
-    clearBlack(this.lctx, this.left);
-    clearBlack(this.rctx, this.right);
+    fillSolid(this.lctx, this.left, this.bgColor);
+    fillSolid(this.rctx, this.right, this.bgColor);
     this.composite(false);
   }
 
@@ -495,12 +495,6 @@ export class Simulation {
 function must<T>(v: T | null): T {
   if (!v) throw new Error("2D context unavailable");
   return v;
-}
-
-function clearBlack(ctx: CanvasRenderingContext2D, c: HTMLCanvasElement): void {
-  ctx.globalAlpha = 1;
-  ctx.fillStyle = "#000";
-  ctx.fillRect(0, 0, c.width, c.height);
 }
 
 function fillSolid(ctx: CanvasRenderingContext2D, c: HTMLCanvasElement, color: string): void {
