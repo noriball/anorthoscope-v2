@@ -127,9 +127,10 @@ export class Simulation {
 
   getRotRatioAnchor(): { axis: "horizontal" | "vertical"; x: number; y: number } {
     if (this.stackAxis === "vertical") {
-      const topCircleBottom = this.leftCy + this.plateR;
-      const bottomCircleTop = this.left.height + this.rightCy - this.plateR;
-      return { axis: "vertical", x: this.stageW / 2, y: (topCircleBottom + bottomCircleTop) / 2 };
+      // 2円の下（ステージ最下部の予約スペース）の中央
+      const usableH = this.left.height + this.right.height;
+      const y = usableH + (this.stageH - usableH) / 2;
+      return { axis: "vertical", x: this.stageW / 2, y };
     }
     return { axis: "horizontal", x: this.stageW / 2, y: this.stageH * 0.94 };
   }
@@ -223,10 +224,20 @@ export class Simulation {
     this.rightCy = this.right.height / 2;
   }
 
-  /** 両方表示（垂直）：上下バッファを半高さずつ、上下にギャップ・外側に余白 */
+  /**
+   * 両方表示（垂直）：上下バッファを半高さずつ。2円の間は小さな隙間のみとし、
+   * 回転比パネル用のスペースは2円の「下」（ステージ最下部）にまとめて確保する。
+   */
   private layoutBothVertical(): void {
-    const halfH = Math.floor(this.stageH / 2);
-    const rightH = this.stageH - halfH;
+    // 回転比パネルを収める、2円の下の予約スペース
+    const panelSpace = Math.min(180, Math.max(120, this.stageH * 0.17));
+    // 2円の間は小さな視覚的な隙間だけでよい（パネルはもうここに来ないため）
+    const gap = Math.max(14, this.stageH * 0.018);
+    const outerM = Math.max(20, this.stageH * 0.03); // 上端の余白
+
+    const usableH = Math.max(40, this.stageH - panelSpace);
+    const halfH = Math.floor(usableH / 2);
+    const rightH = usableH - halfH;
     this.left.width = this.stageW;
     this.left.height = halfH;
     this.right.width = this.stageW;
@@ -234,8 +245,6 @@ export class Simulation {
     this.plate.width = this.stageW;
     this.plate.height = halfH;
 
-    const gap = Math.min(220, Math.max(120, this.stageH * 0.14));
-    const outerM = Math.max(20, this.stageH * 0.03);
     const contentH = Math.max(20, halfH - gap / 2 - outerM);
     this.leftCx = this.stageW / 2;
     this.rightCx = this.stageW / 2;
