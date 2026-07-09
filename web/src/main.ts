@@ -229,15 +229,21 @@ view.addEventListener("pointerup", (e) => {
 });
 
 /** クリックされた位置から、フォーカス対象（左/右/解除）を決める */
-function handleStageClick(clientX: number, _clientY: number): void {
+function handleStageClick(clientX: number, clientY: number): void {
   if (sim.getFocus() !== "both") {
     sim.setFocus("both");
     syncFocusUI();
     return;
   }
   const rect = view.getBoundingClientRect();
-  const xCss = clientX - rect.left;
-  sim.setFocus(xCss < rect.width / 2 ? "left" : "right");
+  // 縦画面（上下スタック）では上下、横画面（左右並び）では左右で判定する
+  if (sim.getRotRatioAnchor().axis === "vertical") {
+    const yCss = clientY - rect.top;
+    sim.setFocus(yCss < rect.height / 2 ? "left" : "right");
+  } else {
+    const xCss = clientX - rect.left;
+    sim.setFocus(xCss < rect.width / 2 ? "left" : "right");
+  }
   syncFocusUI();
 }
 
