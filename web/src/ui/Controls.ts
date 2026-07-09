@@ -177,7 +177,7 @@ function sep(): HTMLElement {
   return el("div", "sep");
 }
 function spacer(): HTMLElement {
-  const s = el("div");
+  const s = el("div", "spacer");
   s.style.flex = "1 1 auto";
   return s;
 }

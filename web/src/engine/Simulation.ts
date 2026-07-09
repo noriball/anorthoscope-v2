@@ -52,11 +52,16 @@ export class Simulation {
   private scale = 1; // 画像表示スケール
   private trimWidth = 0; // スリット長
   private sampleSize = 0; // sample バッファ一辺
-  // 2 円の間に中央スペースを空けるための、各バッファ内での円盤中心 X
-  // （フォーカス中は該当パネルのみ stageW/2 に設定される）
+  // 2 円の間に中央スペースを空けるための、各バッファ内での円盤中心 X/Y
+  // （フォーカス中は該当パネルのみ stageW/2, stageH/2 に設定される）
   private leftCx = 0;
+  private leftCy = 0;
   private rightCx = 0;
+  private rightCy = 0;
   private plateR = 0; // スリット板の半径（回転画像を覆う）
+
+  // 縦横モード
+  private stackAxis: "horizontal" | "vertical" = "horizontal";
 
   // スリット板の表示/非表示クロスフェード（0=非表示, 1=表示）
   private slitPlateOpacity = 0;
@@ -120,6 +125,15 @@ export class Simulation {
     return this.stageH;
   }
 
+  getRotRatioAnchor(): { axis: "horizontal" | "vertical"; x: number; y: number } {
+    if (this.stackAxis === "vertical") {
+      const topCircleBottom = this.leftCy + this.plateR;
+      const bottomCircleTop = this.left.height + this.rightCy - this.plateR;
+      return { axis: "vertical", x: this.stageW / 2, y: (topCircleBottom + bottomCircleTop) / 2 };
+    }
+    return { axis: "horizontal", x: this.stageW / 2, y: this.stageH * 0.94 };
+  }
+
   setFocus(mode: FocusMode): void {
     if (mode === this.focus) return;
     this.focus = mode;
@@ -169,8 +183,22 @@ export class Simulation {
     }
   }
 
-  /** 両方表示：左右バッファを半幅ずつ、中央にギャップ・外側に余白 */
+  private isPortraitStage(): boolean {
+    return this.stageW < this.stageH;
+  }
+
+  /** 両方表示：軸分岐 */
   private layoutBoth(): void {
+    this.stackAxis = this.isPortraitStage() ? "vertical" : "horizontal";
+    if (this.stackAxis === "vertical") {
+      this.layoutBothVertical();
+    } else {
+      this.layoutBothHorizontal();
+    }
+  }
+
+  /** 両方表示（水平）：左右バッファを半幅ずつ、中央にギャップ・外側に余白 */
+  private layoutBothHorizontal(): void {
     const halfW = Math.floor(this.stageW / 2);
     // stageW が奇数の場合、右バッファは stageW - halfW（= halfW+1）にして
     // 2枚の drawImage が stageW 全域を隙間なく覆うようにする（右端に bgColor の
@@ -190,7 +218,32 @@ export class Simulation {
     this.leftCx = outerM + contentW / 2; // 左：外側に余白、中央側にギャップ
     this.rightCx = gap / 2 + contentW / 2; // 右：中央側にギャップ、外側に余白
 
-    this.applyImageMetrics(contentW);
+    this.applyImageMetrics(contentW, this.stageH);
+    this.leftCy = this.left.height / 2;
+    this.rightCy = this.right.height / 2;
+  }
+
+  /** 両方表示（垂直）：上下バッファを半高さずつ、上下にギャップ・外側に余白 */
+  private layoutBothVertical(): void {
+    const halfH = Math.floor(this.stageH / 2);
+    const rightH = this.stageH - halfH;
+    this.left.width = this.stageW;
+    this.left.height = halfH;
+    this.right.width = this.stageW;
+    this.right.height = rightH;
+    this.plate.width = this.stageW;
+    this.plate.height = halfH;
+
+    const gap = Math.min(220, Math.max(120, this.stageH * 0.14));
+    const outerM = Math.max(20, this.stageH * 0.03);
+    const contentH = Math.max(20, halfH - gap / 2 - outerM);
+    this.leftCx = this.stageW / 2;
+    this.rightCx = this.stageW / 2;
+    this.leftCy = outerM + contentH / 2;
+    this.rightCy = gap / 2 + contentH / 2;
+
+    const contentSize = Math.min(this.stageW, contentH);
+    this.applyImageMetrics(contentSize, contentSize);
   }
 
   /** 単一パネルにフォーカス：そのバッファをステージ全体解像度にして中央に大きく表示 */
@@ -204,23 +257,25 @@ export class Simulation {
 
     if (which === "left") {
       this.leftCx = this.stageW / 2;
+      this.leftCy = this.stageH / 2;
     } else {
       this.rightCx = this.stageW / 2;
+      this.rightCy = this.stageH / 2;
     }
 
-    this.applyImageMetrics(this.stageW);
+    this.applyImageMetrics(this.stageW, this.stageH);
   }
 
   /** 画像スケール・スリット長・plateR・sample バッファサイズを計算（両モード共通） */
-  private applyImageMetrics(contentW: number): void {
+  private applyImageMetrics(contentW: number, contentH: number): void {
     if (!this.picture) return;
     const { width: iw, height: ih } = this.picture;
-    this.scale = Math.min(contentW / iw, this.stageH / ih);
+    this.scale = Math.min(contentW / iw, contentH / ih);
     const dw = iw * this.scale;
     const dh = ih * this.scale;
     this.trimWidth = Math.max(1, Math.floor(Math.min(dw, dh) / 2) - TRIM_OFFSET);
     // 円盤は画像が通常表示で占めるのと同じ大きさ（赤いガイド枠と見た目の比率を揃える）
-    this.plateR = Math.min(contentW, this.stageH) / 2;
+    this.plateR = Math.min(contentW, contentH) / 2;
 
     // 回転した画像がはみ出さない一辺（対角）。中心にストリップ抽出領域が収まる
     const diag = Math.ceil(Math.hypot(dw, dh)) + 2 * TRIM_OFFSET;
@@ -281,7 +336,7 @@ export class Simulation {
   private drawLeftPanel(slitPlate: boolean, fadeAlpha: number, bgColor: string): void {
     const ctx = this.lctx;
     const cx = this.leftCx;
-    const cy = this.left.height / 2;
+    const cy = this.leftCy;
 
     if (slitPlate) {
       // スリット板モード：残像なし。画像は円盤内だけに描く
@@ -313,7 +368,7 @@ export class Simulation {
     if (!this.picture) return;
 
     const cx = this.rightCx;
-    const cy = this.right.height / 2;
+    const cy = this.rightCy;
     const sc = this.sampleSize / 2; // sample バッファ中心
     const n = p.numSlits;
 
@@ -378,20 +433,34 @@ export class Simulation {
     ctx.fillStyle = this.bgColor;
     ctx.fillRect(0, 0, this.stageW, this.stageH);
 
-    const halfW = this.left.width;
-    ctx.drawImage(this.left, 0, 0);
-    ctx.drawImage(this.right, halfW, 0);
+    let leftGx: number, leftGy: number, rightGx: number, rightGy: number;
 
-    const cy = this.stageH / 2;
+    if (this.stackAxis === "vertical") {
+      const offsetY = this.left.height;
+      ctx.drawImage(this.left, 0, 0);
+      ctx.drawImage(this.right, 0, offsetY);
+      leftGx = this.leftCx;
+      leftGy = this.leftCy;
+      rightGx = this.rightCx;
+      rightGy = offsetY + this.rightCy;
+    } else {
+      const offsetX = this.left.width;
+      ctx.drawImage(this.left, 0, 0);
+      ctx.drawImage(this.right, offsetX, 0);
+      leftGx = this.leftCx;
+      leftGy = this.leftCy;
+      rightGx = offsetX + this.rightCx;
+      rightGy = this.rightCy;
+    }
 
     // スリット板（フェードイン）と赤ガイド枠（フェードアウト）をクロスフェード
     if (this.slitPlateOpacity > 0 && this.picture) {
-      this.drawSlitPlate(this.leftCx, cy, this.slitPlateOpacity);
+      this.drawSlitPlate(this.leftCx, this.leftCy, this.slitPlateOpacity);
     }
     if (showGuides && this.picture && this.slitPlateOpacity < 1) {
       const guideAlpha = 1 - this.slitPlateOpacity;
-      this.drawGuideLines(this.leftCx, cy, guideAlpha); // 左パネル中心
-      this.drawGuideLines(halfW + this.rightCx, cy, guideAlpha); // 右パネル中心
+      this.drawGuideLines(leftGx, leftGy, guideAlpha);
+      this.drawGuideLines(rightGx, rightGy, guideAlpha);
     }
   }
 

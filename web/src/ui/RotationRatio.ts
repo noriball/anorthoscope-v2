@@ -67,6 +67,20 @@ export class RotationRatio {
     this.root.classList.toggle("hidden", !visible);
   }
 
+  setAnchor(axis: "horizontal" | "vertical", xCss: number, yCss: number): void {
+    if (axis === "vertical") {
+      this.root.style.left = `${xCss}px`;
+      this.root.style.top = `${yCss}px`;
+      this.root.style.bottom = "auto";
+      this.root.style.transform = "translate(-50%, -50%)";
+    } else {
+      this.root.style.left = "";
+      this.root.style.top = "";
+      this.root.style.bottom = "";
+      this.root.style.transform = "";
+    }
+  }
+
   private build(parent: HTMLElement): void {
     const root = document.createElement("div");
     this.root = root;

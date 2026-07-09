@@ -249,10 +249,17 @@ function scheduleResize(): void {
   clearTimeout(resizeTimer);
   resizeTimer = window.setTimeout(doResize, 120);
 }
+function syncRotRatioPosition(): void {
+  const anchor = sim.getRotRatioAnchor();
+  const rect = stage.getBoundingClientRect();
+  const cssToStage = sim.getStageHeight() / rect.height;
+  rotationRatio.setAnchor(anchor.axis, anchor.x / cssToStage, anchor.y / cssToStage);
+}
 function doResize(): void {
   const rect = stage.getBoundingClientRect();
   sim.resize(rect.width, rect.height);
   applyCurrentImage();
+  syncRotRatioPosition();
 }
 window.addEventListener("resize", scheduleResize);
 document.addEventListener("fullscreenchange", scheduleResize);

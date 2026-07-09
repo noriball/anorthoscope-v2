@@ -647,3 +647,80 @@ body {
   padding: 1px 5px;
   border-radius: 6px;
 }
+
+@media (max-width: 700px) {
+  #view {
+    touch-action: none;
+  }
+
+  #rot-ratio {
+    padding: 6px 10px 8px;
+    gap: 2px;
+  }
+  .rr-title { font-size: 9px; }
+  .rr-step { width: 18px; height: 24px; font-size: 12px; }
+  .rr-value { width: 40px; height: 26px; font-size: 17px; }
+  .rr-colon { font-size: 18px; }
+  .rr-celllabel { font-size: 9px; }
+
+  #zoom-controls {
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+
+  #controls {
+    flex-wrap: wrap;
+    align-content: center;
+    gap: 6px 8px;
+    padding: 6px 8px;
+    height: auto;
+    flex: 0 0 auto;
+    min-height: var(--bar-h);
+  }
+  .slider { width: 64px; }
+  .field { font-size: 9px; }
+  .btn { font-size: 12px; padding: 0 7px; height: 28px; }
+  .btn.wide { padding: 0 8px; }
+  .btn.play { width: 68px; }
+  .sep { display: none; }
+  .spacer { display: none; }
+
+  .paint-stage {
+    flex-direction: column;
+    gap: 10px;
+    padding: 8px;
+  }
+  .paint-pane {
+    flex: 1 1 0;
+    width: 100%;
+  }
+  .paint-bar {
+    padding: 6px 8px;
+    gap: 4px 8px;
+  }
+  .paint-btn {
+    height: 28px;
+    padding: 0 8px;
+    font-size: 13px;
+  }
+  .paint-size {
+    width: 80px;
+  }
+
+  .gallery-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    padding: 12px;
+    gap: 10px;
+  }
+  .picker-grid {
+    grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  }
+  .gallery-panel {
+    width: min(880px, 96vw);
+    max-height: 92vh;
+  }
+
+  .guide-panel td {
+    font-size: 12px;
+    padding: 6px 3px;
+  }
+}
