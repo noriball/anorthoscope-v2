@@ -193,40 +193,6 @@ body {
   border-top: 1px solid #37374a;
 }
 
-/* 画像ナビ（前・現在・次の3枚） */
-.nav-thumb {
-  flex: 0 0 auto;
-  width: 52px;
-  height: 52px;
-  border-radius: 4px;
-  background: #1c1c24;
-  border: 2px solid transparent;
-  cursor: pointer;
-  transition: border-color 0.12s, opacity 0.12s;
-}
-.nav-thumb.prev,
-.nav-thumb.next {
-  width: 40px;
-  height: 40px;
-  opacity: 0.5;
-}
-.nav-thumb.prev:hover,
-.nav-thumb.next:hover {
-  opacity: 0.9;
-  border-color: var(--border-hi);
-}
-.nav-thumb.cur {
-  border-color: var(--accent);
-}
-
-.counter {
-  flex: 0 0 auto;
-  font-size: 12px;
-  color: var(--text-dim);
-  min-width: 46px;
-  text-align: center;
-}
-
 /* 数値入力 */
 .field {
   display: flex;

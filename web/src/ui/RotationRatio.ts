@@ -1,7 +1,4 @@
 import {
-  FADE_MAX,
-  FADE_MIN,
-  FADE_STEP,
   ROT_FACTOR_MAX,
   ROT_FACTOR_MIN,
   ROT_FACTOR_STEP,
@@ -44,17 +41,16 @@ interface CellRange {
 }
 
 /**
- * 2 パネルの間・下側に表示する回転比＋スリット数＋フェードのコントロール（3段表示）。
+ * 2 パネルの間・下側に表示する回転比＋スリット数のコントロール（2段表示）。
  *
  *          ROTATION RATIO
  *   スリット + [ 1 ] −  ：  絵 + [ -4 ] −
  *          スリット数 + [ 5 ] −
- *            フェード + [ 0.02 ] −
  *
- * 円と重ならないよう、やや小さめの表示にして段に分ける（上段＝回転比、
- * 中段＝スリット数、下段＝フェード）。数字の左右に + − を置くのでポインタが
- * 数字に被らない。直接入力も可能。単一パネルのフォーカス表示中はこのパネル自体を
- * 隠す（setVisible）— フォーカス中は中央の余白が無くなり円と重なってしまうため。
+ * 円と重ならないよう、やや小さめの表示にして2段に分ける（上段＝回転比、
+ * 下段＝スリット数）。数字の左右に + − を置くのでポインタが数字に被らない。
+ * 直接入力も可能。単一パネルのフォーカス表示中はこのパネル自体を隠す
+ * （setVisible）— フォーカス中は中央の余白が無くなり円と重なってしまうため。
  */
 export class RotationRatio {
   private readonly hooks: RatioHooks;
@@ -112,17 +108,7 @@ export class RotationRatio {
     row2.className = "rr-row";
     row2.append(slitCount);
 
-    const fade = this.cell(
-      "フェード",
-      () => this.hooks.getParams().fadeAlpha,
-      (v) => this.hooks.setParams({ fadeAlpha: v }),
-      { min: FADE_MIN, max: FADE_MAX, step: FADE_STEP },
-    );
-    const row3 = document.createElement("div");
-    row3.className = "rr-row";
-    row3.append(fade);
-
-    root.append(title, row1, row2, row3);
+    root.append(title, row1, row2);
     parent.append(root);
   }
 

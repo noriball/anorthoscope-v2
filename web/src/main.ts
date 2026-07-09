@@ -67,8 +67,6 @@ const hooks: AppHooks = {
     state.paused = !state.paused;
     bar.update();
   },
-  next: () => setIndex(state.index + 1),
-  prev: () => setIndex(state.index - 1),
   addImages: () => fileInput.click(),
   toggleFullscreen,
   openGuide: () => guide.show(),
