@@ -670,11 +670,22 @@ body {
   #controls {
     flex-wrap: wrap;
     align-content: center;
+    justify-content: center;
     gap: 6px 8px;
     padding: 6px 8px;
     height: auto;
     flex: 0 0 auto;
     min-height: var(--bar-h);
+  }
+  /* グループ自体も画面幅を超えたら折返す（全ボタンが画面外にはみ出すのを防ぐ）。
+     flex:0 0 auto のままだと幅が内容依存のまま広がり続けて折返しが効かないため、
+     幅を親（#controls）の範囲に制限してから wrap させる。 */
+  .group {
+    flex: 1 1 auto;
+    max-width: 100%;
+    flex-wrap: wrap;
+    justify-content: center;
+    row-gap: 6px;
   }
   .slider { width: 64px; }
   .field { font-size: 9px; }
