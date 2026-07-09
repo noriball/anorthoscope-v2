@@ -648,7 +648,10 @@ body {
   border-radius: 6px;
 }
 
-@media (max-width: 700px) {
+/* 縦画面のスマホ（幅が狭い）に加え、横向きスマホ（幅は広いが高さが低い）にも
+   同じコンパクト表示を適用する。横向きスマホは幅700pxを超えることが多いが、
+   高さは375〜430px程度しかなく、デスクトップ用の1行レイアウトでは収まらない。 */
+@media (max-width: 700px), (max-height: 500px) {
   #view {
     touch-action: none;
   }
