@@ -74,12 +74,10 @@ export class ControlBar {
     // 入力欄から離れたら、丸められた実際の値を表示に反映する
     this.speedInput.onblur = () => this.update();
 
-    this.fadeInput = numberInput(FADE_MIN, FADE_MAX, FADE_STEP);
+    // フェードは数値表記なしのスライダー（左右にドラッグするだけ）
+    this.fadeInput = sliderInput(FADE_MIN, FADE_MAX, FADE_STEP);
     this.fadeInput.oninput = () =>
-      this.commitNumber(this.fadeInput, FADE_MIN, FADE_MAX, FADE_STEP, (v) =>
-        this.hooks.setParams({ fadeAlpha: v }),
-      );
-    this.fadeInput.onblur = () => this.update();
+      this.hooks.setParams({ fadeAlpha: Number(this.fadeInput.value) });
 
     const params = group(
       field("速度", this.speedInput, "×"),
@@ -162,9 +160,9 @@ export class ControlBar {
     this.lineBtn.classList.toggle("on", p.showGuideLines);
     this.plateBtn.classList.toggle("on", p.slitPlate);
 
-    // 入力欄はフォーカス中なら上書きしない（打鍵の邪魔をしない）
+    // 入力欄はフォーカス中なら上書きしない（打鍵・ドラッグの邪魔をしない）
     setInputUnlessFocused(this.speedInput, p.speed.toFixed(1));
-    setInputUnlessFocused(this.fadeInput, p.fadeAlpha.toFixed(decimalsForStep(FADE_STEP)));
+    setInputUnlessFocused(this.fadeInput, String(p.fadeAlpha));
   }
 }
 
@@ -212,6 +210,14 @@ function numberInput(min: number, max: number, step: number): HTMLInputElement {
   i.max = String(max);
   i.step = String(step);
   i.inputMode = "decimal";
+  return i;
+}
+function sliderInput(min: number, max: number, step: number): HTMLInputElement {
+  const i = el("input", "slider");
+  i.type = "range";
+  i.min = String(min);
+  i.max = String(max);
+  i.step = String(step);
   return i;
 }
 function setInputUnlessFocused(input: HTMLInputElement, value: string): void {

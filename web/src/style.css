@@ -219,6 +219,10 @@ body {
   outline: none;
   border-color: var(--accent);
 }
+.slider {
+  width: 90px;
+  height: 28px;
+}
 .field-inline {
   display: flex;
   align-items: center;
