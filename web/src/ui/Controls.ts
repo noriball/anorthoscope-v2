@@ -5,7 +5,9 @@ import {
   SPEED_MAX,
   SPEED_MIN,
   SPEED_STEP,
-  BG_PRESETS,
+  BG_MIN,
+  BG_MAX,
+  BG_STEP,
   type Params,
 } from "../config";
 import type { Picture } from "../images";
@@ -40,8 +42,7 @@ export class ControlBar {
   private speedInput!: HTMLInputElement;
   private speedValueLabel!: HTMLSpanElement;
   private fadeInput!: HTMLInputElement;
-  private bgColorButtons: Map<string, HTMLButtonElement> = new Map();
-  private lastBgColorHex = "#000000";
+  private bgInput!: HTMLInputElement;
 
   constructor(root: HTMLElement, hooks: AppHooks) {
     this.root = root;
@@ -75,29 +76,20 @@ export class ControlBar {
     this.fadeInput.oninput = () =>
       this.hooks.setParams({ fadeAlpha: Number(this.fadeInput.value) });
 
-    // --- シミュレータ背景色（正方形カラーボタン） ---
-    const bgColorButtons: HTMLElement[] = [];
-    for (const preset of BG_PRESETS) {
-      const btn = this.button("", () => {
-        this.lastBgColorHex = preset.hex;
-        this.hooks.setBgColor(preset.hex);
-        this.update();
-      });
-      btn.style.backgroundColor = preset.hex;
-      btn.style.width = "28px";
-      btn.style.height = "28px";
-      btn.style.minWidth = "28px"; // flex で縮まないように
-      btn.style.maxWidth = "28px"; // min-width CSS ルールで伸びないように
-      btn.style.padding = "0"; // 標準パディングを削除
-      btn.title = preset.name;
-      this.bgColorButtons.set(preset.hex, btn);
-      bgColorButtons.push(btn);
-    }
+    // --- シミュレータ背景色（グレースケールスライダー：0=黒 ～ 255=白） ---
+    this.bgInput = sliderInput(BG_MIN, BG_MAX, BG_STEP);
+    this.bgInput.value = "0"; // 初期値は黒（DEFAULT_BG_COLOR と一致）
+    this.bgInput.style.background = "linear-gradient(to right, #000, #fff)";
+    this.bgInput.oninput = () => {
+      const v = Number(this.bgInput.value);
+      const hex = grayToHex(v);
+      this.hooks.setBgColor(hex);
+    };
 
     const params = group(
       field("速度", this.speedInput, this.speedValueLabel),
       field("フェード", this.fadeInput),
-      field("背景", group(...bgColorButtons)),
+      field("背景", this.bgInput),
     );
 
     // --- アクション ---
@@ -164,11 +156,6 @@ export class ControlBar {
     setInputUnlessFocused(this.speedInput, String(p.speed));
     this.speedValueLabel.textContent = `${p.speed.toFixed(1)}×`;
     setInputUnlessFocused(this.fadeInput, String(p.fadeAlpha));
-
-    // 背景色ボタンの .on ハイライト
-    this.bgColorButtons.forEach((btn, hex) =>
-      btn.classList.toggle("on", hex === this.lastBgColorHex)
-    );
   }
 }
 
@@ -224,4 +211,9 @@ function sliderInput(min: number, max: number, step: number): HTMLInputElement {
 }
 function setInputUnlessFocused(input: HTMLInputElement, value: string): void {
   if (document.activeElement !== input) input.value = value;
+}
+/** グレー階調値（0〜255）を "#rrggbb" 形式の無彩色 hex に変換 */
+function grayToHex(v: number): string {
+  const c = Math.round(v).toString(16).padStart(2, "0");
+  return `#${c}${c}${c}`;
 }

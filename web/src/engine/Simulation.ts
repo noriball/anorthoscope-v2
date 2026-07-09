@@ -168,9 +168,13 @@ export class Simulation {
   /** 両方表示：左右バッファを半幅ずつ、中央にギャップ・外側に余白 */
   private layoutBoth(): void {
     const halfW = Math.floor(this.stageW / 2);
+    // stageW が奇数の場合、右バッファは stageW - halfW（= halfW+1）にして
+    // 2枚の drawImage が stageW 全域を隙間なく覆うようにする（右端に bgColor の
+    // 1px帯が露出するのを防ぐ）。
+    const rightW = this.stageW - halfW;
     this.left.width = halfW;
     this.left.height = this.stageH;
-    this.right.width = halfW;
+    this.right.width = rightW;
     this.right.height = this.stageH;
     this.plate.width = halfW;
     this.plate.height = this.stageH;

@@ -64,6 +64,9 @@ const hooks: AppHooks = {
   },
   setBgColor: (hex) => {
     sim.setBgColor(hex);
+    // canvas 外周（レイアウトの端数・DPRの丸め等で万一露出した場合）にも
+    // 同じ色を敷いておき、境界に別色の帯が見えるのを防ぐ。
+    document.body.style.background = hex;
   },
   isPaused: () => state.paused,
   togglePause: () => {

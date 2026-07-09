@@ -62,19 +62,10 @@ export const COMPRESS_DIV_MIN = 2;
 export const COMPRESS_DIV_MAX = 16;
 export const COMPRESS_DIV_DEFAULT = 5;
 
-// シミュレータ背景色プリセット（5段階グレースケール）
-export interface BGPreset {
-  name: string;
-  hex: string;
-}
-
-export const BG_PRESETS: BGPreset[] = [
-  { name: "黒", hex: "#000000" },
-  { name: "濃灰色", hex: "#404040" },
-  { name: "中灰色", hex: "#808080" },
-  { name: "薄灰色", hex: "#c0c0c0" },
-  { name: "白", hex: "#ffffff" },
-];
+// シミュレータ背景色（グレースケールスライダー：0=黒 ～ 255=白）
+export const BG_MIN = 0;
+export const BG_MAX = 255;
+export const BG_STEP = 1;
 
 export const DEFAULT_BG_COLOR = "#000000";
 
