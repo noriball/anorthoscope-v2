@@ -242,7 +242,7 @@ export class Simulation {
     this.currentNumSlits = params.numSlits;
     if (this.picture && !paused) {
       this.advance(dt, params);
-      if (this.focus !== "right") this.drawLeftPanel(params.slitPlate, params.fadeAlpha, params.bgColor);
+      if (this.focus !== "right") this.drawLeftPanel(params.slitPlate, params.fadeAlpha);
       if (this.focus !== "left") this.stampRightPanel(params);
     }
     this.composite(params.showGuideLines, params.slitPlate);
@@ -254,17 +254,14 @@ export class Simulation {
     this.slitAngle += omega * p.slitRotFactor;
   }
 
-  /** 左パネル：回転画像を描画。通常は黒背景＋残像、スリット板モードは bgColor背景（残像なし） */
-  private drawLeftPanel(slitPlate: boolean, fadeAlpha: number, bgColor: string): void {
+  /** 左パネル：回転画像を描画。通常は残像フェード、スリット板モード時は残像なし */
+  private drawLeftPanel(slitPlate: boolean, fadeAlpha: number): void {
     const ctx = this.lctx;
     const cx = this.leftCx;
     const cy = this.left.height / 2;
 
     if (slitPlate) {
-      // bgColor 背景（スリット板を視認しやすくする）。残像なし。画像は円盤内だけに描く
-      ctx.globalAlpha = 1;
-      ctx.fillStyle = bgColor;
-      ctx.fillRect(0, 0, this.left.width, this.left.height);
+      // スリット板モード：残像なし。画像は円盤内だけに描く
       ctx.save();
       ctx.beginPath();
       ctx.arc(cx, cy, this.plateR, 0, Math.PI * 2);
@@ -272,6 +269,7 @@ export class Simulation {
       this.drawPictureRotated(ctx, cx, cy, this.imageAngle);
       ctx.restore();
     } else {
+      // 通常モード：フェード（背景描画は composite で行う）
       ctx.globalAlpha = fadeAlpha;
       ctx.fillStyle = "#000";
       ctx.fillRect(0, 0, this.left.width, this.left.height);
@@ -283,9 +281,9 @@ export class Simulation {
   /** 右パネル：各スリットのストリップを抽出し、蓄積バッファへ配置 */
   private stampRightPanel(p: Params): void {
     const ctx = this.rctx;
-    // 蓄積フェード（スリット板モードでは白地へフェード）
+    // 蓄積フェード（背景描画は composite で行う。バッファは既に初期化されている）
     ctx.globalAlpha = p.fadeAlpha;
-    ctx.fillStyle = p.slitPlate ? "#fff" : "#000";
+    ctx.fillStyle = "#000";
     ctx.fillRect(0, 0, this.right.width, this.right.height);
     ctx.globalAlpha = 1;
 
@@ -354,7 +352,7 @@ export class Simulation {
 
   private compositeBoth(showGuides: boolean, slitPlate: boolean): void {
     const ctx = this.vctx;
-    ctx.fillStyle = "#000";
+    ctx.fillStyle = this.bgColor;
     ctx.fillRect(0, 0, this.stageW, this.stageH);
 
     const halfW = this.left.width;
@@ -375,7 +373,7 @@ export class Simulation {
   /** 単一パネルにフォーカス：そのバッファをパン・ズームしてステージ全体に表示 */
   private compositeFocused(which: "left" | "right", showGuides: boolean, slitPlate: boolean): void {
     const ctx = this.vctx;
-    ctx.fillStyle = "#000";
+    ctx.fillStyle = this.bgColor;
     ctx.fillRect(0, 0, this.stageW, this.stageH);
 
     const buf = which === "left" ? this.left : this.right;
@@ -451,8 +449,13 @@ export class Simulation {
     ctx.restore();
   }
 
-  // composite 時にスリット数を知るための控え（render で更新）
+  // composite 時に使用するパラメータ
   private currentNumSlits = 4;
+  private bgColor = "#000000";
+
+  setBgColor(hex: string): void {
+    this.bgColor = hex;
+  }
 }
 
 function must<T>(v: T | null): T {

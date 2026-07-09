@@ -62,7 +62,7 @@ export const COMPRESS_DIV_MIN = 2;
 export const COMPRESS_DIV_MAX = 16;
 export const COMPRESS_DIV_DEFAULT = 5;
 
-// スリット板背景色プリセット
+// シミュレータ背景色プリセット（5段階グレースケール）
 export interface BGPreset {
   name: string;
   hex: string;
@@ -70,13 +70,10 @@ export interface BGPreset {
 
 export const BG_PRESETS: BGPreset[] = [
   { name: "黒", hex: "#000000" },
+  { name: "濃灰色", hex: "#404040" },
+  { name: "中灰色", hex: "#808080" },
+  { name: "薄灰色", hex: "#c0c0c0" },
   { name: "白", hex: "#ffffff" },
-  { name: "灰色", hex: "#808080" },
-  { name: "赤", hex: "#ff0000" },
-  { name: "青", hex: "#0000ff" },
-  { name: "緑", hex: "#00ff00" },
-  { name: "黄", hex: "#ffff00" },
-  { name: "紫", hex: "#ff00ff" },
 ];
 
 export const DEFAULT_BG_COLOR = "#000000";
@@ -96,8 +93,6 @@ export interface Params {
   slitPlate: boolean;
   /** 残像フェードの不透明度（左右パネル共通）。小さいほど残像が長く残る */
   fadeAlpha: number;
-  /** スリット板の背景色（16進カラーコード） */
-  bgColor: string;
 }
 
 export const DEFAULT_PARAMS: Params = {
@@ -108,5 +103,4 @@ export const DEFAULT_PARAMS: Params = {
   showGuideLines: true,
   slitPlate: false,
   fadeAlpha: FADE_ALPHA,
-  bgColor: DEFAULT_BG_COLOR,
 };

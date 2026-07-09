@@ -14,6 +14,7 @@ import type { Picture } from "../images";
 export interface AppHooks {
   getParams(): Params;
   setParams(patch: Partial<Params>): void;
+  setBgColor(hex: string): void;
   isPaused(): boolean;
   togglePause(): void;
   addImages(): void;
@@ -40,6 +41,7 @@ export class ControlBar {
   private speedValueLabel!: HTMLSpanElement;
   private fadeInput!: HTMLInputElement;
   private bgColorButtons: Map<string, HTMLButtonElement> = new Map();
+  private currentBgColor = "#000000";
 
   constructor(root: HTMLElement, hooks: AppHooks) {
     this.root = root;
@@ -73,11 +75,12 @@ export class ControlBar {
     this.fadeInput.oninput = () =>
       this.hooks.setParams({ fadeAlpha: Number(this.fadeInput.value) });
 
-    // --- スリット板背景色（正方形カラーボタン） ---
+    // --- シミュレータ背景色（正方形カラーボタン） ---
     const bgColorButtons: HTMLElement[] = [];
     for (const preset of BG_PRESETS) {
       const btn = this.button("", () => {
-        this.hooks.setParams({ bgColor: preset.hex });
+        this.currentBgColor = preset.hex;
+        this.hooks.setBgColor(preset.hex);
         this.update();
       });
       btn.style.backgroundColor = preset.hex;
@@ -164,7 +167,7 @@ export class ControlBar {
 
     // 背景色ボタンの .on ハイライト
     this.bgColorButtons.forEach((btn, hex) =>
-      btn.classList.toggle("on", hex === p.bgColor)
+      btn.classList.toggle("on", hex === this.currentBgColor)
     );
   }
 }

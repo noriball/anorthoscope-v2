@@ -62,6 +62,9 @@ const hooks: AppHooks = {
   setParams: (patch) => {
     state.params = { ...state.params, ...patch };
   },
+  setBgColor: (hex) => {
+    sim.setBgColor(hex);
+  },
   isPaused: () => state.paused,
   togglePause: () => {
     state.paused = !state.paused;
