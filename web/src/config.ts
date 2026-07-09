@@ -16,8 +16,11 @@ export const TRIM_HEIGHT = 6;
 /** 中心からスリット内側端までのオフセット[内部px] */
 export const TRIM_OFFSET = 10;
 
-/** 残像フェードの不透明度（1フレームあたり）。小さいほど残像が長く残る */
+/** 残像フェードの不透明度（1フレームあたり）の既定値。小さいほど残像が長く残る */
 export const FADE_ALPHA = 0.02;
+export const FADE_MIN = 0.005;
+export const FADE_MAX = 0.2;
+export const FADE_STEP = 0.005;
 
 /** 基本角速度[rad/sec]。回転比係数と速度スケールに掛かる */
 export const BASE_OMEGA = 0.6;
@@ -33,6 +36,11 @@ export const ROT_FACTOR_STEP = 1;
 
 export const SLITS_MIN = 1;
 export const SLITS_MAX = 20;
+
+// 単一パネル・フォーカスモードのズーム可動域
+export const ZOOM_MIN = 1;
+export const ZOOM_MAX = 8;
+export const ZOOM_STEP_FACTOR = 1.2;
 
 /** 画像マニフェストのパス（public/data 配下） */
 export const DATA_DIR = "data";
@@ -67,6 +75,8 @@ export interface Params {
   showGuideLines: boolean;
   /** スリット板モード：左パネルの回転画像に黒い円盤＋透明スリット窓を重ねる（赤は非表示） */
   slitPlate: boolean;
+  /** 残像フェードの不透明度（左右パネル共通）。小さいほど残像が長く残る */
+  fadeAlpha: number;
 }
 
 export const DEFAULT_PARAMS: Params = {
@@ -76,4 +86,5 @@ export const DEFAULT_PARAMS: Params = {
   numSlits: 4,
   showGuideLines: true,
   slitPlate: false,
+  fadeAlpha: FADE_ALPHA,
 };

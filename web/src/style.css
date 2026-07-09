@@ -65,6 +65,9 @@ body {
   user-select: none;
   white-space: nowrap;
 }
+#rot-ratio.hidden {
+  display: none;
+}
 .rr-title {
   font-size: 11px;
   letter-spacing: 0.16em;
@@ -137,6 +140,46 @@ body {
   font-weight: 300;
   color: var(--text);
   padding-bottom: 2px;
+}
+
+/* ===== ズームコントロール（単一パネル・フォーカス表示中だけ現れる） ===== */
+#zoom-controls {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  backdrop-filter: blur(2px);
+  z-index: 5;
+}
+#zoom-controls.hidden {
+  display: none;
+}
+.zoom-btn {
+  width: 32px;
+  height: 32px;
+  font-size: 16px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.zoom-btn:hover {
+  background: var(--panel-hi);
+  border-color: var(--border-hi);
+}
+
+/* フォーカス表示中の #view：ドラッグでパンできることを示すカーソル */
+#view.focused {
+  cursor: grab;
+}
+#view.focused:active {
+  cursor: grabbing;
 }
 
 /* ===== 下部コントロールバー ===== */

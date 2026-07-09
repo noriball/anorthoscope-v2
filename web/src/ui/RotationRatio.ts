@@ -1,4 +1,7 @@
 import {
+  FADE_MAX,
+  FADE_MIN,
+  FADE_STEP,
   ROT_FACTOR_MAX,
   ROT_FACTOR_MIN,
   ROT_FACTOR_STEP,
@@ -13,10 +16,26 @@ export interface RatioHooks {
 }
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
-/** step が整数刻みなら整数に、小数刻みなら小数第1位に丸める */
-const roundStep = (v: number, step: number) => (step >= 1 ? Math.round(v) : Math.round(v * 10) / 10);
-/** 整数はそのまま、小数のときだけ 1 桁表示（1 / -4 / 1.5） */
-const fmt = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(1));
+
+/** step の刻み幅から表示すべき小数桁数を求める（1 → 0 桁、0.1 → 1 桁、0.005 → 3 桁） */
+function decimalsForStep(step: number): number {
+  if (step >= 1) return 0;
+  const s = step.toString();
+  const i = s.indexOf(".");
+  return i === -1 ? 0 : s.length - i - 1;
+}
+/** 値を step の刻みちょうどに丸める（浮動小数点誤差も除去） */
+const roundStep = (v: number, step: number): number => {
+  const decimals = decimalsForStep(step);
+  const snapped = Math.round(v / step) * step;
+  const factor = 10 ** decimals;
+  return Math.round(snapped * factor) / factor;
+};
+/** step の刻み幅に応じた桁数で表示（1刻みは整数、0.005刻みは小数第3位まで） */
+const fmt = (v: number, step: number): string => {
+  const decimals = decimalsForStep(step);
+  return decimals === 0 ? String(Math.round(v)) : v.toFixed(decimals);
+};
 
 interface CellRange {
   min: number;
@@ -25,19 +44,22 @@ interface CellRange {
 }
 
 /**
- * 2 パネルの間・下側に表示する回転比＋スリット数コントロール（2段表示）。
+ * 2 パネルの間・下側に表示する回転比＋スリット数＋フェードのコントロール（3段表示）。
  *
  *          ROTATION RATIO
  *   スリット + [ 1 ] −  ：  絵 + [ -4 ] −
  *          スリット数 + [ 5 ] −
+ *            フェード + [ 0.02 ] −
  *
- * 円と重ならないよう、やや小さめの表示にして2段に分ける（上段＝回転比、
- * 下段＝スリット数）。数字の左右に + − を置くのでポインタが数字に被らない。
- * 直接入力も可能。
+ * 円と重ならないよう、やや小さめの表示にして段に分ける（上段＝回転比、
+ * 中段＝スリット数、下段＝フェード）。数字の左右に + − を置くのでポインタが
+ * 数字に被らない。直接入力も可能。単一パネルのフォーカス表示中はこのパネル自体を
+ * 隠す（setVisible）— フォーカス中は中央の余白が無くなり円と重なってしまうため。
  */
 export class RotationRatio {
   private readonly hooks: RatioHooks;
   private readonly refreshers: Array<() => void> = [];
+  private root!: HTMLDivElement;
 
   constructor(parent: HTMLElement, hooks: RatioHooks) {
     this.hooks = hooks;
@@ -45,8 +67,13 @@ export class RotationRatio {
     this.update();
   }
 
+  setVisible(visible: boolean): void {
+    this.root.classList.toggle("hidden", !visible);
+  }
+
   private build(parent: HTMLElement): void {
     const root = document.createElement("div");
+    this.root = root;
     root.id = "rot-ratio";
 
     const title = document.createElement("div");
@@ -85,7 +112,17 @@ export class RotationRatio {
     row2.className = "rr-row";
     row2.append(slitCount);
 
-    root.append(title, row1, row2);
+    const fade = this.cell(
+      "フェード",
+      () => this.hooks.getParams().fadeAlpha,
+      (v) => this.hooks.setParams({ fadeAlpha: v }),
+      { min: FADE_MIN, max: FADE_MAX, step: FADE_STEP },
+    );
+    const row3 = document.createElement("div");
+    row3.className = "rr-row";
+    row3.append(fade);
+
+    root.append(title, row1, row2, row3);
     parent.append(root);
   }
 
@@ -135,7 +172,7 @@ export class RotationRatio {
     cell.append(label, stepper);
 
     this.refreshers.push(() => {
-      if (document.activeElement !== input) input.value = fmt(get());
+      if (document.activeElement !== input) input.value = fmt(get(), range.step);
     });
     return cell;
   }

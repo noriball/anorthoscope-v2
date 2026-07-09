@@ -1,12 +1,18 @@
 import {
   BASE_OMEGA,
-  FADE_ALPHA,
   STAGE_MAX_HEIGHT,
   TRIM_HEIGHT,
   TRIM_OFFSET,
+  ZOOM_MAX,
+  ZOOM_MIN,
   type Params,
 } from "../config";
 import type { Picture } from "../images";
+
+/** 表示モード：両方 / 左のみフォーカス / 右のみフォーカス */
+export type FocusMode = "both" | "left" | "right";
+
+const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
 /**
  * アノルソスコープの描画エンジン。
@@ -17,6 +23,12 @@ import type { Picture } from "../images";
  *  - オフスクリーン Canvas を使い回す。毎フレームの getImageData / 新規確保を行わず、
  *    ストリップ抽出は drawImage のソース矩形クロップ（GPU 支援・無確保）で行う。
  *  - requestAnimationFrame の delta-time で角度を進め、フレームレート非依存。
+ *
+ * フォーカスモード：どちらかの円をクリックすると、その円だけをステージ全体に
+ * 表示する（`setFocus`）。フォーカス中はその円のバッファをステージ全体解像度
+ * （stageW x stageH）で再構築し、ドラッグでパン・ボタンでズームができる。
+ * 非表示側のパネルは描画自体をスキップする（stampRightPanel は this.left に
+ * 依存しないため、focus='right' のとき drawLeftPanel を丸ごと省略できる）。
  */
 export class Simulation {
   private readonly view: HTMLCanvasElement;
@@ -41,6 +53,7 @@ export class Simulation {
   private trimWidth = 0; // スリット長
   private sampleSize = 0; // sample バッファ一辺
   // 2 円の間に中央スペースを空けるための、各バッファ内での円盤中心 X
+  // （フォーカス中は該当パネルのみ stageW/2 に設定される）
   private leftCx = 0;
   private rightCx = 0;
   private plateR = 0; // スリット板の半径（回転画像を覆う）
@@ -48,6 +61,12 @@ export class Simulation {
   // 蓄積される回転角
   private imageAngle = 0;
   private slitAngle = 0;
+
+  // フォーカスモード・パン・ズーム
+  private focus: FocusMode = "both";
+  private panX = 0;
+  private panY = 0;
+  private zoomScale = 1;
 
   constructor(view: HTMLCanvasElement) {
     this.view = view;
@@ -73,16 +92,10 @@ export class Simulation {
     this.view.width = this.stageW;
     this.view.height = this.stageH;
 
-    const halfW = Math.floor(this.stageW / 2);
-    this.left.width = halfW;
-    this.left.height = this.stageH;
-    this.right.width = halfW;
-    this.right.height = this.stageH;
-    this.plate.width = halfW;
-    this.plate.height = this.stageH;
-
+    // バッファサイズは recomputeLayout（フォーカスモードに応じて分岐）が決める
     this.recomputeLayout();
     this.reset();
+    this.clampPan();
   }
 
   setImage(picture: Picture | null): void {
@@ -91,10 +104,76 @@ export class Simulation {
     this.reset();
   }
 
-  /** 画像スケール・スリット長・sample バッファサイズ・円盤中心を再計算 */
+  // =========================================================
+  // フォーカス・パン・ズーム
+  // =========================================================
+  getFocus(): FocusMode {
+    return this.focus;
+  }
+
+  /** 内部ステージ高さ[px]。main.ts が CSS px ↔ ステージ px の換算に使う */
+  getStageHeight(): number {
+    return this.stageH;
+  }
+
+  setFocus(mode: FocusMode): void {
+    if (mode === this.focus) return;
+    this.focus = mode;
+    this.panX = 0;
+    this.panY = 0;
+    this.zoomScale = 1;
+    this.recomputeLayout();
+    this.reset();
+  }
+
+  /** dx/dy はステージ内部px単位（呼び出し側で CSS px から変換済み） */
+  pan(dx: number, dy: number): void {
+    if (this.focus === "both") return;
+    this.panX += dx;
+    this.panY += dy;
+    this.clampPan();
+  }
+
+  zoomBy(factor: number): void {
+    if (this.focus === "both") return;
+    this.zoomScale = clamp(this.zoomScale * factor, ZOOM_MIN, ZOOM_MAX);
+    this.clampPan();
+  }
+
+  resetView(): void {
+    if (this.focus === "both") return;
+    this.panX = 0;
+    this.panY = 0;
+    this.zoomScale = 1;
+  }
+
+  /** ズーム後、拡大された画像が常にステージ全体を覆うようパン量を制限する */
+  private clampPan(): void {
+    const maxX = (this.stageW * (this.zoomScale - 1)) / 2;
+    const maxY = (this.stageH * (this.zoomScale - 1)) / 2;
+    this.panX = clamp(this.panX, -maxX, maxX);
+    this.panY = clamp(this.panY, -maxY, maxY);
+  }
+
+  /** 画像スケール・スリット長・バッファサイズ・円盤中心を再計算（フォーカスモードで分岐） */
   private recomputeLayout(): void {
     if (!this.picture || this.stageH === 0) return;
-    const halfW = this.left.width;
+    if (this.focus === "both") {
+      this.layoutBoth();
+    } else {
+      this.layoutFocused(this.focus);
+    }
+  }
+
+  /** 両方表示：左右バッファを半幅ずつ、中央にギャップ・外側に余白 */
+  private layoutBoth(): void {
+    const halfW = Math.floor(this.stageW / 2);
+    this.left.width = halfW;
+    this.left.height = this.stageH;
+    this.right.width = halfW;
+    this.right.height = this.stageH;
+    this.plate.width = halfW;
+    this.plate.height = this.stageH;
 
     // 2 円の間に中央スペース（回転比パネル用）＋ 左右端の余白を空ける
     const gap = Math.min(380, Math.max(240, this.stageW * 0.18));
@@ -103,6 +182,30 @@ export class Simulation {
     this.leftCx = outerM + contentW / 2; // 左：外側に余白、中央側にギャップ
     this.rightCx = gap / 2 + contentW / 2; // 右：中央側にギャップ、外側に余白
 
+    this.applyImageMetrics(contentW);
+  }
+
+  /** 単一パネルにフォーカス：そのバッファをステージ全体解像度にして中央に大きく表示 */
+  private layoutFocused(which: "left" | "right"): void {
+    const buf = which === "left" ? this.left : this.right;
+    buf.width = this.stageW;
+    buf.height = this.stageH;
+    // スリット板は左パネル専用の概念だが、フォーカス中も解像度を合わせておく
+    this.plate.width = this.stageW;
+    this.plate.height = this.stageH;
+
+    if (which === "left") {
+      this.leftCx = this.stageW / 2;
+    } else {
+      this.rightCx = this.stageW / 2;
+    }
+
+    this.applyImageMetrics(this.stageW);
+  }
+
+  /** 画像スケール・スリット長・plateR・sample バッファサイズを計算（両モード共通） */
+  private applyImageMetrics(contentW: number): void {
+    if (!this.picture) return;
     const { width: iw, height: ih } = this.picture;
     this.scale = Math.min(contentW / iw, this.stageH / ih);
     const dw = iw * this.scale;
@@ -139,8 +242,8 @@ export class Simulation {
     this.currentNumSlits = params.numSlits;
     if (this.picture && !paused) {
       this.advance(dt, params);
-      this.drawLeftPanel(params.slitPlate);
-      this.stampRightPanel(params);
+      if (this.focus !== "right") this.drawLeftPanel(params.slitPlate, params.fadeAlpha);
+      if (this.focus !== "left") this.stampRightPanel(params);
     }
     this.composite(params.showGuideLines, params.slitPlate);
   }
@@ -152,7 +255,7 @@ export class Simulation {
   }
 
   /** 左パネル：回転画像を描画。通常は黒背景＋残像、スリット板モードは白背景（残像なし） */
-  private drawLeftPanel(slitPlate: boolean): void {
+  private drawLeftPanel(slitPlate: boolean, fadeAlpha: number): void {
     const ctx = this.lctx;
     const cx = this.leftCx;
     const cy = this.left.height / 2;
@@ -169,7 +272,7 @@ export class Simulation {
       this.drawPictureRotated(ctx, cx, cy, this.imageAngle);
       ctx.restore();
     } else {
-      ctx.globalAlpha = FADE_ALPHA;
+      ctx.globalAlpha = fadeAlpha;
       ctx.fillStyle = "#000";
       ctx.fillRect(0, 0, this.left.width, this.left.height);
       ctx.globalAlpha = 1;
@@ -181,7 +284,7 @@ export class Simulation {
   private stampRightPanel(p: Params): void {
     const ctx = this.rctx;
     // 蓄積フェード（スリット板モードでは白地へフェード）
-    ctx.globalAlpha = FADE_ALPHA;
+    ctx.globalAlpha = p.fadeAlpha;
     ctx.fillStyle = p.slitPlate ? "#fff" : "#000";
     ctx.fillRect(0, 0, this.right.width, this.right.height);
     ctx.globalAlpha = 1;
@@ -240,8 +343,16 @@ export class Simulation {
     ctx.restore();
   }
 
-  /** 可視 Canvas を再構成：左右バッファを貼り、スリット板 or 赤ガイドを上描き */
+  /** 可視 Canvas を再構成：両方表示 or 単一パネルにフォーカス（パン・ズーム適用） */
   private composite(showGuides: boolean, slitPlate: boolean): void {
+    if (this.focus === "both") {
+      this.compositeBoth(showGuides, slitPlate);
+    } else {
+      this.compositeFocused(this.focus, showGuides, slitPlate);
+    }
+  }
+
+  private compositeBoth(showGuides: boolean, slitPlate: boolean): void {
     const ctx = this.vctx;
     ctx.fillStyle = "#000";
     ctx.fillRect(0, 0, this.stageW, this.stageH);
@@ -259,6 +370,31 @@ export class Simulation {
       this.drawGuideLines(this.leftCx, cy); // 左パネル中心
       this.drawGuideLines(halfW + this.rightCx, cy); // 右パネル中心
     }
+  }
+
+  /** 単一パネルにフォーカス：そのバッファをパン・ズームしてステージ全体に表示 */
+  private compositeFocused(which: "left" | "right", showGuides: boolean, slitPlate: boolean): void {
+    const ctx = this.vctx;
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, this.stageW, this.stageH);
+
+    const buf = which === "left" ? this.left : this.right;
+    const cx = which === "left" ? this.leftCx : this.rightCx; // stageW/2（layoutFocused 済み）
+    const cy = this.stageH / 2;
+
+    ctx.save();
+    ctx.translate(this.stageW / 2 + this.panX, this.stageH / 2 + this.panY);
+    ctx.scale(this.zoomScale, this.zoomScale);
+    ctx.translate(-cx, -cy);
+    ctx.drawImage(buf, 0, 0);
+
+    if (slitPlate && this.picture && which === "left") {
+      // スリット板は左パネル専用の概念（both モードと同じ扱い）
+      this.drawSlitPlate(cx, cy);
+    } else if (showGuides && this.picture) {
+      this.drawGuideLines(cx, cy);
+    }
+    ctx.restore();
   }
 
   /** 左パネルに、黒い円盤＋透明のスリット窓（スリット板）を重ねる */

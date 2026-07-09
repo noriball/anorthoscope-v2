@@ -1,5 +1,5 @@
 import "./style.css";
-import { DEFAULT_PARAMS, type Params } from "./config";
+import { DEFAULT_PARAMS, ZOOM_STEP_FACTOR, type Params } from "./config";
 import {
   loadFromFiles,
   loadInitialImages,
@@ -10,6 +10,7 @@ import { listDrawings, type Drawing } from "./gallery";
 import { Simulation } from "./engine/Simulation";
 import { ControlBar, type AppHooks } from "./ui/Controls";
 import { RotationRatio } from "./ui/RotationRatio";
+import { ZoomControls } from "./ui/ZoomControls";
 import { Guide } from "./ui/Guide";
 import { PaintEditor } from "./ui/PaintEditor";
 import { CompressEditor } from "./ui/CompressEditor";
@@ -80,12 +81,25 @@ const hooks: AppHooks = {
 };
 
 const bar = new ControlBar(controlsRoot, hooks);
-new RotationRatio(stage, {
+const rotationRatio = new RotationRatio(stage, {
   getParams: () => state.params,
   setParams: (patch) => {
     state.params = { ...state.params, ...patch };
   },
 });
+const zoomControls = new ZoomControls(stage, {
+  zoomIn: () => sim.zoomBy(ZOOM_STEP_FACTOR),
+  zoomOut: () => sim.zoomBy(1 / ZOOM_STEP_FACTOR),
+  reset: () => sim.resetView(),
+});
+
+/** フォーカス状態に応じて、回転比パネル／ズームボタン／カーソルを同期する */
+function syncFocusUI(): void {
+  const focused = sim.getFocus() !== "both";
+  zoomControls.setVisible(focused);
+  rotationRatio.setVisible(!focused);
+  view.classList.toggle("focused", focused);
+}
 
 // ===========================================================
 // ペイント / ギャラリー
@@ -166,6 +180,61 @@ function toggleFullscreen(): void {
 }
 
 // ===========================================================
+// フォーカス（円をクリックして単一表示）・ドラッグでパン・ボタンでズーム
+// ===========================================================
+const FOCUS_DRAG_THRESHOLD = 6; // px（CSS px）。これ未満の移動はクリック扱い
+let pointerDownPos: { x: number; y: number } | null = null;
+let dragLast: { x: number; y: number } | null = null;
+let isDragging = false;
+
+view.addEventListener("pointerdown", (e) => {
+  pointerDownPos = { x: e.clientX, y: e.clientY };
+  dragLast = { x: e.clientX, y: e.clientY };
+  isDragging = false;
+  view.setPointerCapture(e.pointerId);
+});
+
+view.addEventListener("pointermove", (e) => {
+  if (!dragLast || !pointerDownPos) return;
+  const dx = e.clientX - dragLast.x;
+  const dy = e.clientY - dragLast.y;
+  if (!isDragging) {
+    const totalDx = e.clientX - pointerDownPos.x;
+    const totalDy = e.clientY - pointerDownPos.y;
+    if (Math.hypot(totalDx, totalDy) > FOCUS_DRAG_THRESHOLD) isDragging = true;
+  }
+  if (isDragging && sim.getFocus() !== "both") {
+    const rect = view.getBoundingClientRect();
+    const cssToStage = sim.getStageHeight() / rect.height; // アスペクト維持なので幅でも同じ比
+    sim.pan(dx * cssToStage, dy * cssToStage);
+  }
+  dragLast = { x: e.clientX, y: e.clientY };
+});
+
+view.addEventListener("pointerup", (e) => {
+  if (pointerDownPos && !isDragging) {
+    handleStageClick(e.clientX, e.clientY);
+  }
+  pointerDownPos = null;
+  dragLast = null;
+  isDragging = false;
+  view.releasePointerCapture(e.pointerId);
+});
+
+/** クリックされた位置から、フォーカス対象（左/右/解除）を決める */
+function handleStageClick(clientX: number, _clientY: number): void {
+  if (sim.getFocus() !== "both") {
+    sim.setFocus("both");
+    syncFocusUI();
+    return;
+  }
+  const rect = view.getBoundingClientRect();
+  const xCss = clientX - rect.left;
+  sim.setFocus(xCss < rect.width / 2 ? "left" : "right");
+  syncFocusUI();
+}
+
+// ===========================================================
 // リサイズ（デバウンス）
 // ===========================================================
 let resizeTimer = 0;
@@ -181,12 +250,17 @@ function doResize(): void {
 window.addEventListener("resize", scheduleResize);
 document.addEventListener("fullscreenchange", scheduleResize);
 
-// ESC は開いているオーバーレイを閉じるためだけに使用（シミュレータ操作はすべてボタン）
+// ESC は開いているオーバーレイを閉じる／フォーカス表示を解除するためだけに使用
+// （シミュレータ操作はすべてボタン）
 window.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
     guide.hide();
     gallery.hide();
     imagePicker.hide();
+    if (sim.getFocus() !== "both") {
+      sim.setFocus("both");
+      syncFocusUI();
+    }
   }
 });
 
@@ -206,6 +280,7 @@ function loop(now: number): void {
 // ===========================================================
 async function boot(): Promise<void> {
   doResize();
+  syncFocusUI();
   try {
     state.images = await loadInitialImages();
   } catch (err) {
