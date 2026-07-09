@@ -58,6 +58,10 @@ export class Simulation {
   private rightCx = 0;
   private plateR = 0; // スリット板の半径（回転画像を覆う）
 
+  // スリット板の表示/非表示クロスフェード（0=非表示, 1=表示）
+  private slitPlateOpacity = 0;
+  private static readonly SLIT_PLATE_FADE_SEC = 0.3;
+
   // 蓄積される回転角
   private imageAngle = 0;
   private slitAngle = 0;
@@ -233,7 +237,7 @@ export class Simulation {
     this.slitAngle = 0;
     clearBlack(this.lctx, this.left);
     clearBlack(this.rctx, this.right);
-    this.composite(false, false);
+    this.composite(false);
   }
 
   /**
@@ -244,12 +248,27 @@ export class Simulation {
    */
   render(dt: number, params: Params, paused: boolean): void {
     this.currentNumSlits = params.numSlits;
+    this.advanceSlitPlateFade(dt, params.slitPlate);
     if (this.picture && !paused) {
       this.advance(dt, params);
-      if (this.focus !== "right") this.drawLeftPanel(params.slitPlate, params.fadeAlpha, this.bgColor);
+      // 完全にフェードインし終わるまでは残像ありの通常描画のまま
+      // （円盤オーバーレイがまだ薄いうちに、下の絵だけ先にクリップ・残像消去されるのを防ぐ）
+      const useSlitClip = this.slitPlateOpacity >= 1;
+      if (this.focus !== "right") this.drawLeftPanel(useSlitClip, params.fadeAlpha, this.bgColor);
       if (this.focus !== "left") this.stampRightPanel(params);
     }
-    this.composite(params.showGuideLines, params.slitPlate);
+    this.composite(params.showGuideLines);
+  }
+
+  /** スリット板の表示/非表示を SLIT_PLATE_FADE_SEC 秒かけて滑らかに切り替える */
+  private advanceSlitPlateFade(dt: number, slitPlate: boolean): void {
+    const target = slitPlate ? 1 : 0;
+    const rate = dt / Simulation.SLIT_PLATE_FADE_SEC;
+    if (this.slitPlateOpacity < target) {
+      this.slitPlateOpacity = Math.min(target, this.slitPlateOpacity + rate);
+    } else if (this.slitPlateOpacity > target) {
+      this.slitPlateOpacity = Math.max(target, this.slitPlateOpacity - rate);
+    }
   }
 
   private advance(dt: number, p: Params): void {
@@ -346,15 +365,15 @@ export class Simulation {
   }
 
   /** 可視 Canvas を再構成：両方表示 or 単一パネルにフォーカス（パン・ズーム適用） */
-  private composite(showGuides: boolean, slitPlate: boolean): void {
+  private composite(showGuides: boolean): void {
     if (this.focus === "both") {
-      this.compositeBoth(showGuides, slitPlate);
+      this.compositeBoth(showGuides);
     } else {
-      this.compositeFocused(this.focus, showGuides, slitPlate);
+      this.compositeFocused(this.focus, showGuides);
     }
   }
 
-  private compositeBoth(showGuides: boolean, slitPlate: boolean): void {
+  private compositeBoth(showGuides: boolean): void {
     const ctx = this.vctx;
     ctx.fillStyle = this.bgColor;
     ctx.fillRect(0, 0, this.stageW, this.stageH);
@@ -365,17 +384,19 @@ export class Simulation {
 
     const cy = this.stageH / 2;
 
-    if (slitPlate && this.picture) {
-      // スリット板モード：左パネルに黒円盤＋透明スリット窓を重ねる（赤は出さない）
-      this.drawSlitPlate(this.leftCx, cy);
-    } else if (showGuides && this.picture) {
-      this.drawGuideLines(this.leftCx, cy); // 左パネル中心
-      this.drawGuideLines(halfW + this.rightCx, cy); // 右パネル中心
+    // スリット板（フェードイン）と赤ガイド枠（フェードアウト）をクロスフェード
+    if (this.slitPlateOpacity > 0 && this.picture) {
+      this.drawSlitPlate(this.leftCx, cy, this.slitPlateOpacity);
+    }
+    if (showGuides && this.picture && this.slitPlateOpacity < 1) {
+      const guideAlpha = 1 - this.slitPlateOpacity;
+      this.drawGuideLines(this.leftCx, cy, guideAlpha); // 左パネル中心
+      this.drawGuideLines(halfW + this.rightCx, cy, guideAlpha); // 右パネル中心
     }
   }
 
   /** 単一パネルにフォーカス：そのバッファをパン・ズームしてステージ全体に表示 */
-  private compositeFocused(which: "left" | "right", showGuides: boolean, slitPlate: boolean): void {
+  private compositeFocused(which: "left" | "right", showGuides: boolean): void {
     const ctx = this.vctx;
     ctx.fillStyle = this.bgColor;
     ctx.fillRect(0, 0, this.stageW, this.stageH);
@@ -390,17 +411,19 @@ export class Simulation {
     ctx.translate(-cx, -cy);
     ctx.drawImage(buf, 0, 0);
 
-    if (slitPlate && this.picture && which === "left") {
+    if (which === "left" && this.slitPlateOpacity > 0 && this.picture) {
       // スリット板は左パネル専用の概念（both モードと同じ扱い）
-      this.drawSlitPlate(cx, cy);
-    } else if (showGuides && this.picture) {
-      this.drawGuideLines(cx, cy);
+      this.drawSlitPlate(cx, cy, this.slitPlateOpacity);
+    }
+    if (showGuides && this.picture && (which !== "left" || this.slitPlateOpacity < 1)) {
+      const guideAlpha = which === "left" ? 1 - this.slitPlateOpacity : 1;
+      this.drawGuideLines(cx, cy, guideAlpha);
     }
     ctx.restore();
   }
 
   /** 左パネルに、黒い円盤＋透明のスリット窓（スリット板）を重ねる */
-  private drawSlitPlate(cx: number, cy: number): void {
+  private drawSlitPlate(cx: number, cy: number, alpha: number): void {
     const ctx = this.platectx;
     const n = this.currentNumSlits;
     ctx.clearRect(0, 0, this.plate.width, this.plate.height);
@@ -433,13 +456,16 @@ export class Simulation {
     ctx.arc(cx, cy, this.plateR, 0, Math.PI * 2);
     ctx.stroke();
 
+    this.vctx.globalAlpha = alpha;
     this.vctx.drawImage(this.plate, 0, 0);
+    this.vctx.globalAlpha = 1;
   }
 
-  private drawGuideLines(cx: number, cy: number): void {
+  private drawGuideLines(cx: number, cy: number, alpha: number): void {
     const ctx = this.vctx;
     const n = this.currentNumSlits;
     ctx.save();
+    ctx.globalAlpha = alpha;
     ctx.translate(cx, cy);
     ctx.rotate(this.slitAngle);
     ctx.strokeStyle = "rgba(240,0,0,0.9)";
