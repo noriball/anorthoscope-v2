@@ -277,6 +277,9 @@ body {
 .btn.wide {
   padding: 0 12px;
 }
+.btn.play {
+  width: 84px;
+}
 .btn.icon {
   font-size: 15px;
 }

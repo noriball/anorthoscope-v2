@@ -54,7 +54,7 @@ export class ControlBar {
 
     // --- 再生 ---
     this.playBtn = this.button("⏸ 停止", () => this.hooks.togglePause(), "再生 / 停止");
-    this.playBtn.classList.add("wide");
+    this.playBtn.classList.add("wide", "play");
 
     // --- 数値パラメータ（回転比・スリット数は中央上の大きな表示で操作） ---
     // 速度はスライダー＋数値表示（フェードと異なり、値を目視で把握したい操作のため）
