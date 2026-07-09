@@ -5,6 +5,7 @@ import {
   SPEED_MAX,
   SPEED_MIN,
   SPEED_STEP,
+  BG_PRESETS,
   type Params,
 } from "../config";
 import type { Picture } from "../images";
@@ -38,6 +39,7 @@ export class ControlBar {
   private speedInput!: HTMLInputElement;
   private speedValueLabel!: HTMLSpanElement;
   private fadeInput!: HTMLInputElement;
+  private bgColorButtons: Map<string, HTMLButtonElement> = new Map();
 
   constructor(root: HTMLElement, hooks: AppHooks) {
     this.root = root;
@@ -71,9 +73,28 @@ export class ControlBar {
     this.fadeInput.oninput = () =>
       this.hooks.setParams({ fadeAlpha: Number(this.fadeInput.value) });
 
+    // --- スリット板背景色（正方形カラーボタン） ---
+    const bgColorButtons: HTMLElement[] = [];
+    for (const preset of BG_PRESETS) {
+      const btn = this.button("", () => {
+        this.hooks.setParams({ bgColor: preset.hex });
+        this.update();
+      });
+      btn.style.backgroundColor = preset.hex;
+      btn.style.width = "28px";
+      btn.style.height = "28px";
+      btn.style.minWidth = "28px"; // flex で縮まないように
+      btn.style.maxWidth = "28px"; // min-width CSS ルールで伸びないように
+      btn.style.padding = "0"; // 標準パディングを削除
+      btn.title = preset.name;
+      this.bgColorButtons.set(preset.hex, btn);
+      bgColorButtons.push(btn);
+    }
+
     const params = group(
       field("速度", this.speedInput, this.speedValueLabel),
       field("フェード", this.fadeInput),
+      field("背景", group(...bgColorButtons)),
     );
 
     // --- アクション ---
@@ -140,6 +161,11 @@ export class ControlBar {
     setInputUnlessFocused(this.speedInput, String(p.speed));
     this.speedValueLabel.textContent = `${p.speed.toFixed(1)}×`;
     setInputUnlessFocused(this.fadeInput, String(p.fadeAlpha));
+
+    // 背景色ボタンの .on ハイライト
+    this.bgColorButtons.forEach((btn, hex) =>
+      btn.classList.toggle("on", hex === p.bgColor)
+    );
   }
 }
 
@@ -165,7 +191,7 @@ function spacer(): HTMLElement {
   s.style.flex = "1 1 auto";
   return s;
 }
-function field(labelText: string, input: HTMLInputElement, unit?: string | HTMLElement): HTMLElement {
+function field(labelText: string, input: HTMLInputElement | HTMLElement, unit?: string | HTMLElement): HTMLElement {
   const wrap = el("label", "field");
   const l = el("span");
   l.textContent = labelText;

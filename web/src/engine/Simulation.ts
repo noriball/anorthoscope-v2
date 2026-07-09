@@ -242,7 +242,7 @@ export class Simulation {
     this.currentNumSlits = params.numSlits;
     if (this.picture && !paused) {
       this.advance(dt, params);
-      if (this.focus !== "right") this.drawLeftPanel(params.slitPlate, params.fadeAlpha);
+      if (this.focus !== "right") this.drawLeftPanel(params.slitPlate, params.fadeAlpha, params.bgColor);
       if (this.focus !== "left") this.stampRightPanel(params);
     }
     this.composite(params.showGuideLines, params.slitPlate);
@@ -254,16 +254,16 @@ export class Simulation {
     this.slitAngle += omega * p.slitRotFactor;
   }
 
-  /** 左パネル：回転画像を描画。通常は黒背景＋残像、スリット板モードは白背景（残像なし） */
-  private drawLeftPanel(slitPlate: boolean, fadeAlpha: number): void {
+  /** 左パネル：回転画像を描画。通常は黒背景＋残像、スリット板モードは bgColor背景（残像なし） */
+  private drawLeftPanel(slitPlate: boolean, fadeAlpha: number, bgColor: string): void {
     const ctx = this.lctx;
     const cx = this.leftCx;
     const cy = this.left.height / 2;
 
     if (slitPlate) {
-      // 白背景（スリット板を白地に見せる）。残像なし。画像は円盤内だけに描く
+      // bgColor 背景（スリット板を視認しやすくする）。残像なし。画像は円盤内だけに描く
       ctx.globalAlpha = 1;
-      ctx.fillStyle = "#fff";
+      ctx.fillStyle = bgColor;
       ctx.fillRect(0, 0, this.left.width, this.left.height);
       ctx.save();
       ctx.beginPath();
@@ -423,6 +423,13 @@ export class Simulation {
     }
     ctx.restore();
     ctx.globalCompositeOperation = "source-over";
+
+    // 円周枠線（白色1px）
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(cx, cy, this.plateR, 0, Math.PI * 2);
+    ctx.stroke();
 
     this.vctx.drawImage(this.plate, 0, 0);
   }
