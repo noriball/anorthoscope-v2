@@ -242,7 +242,7 @@ export class Simulation {
     this.currentNumSlits = params.numSlits;
     if (this.picture && !paused) {
       this.advance(dt, params);
-      if (this.focus !== "right") this.drawLeftPanel(params.slitPlate, params.fadeAlpha);
+      if (this.focus !== "right") this.drawLeftPanel(params.slitPlate, params.fadeAlpha, this.bgColor);
       if (this.focus !== "left") this.stampRightPanel(params);
     }
     this.composite(params.showGuideLines, params.slitPlate);
@@ -255,7 +255,7 @@ export class Simulation {
   }
 
   /** 左パネル：回転画像を描画。通常は残像フェード、スリット板モード時は残像なし */
-  private drawLeftPanel(slitPlate: boolean, fadeAlpha: number): void {
+  private drawLeftPanel(slitPlate: boolean, fadeAlpha: number, bgColor: string): void {
     const ctx = this.lctx;
     const cx = this.leftCx;
     const cy = this.left.height / 2;
@@ -269,9 +269,9 @@ export class Simulation {
       this.drawPictureRotated(ctx, cx, cy, this.imageAngle);
       ctx.restore();
     } else {
-      // 通常モード：フェード（背景描画は composite で行う）
+      // 通常モード：bgColor へフェード（このバッファがそのまま composite で描画されるため）
       ctx.globalAlpha = fadeAlpha;
-      ctx.fillStyle = "#000";
+      ctx.fillStyle = bgColor;
       ctx.fillRect(0, 0, this.left.width, this.left.height);
       ctx.globalAlpha = 1;
       this.drawPictureRotated(ctx, cx, cy, this.imageAngle);
@@ -281,9 +281,9 @@ export class Simulation {
   /** 右パネル：各スリットのストリップを抽出し、蓄積バッファへ配置 */
   private stampRightPanel(p: Params): void {
     const ctx = this.rctx;
-    // 蓄積フェード（背景描画は composite で行う。バッファは既に初期化されている）
+    // 蓄積フェード（bgColor へフェード。このバッファがそのまま composite で描画されるため）
     ctx.globalAlpha = p.fadeAlpha;
-    ctx.fillStyle = "#000";
+    ctx.fillStyle = this.bgColor;
     ctx.fillRect(0, 0, this.right.width, this.right.height);
     ctx.globalAlpha = 1;
 
@@ -455,6 +455,10 @@ export class Simulation {
 
   setBgColor(hex: string): void {
     this.bgColor = hex;
+    // フェード合成は8bit丸め誤差により厳密に収束しきらないため、
+    // 色変更時はバッファを新しい背景色で即座に塗りつぶし、体感の遅延・誤差を無くす。
+    fillSolid(this.lctx, this.left, hex);
+    fillSolid(this.rctx, this.right, hex);
   }
 }
 
@@ -466,5 +470,11 @@ function must<T>(v: T | null): T {
 function clearBlack(ctx: CanvasRenderingContext2D, c: HTMLCanvasElement): void {
   ctx.globalAlpha = 1;
   ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, c.width, c.height);
+}
+
+function fillSolid(ctx: CanvasRenderingContext2D, c: HTMLCanvasElement, color: string): void {
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = color;
   ctx.fillRect(0, 0, c.width, c.height);
 }
