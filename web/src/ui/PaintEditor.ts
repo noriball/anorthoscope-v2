@@ -2,6 +2,7 @@ import { DIV_DEFAULT, DIV_MAX, DIV_MIN, PAINT_SIZE } from "../config";
 import { saveDrawing, type Drawing } from "../gallery";
 import { fullToWedge, wedgeToFull } from "../engine/wedge";
 import { pictureFromURL, type Picture } from "../images";
+import { showToast } from "./toast";
 
 type Tool = "brush" | "eraser" | "line" | "circle" | "fill" | "photo";
 
@@ -525,6 +526,7 @@ export class PaintEditor {
     });
     this.editingId = d.id;
     this.onSaved(d);
+    showToast("保存しました");
   }
 
   // =========================================================

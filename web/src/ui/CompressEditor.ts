@@ -8,6 +8,7 @@ import { fullToWedge } from "../engine/wedge";
 import { saveDrawing, type Drawing } from "../gallery";
 import { loadFromFiles, type Picture } from "../images";
 import { ImagePicker } from "./ImagePicker";
+import { showToast } from "./toast";
 
 type Tool = "brush" | "eraser" | "line" | "circle" | "fill";
 
@@ -470,6 +471,7 @@ export class CompressEditor {
     const dataURL = out.toDataURL("image/png");
     const d = saveDrawing({ dataURL, bg: this.bgColor, divisions: this.divisions });
     this.onSaved(d);
+    showToast("保存しました");
   }
 
   // =========================================================
