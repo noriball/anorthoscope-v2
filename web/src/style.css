@@ -745,4 +745,12 @@ body {
     flex: 1 1 0;
     width: 100%;
   }
+  /* プレビュー/結果側は非表示にし、描画/元画像側だけを拡大表示する */
+  .paint-stage > .paint-pane:last-child {
+    display: none;
+  }
+  .paint-stage > .paint-pane:first-child {
+    position: relative;
+    overflow: hidden;
+  }
 }

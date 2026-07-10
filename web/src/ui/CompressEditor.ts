@@ -626,9 +626,11 @@ export class CompressEditor {
     this.setTool("brush");
   }
 
-  /** 各キャンバスの表示サイズを、ペインに収まる最大の正方形へ揃える */
+  /** 各キャンバスの表示サイズを、ペインに収まる最大の正方形へ揃える（または縦画面では結果ペインを非表示） */
   private relayout(): void {
+    const isPortrait = window.matchMedia("(orientation: portrait)").matches;
     for (const pane of [this.srcPane, this.outPane]) {
+      if (isPortrait && pane === this.outPane) continue;
       const canvas = pane.querySelector("canvas") as HTMLCanvasElement | null;
       const paneLabel = pane.firstElementChild as HTMLElement | null;
       if (!canvas || !paneLabel) continue;

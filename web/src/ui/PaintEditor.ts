@@ -189,6 +189,13 @@ export class PaintEditor {
     return (Math.PI * 2) / this.divisions;
   }
 
+  /** 実際に描ける扇形の外接ボックスを計算 */
+  private wedgeBBox(): { minX: number; maxX: number; minY: number; maxY: number } {
+    const half = this.wedgeAngle / 2;
+    const halfW = R * Math.sin(half);
+    return { minX: CX - halfW, maxX: CX + halfW, minY: CY - R, maxY: CY };
+  }
+
   private wedgePath(ctx: CanvasRenderingContext2D, begin = true): void {
     const half = this.wedgeAngle / 2;
     if (begin) ctx.beginPath();
@@ -529,6 +536,7 @@ export class PaintEditor {
       btn.classList.toggle("on", key === this.divisions),
     );
     this.render();
+    this.relayout();
   }
 
   // =========================================================
@@ -750,18 +758,34 @@ export class PaintEditor {
     this.setTool("brush");
   }
 
-  /** 各キャンバスの表示サイズを、ペインに収まる最大の正方形へ揃える */
+  /** 各キャンバスの表示サイズを、ペインに収まる最大の正方形へ揃える（または縦画面では扇形外接ボックスへフィット） */
   private relayout(): void {
+    const isPortrait = window.matchMedia("(orientation: portrait)").matches;
     for (const pane of [this.drawPane, this.previewPane]) {
+      if (isPortrait && pane === this.previewPane) continue;
       const canvas = pane.querySelector("canvas") as HTMLCanvasElement | null;
       const paneLabel = pane.firstElementChild as HTMLElement | null;
       if (!canvas || !paneLabel) continue;
       const gap = 8;
       const availW = pane.clientWidth;
       const availH = pane.clientHeight - paneLabel.offsetHeight - gap;
-      const side = Math.max(0, Math.floor(Math.min(availW, availH)));
-      canvas.style.width = `${side}px`;
-      canvas.style.height = `${side}px`;
+
+      if (isPortrait && pane === this.drawPane) {
+        const { minX, maxX, minY, maxY } = this.wedgeBBox();
+        const scale = Math.max(0, Math.min(availW / (maxX - minX), availH / (maxY - minY)));
+        canvas.style.width = `${PAINT_SIZE * scale}px`;
+        canvas.style.height = `${PAINT_SIZE * scale}px`;
+        canvas.style.position = "absolute";
+        canvas.style.left = `${availW / 2 - ((minX + maxX) / 2) * scale}px`;
+        canvas.style.top = `${availH / 2 - ((minY + maxY) / 2) * scale}px`;
+      } else {
+        canvas.style.position = "";
+        canvas.style.left = "";
+        canvas.style.top = "";
+        const side = Math.max(0, Math.floor(Math.min(availW, availH)));
+        canvas.style.width = `${side}px`;
+        canvas.style.height = `${side}px`;
+      }
     }
   }
 
