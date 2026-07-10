@@ -699,13 +699,8 @@ body {
   .spacer { display: none; }
 
   .paint-stage {
-    flex-direction: column;
     gap: 10px;
     padding: 8px;
-  }
-  .paint-pane {
-    flex: 1 1 0;
-    width: 100%;
   }
   .paint-bar {
     padding: 6px 8px;
@@ -736,5 +731,18 @@ body {
   .guide-panel td {
     font-size: 12px;
     padding: 6px 3px;
+  }
+}
+
+/* ペイント/圧縮モードの2ペインは、幅が狭い（縦画面）ときだけ上下に積む。
+   横向きスマホ（幅は広いが高さが低い）は横幅に余裕があるため、左右並びのまま
+   コンパクト化のみ適用する（上の共通ブロックでツールバー等は既に縮小済み）。 */
+@media (max-width: 700px) {
+  .paint-stage {
+    flex-direction: column;
+  }
+  .paint-pane {
+    flex: 1 1 0;
+    width: 100%;
   }
 }
