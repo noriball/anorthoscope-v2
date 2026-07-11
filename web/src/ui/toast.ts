@@ -17,5 +17,5 @@ export function showToast(message: string): void {
   clearTimeout(hideTimer);
   hideTimer = window.setTimeout(() => {
     toastEl?.classList.remove("show");
-  }, 1600);
+  }, 2000);
 }
