@@ -89,6 +89,19 @@ export class PaintEditor {
 
   private divisions = DIV_DEFAULT;
   private diskDiameterMm = DISC_DIAMETER_MM_DEFAULT;
+  // PNGダウンロード設定（印刷用）
+  private exportOutline = true;
+  private exportOutlineColor: "#000000" | "#ffffff" = "#ffffff";
+  private exportCenterMark = true;
+  private exportCenterShape: "dot" | "cross" = "dot";
+  private exportCenterColor: "#000000" | "#ffffff" = "#ffffff";
+  private exportModal!: HTMLDivElement;
+  private exportDiameterInput!: HTMLInputElement;
+  private exportOutlineBtn!: HTMLButtonElement;
+  private readonly exportOutlineColorBtns = new Map<string, HTMLButtonElement>();
+  private exportCenterBtn!: HTMLButtonElement;
+  private readonly exportCenterShapeBtns = new Map<string, HTMLButtonElement>();
+  private readonly exportCenterColorBtns = new Map<string, HTMLButtonElement>();
   private tool: Tool = "brush";
   private color = "#ffd23c";
   private bgColor = "#000000"; // 背景色（描画レイヤの下に敷く単色）
@@ -545,16 +558,168 @@ export class PaintEditor {
     this.close(); // 保存後は通常表示（その絵を使ったシミュレータ）へ戻る
   }
 
+  // =========================================================
+  // PNGダウンロード設定モーダル
+  // =========================================================
+  private openExportModal(): void {
+    this.exportDiameterInput.value = String(this.diskDiameterMm);
+    this.updateExportModalUI();
+    this.exportModal.classList.remove("hidden");
+  }
+
+  private closeExportModal(): void {
+    this.exportModal.classList.add("hidden");
+  }
+
+  private updateExportModalUI(): void {
+    this.exportOutlineBtn.classList.toggle("on", this.exportOutline);
+    this.exportOutlineBtn.textContent = `円周ライン：${this.exportOutline ? "あり" : "なし"}`;
+    this.exportCenterBtn.classList.toggle("on", this.exportCenterMark);
+    this.exportCenterBtn.textContent = `中心マーク：${this.exportCenterMark ? "あり" : "なし"}`;
+    this.exportOutlineColorBtns.forEach((btn, color) =>
+      btn.classList.toggle("on", color === this.exportOutlineColor),
+    );
+    this.exportCenterShapeBtns.forEach((btn, shape) =>
+      btn.classList.toggle("on", shape === this.exportCenterShape),
+    );
+    this.exportCenterColorBtns.forEach((btn, color) =>
+      btn.classList.toggle("on", color === this.exportCenterColor),
+    );
+  }
+
+  private buildExportModal(): void {
+    const modal = document.createElement("div");
+    this.exportModal = modal;
+    modal.id = "export-modal";
+    modal.className = "hidden";
+
+    const panel = document.createElement("div");
+    panel.className = "export-panel";
+    panel.onclick = (e) => e.stopPropagation();
+
+    const title = document.createElement("h2");
+    title.textContent = "PNGダウンロード設定";
+
+    // 直径
+    this.exportDiameterInput = document.createElement("input");
+    this.exportDiameterInput.type = "number";
+    this.exportDiameterInput.className = "num";
+    this.exportDiameterInput.min = String(DISC_DIAMETER_MM_MIN);
+    this.exportDiameterInput.max = String(DISC_DIAMETER_MM_MAX);
+    this.exportDiameterInput.value = String(this.diskDiameterMm);
+    this.exportDiameterInput.oninput = () => {
+      const v = Number(this.exportDiameterInput.value);
+      if (!Number.isNaN(v)) this.diskDiameterMm = v;
+    };
+    const diameterRow = document.createElement("div");
+    diameterRow.className = "export-row";
+    diameterRow.append(label("直径"), this.exportDiameterInput, label("mm"));
+
+    // 円周ライン：あり/なし + 色
+    this.exportOutlineBtn = pbtn("円周ライン", () => {
+      this.exportOutline = !this.exportOutline;
+      this.updateExportModalUI();
+    });
+    const outlineColorGroup = document.createElement("div");
+    outlineColorGroup.className = "export-color-group";
+    for (const [name, hex] of [
+      ["黒", "#000000"],
+      ["白", "#ffffff"],
+    ] as const) {
+      const b = pbtn(name, () => {
+        this.exportOutlineColor = hex;
+        this.updateExportModalUI();
+      });
+      this.exportOutlineColorBtns.set(hex, b);
+      outlineColorGroup.append(b);
+    }
+    const outlineRow = document.createElement("div");
+    outlineRow.className = "export-row";
+    outlineRow.append(this.exportOutlineBtn, outlineColorGroup);
+
+    // 中心マーク：あり/なし + 形状（ドット/十字）+ 色
+    this.exportCenterBtn = pbtn("中心マーク", () => {
+      this.exportCenterMark = !this.exportCenterMark;
+      this.updateExportModalUI();
+    });
+    const centerShapeGroup = document.createElement("div");
+    centerShapeGroup.className = "export-color-group";
+    for (const [name, shape] of [
+      ["ドット", "dot"],
+      ["十字", "cross"],
+    ] as const) {
+      const b = pbtn(name, () => {
+        this.exportCenterShape = shape;
+        this.updateExportModalUI();
+      });
+      this.exportCenterShapeBtns.set(shape, b);
+      centerShapeGroup.append(b);
+    }
+    const centerColorGroup = document.createElement("div");
+    centerColorGroup.className = "export-color-group";
+    for (const [name, hex] of [
+      ["黒", "#000000"],
+      ["白", "#ffffff"],
+    ] as const) {
+      const b = pbtn(name, () => {
+        this.exportCenterColor = hex;
+        this.updateExportModalUI();
+      });
+      this.exportCenterColorBtns.set(hex, b);
+      centerColorGroup.append(b);
+    }
+    const centerRow = document.createElement("div");
+    centerRow.className = "export-row";
+    centerRow.append(this.exportCenterBtn, centerShapeGroup, centerColorGroup);
+
+    // 実行ボタン
+    const actionsRow = document.createElement("div");
+    actionsRow.className = "export-actions";
+    const downloadBtn = pbtn("ダウンロード", () => this.downloadDisc());
+    downloadBtn.classList.add("primary");
+    actionsRow.append(downloadBtn, pbtn("キャンセル", () => this.closeExportModal()));
+
+    panel.append(title, diameterRow, outlineRow, centerRow, actionsRow);
+    modal.append(panel);
+    modal.onclick = () => this.closeExportModal(); // 背景クリックで閉じる
+  }
+
   private downloadDisc(): void {
     const px = Math.round((this.diskDiameterMm / 25.4) * PRINT_DPI);
     const canvas = this.buildFullImageAtSize(px);
-    // 中心に穴あけ位置の目印（白ドット）を描く（回転軸の位置合わせ用）
-    const dotR = ((CENTER_DOT_DIAMETER_MM / 2) / 25.4) * PRINT_DPI;
-    const dctx = canvas.getContext("2d")!;
-    dctx.fillStyle = "#ffffff";
-    dctx.beginPath();
-    dctx.arc(px / 2, px / 2, dotR, 0, Math.PI * 2);
-    dctx.fill();
+    const ctx = canvas.getContext("2d")!;
+    const cx = px / 2;
+    const cy = px / 2;
+
+    if (this.exportOutline) {
+      const lineW = Math.max(1, px * 0.003);
+      ctx.strokeStyle = this.exportOutlineColor;
+      ctx.lineWidth = lineW;
+      ctx.beginPath();
+      ctx.arc(cx, cy, px / 2 - lineW / 2, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    if (this.exportCenterMark) {
+      ctx.fillStyle = this.exportCenterColor;
+      ctx.strokeStyle = this.exportCenterColor;
+      if (this.exportCenterShape === "dot") {
+        const dotR = ((CENTER_DOT_DIAMETER_MM / 2) / 25.4) * PRINT_DPI;
+        ctx.beginPath();
+        ctx.arc(cx, cy, dotR, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        const armLen = (CENTER_DOT_DIAMETER_MM / 25.4) * PRINT_DPI;
+        ctx.lineWidth = Math.max(1, px * 0.0015);
+        ctx.beginPath();
+        ctx.moveTo(cx - armLen, cy);
+        ctx.lineTo(cx + armLen, cy);
+        ctx.moveTo(cx, cy - armLen);
+        ctx.lineTo(cx, cy + armLen);
+        ctx.stroke();
+      }
+    }
+
     canvas.toBlob((blob) => {
       if (!blob) return;
       const url = URL.createObjectURL(blob);
@@ -564,6 +729,7 @@ export class PaintEditor {
       a.click();
       URL.revokeObjectURL(url);
     }, "image/png");
+    this.closeExportModal();
   }
 
   // =========================================================
@@ -748,25 +914,15 @@ export class PaintEditor {
       pbtn("全消し", () => this.clearAll()),
     );
 
-    // 展開画像のPNG書き出し
+    // 展開画像のPNG書き出し（詳細設定はモーダルで行う）
     const exportGroup = document.createElement("div");
     exportGroup.className = "paint-group";
-    const diameterInput = document.createElement("input");
-    diameterInput.type = "number";
-    diameterInput.className = "num";
-    diameterInput.min = String(DISC_DIAMETER_MM_MIN);
-    diameterInput.max = String(DISC_DIAMETER_MM_MAX);
-    diameterInput.value = String(this.diskDiameterMm);
-    diameterInput.oninput = () => {
-      const v = Number(diameterInput.value);
-      if (!Number.isNaN(v)) this.diskDiameterMm = v;
-    };
     const downloadBtn = pbtn(
       "PNGダウンロード",
-      () => this.downloadDisc(),
-      "展開した360°画像を指定した直径(mm)でPNG保存（印刷用）",
+      () => this.openExportModal(),
+      "展開した360°画像をPNGでダウンロード（印刷用）",
     );
-    exportGroup.append(label("直径"), diameterInput, label("mm"), downloadBtn);
+    exportGroup.append(downloadBtn);
 
     // 保存・閉じる
     const endGroup = document.createElement("div");
@@ -802,7 +958,8 @@ export class PaintEditor {
     hint.textContent =
       "黄色枠の扇形の中だけ描けます。＋ファイルから写真を読み込み、✋ツールで移動、－／＋で拡大縮小できます。保存時、その絵が角度方向に引き伸ばされ、歪んだ1枚の画像になります。";
 
-    this.root.append(bar, stage, hint);
+    this.buildExportModal();
+    this.root.append(bar, stage, hint, this.exportModal);
     document.body.append(this.root);
 
     this.canvas.addEventListener("pointerdown", (e) => this.onDown(e));
