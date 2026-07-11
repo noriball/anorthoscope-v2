@@ -69,6 +69,14 @@ export const BG_STEP = 1;
 
 export const DEFAULT_BG_COLOR = "#000000";
 
+// ペイント展開画像のPNG書き出し（印刷用）
+/** 印刷用PNG書き出しの解像度（1インチ=25.4mmあたりのピクセル数） */
+export const PRINT_DPI = 300;
+/** 直径(mm)入力の初期値・可動域 */
+export const DISC_DIAMETER_MM_DEFAULT = 100;
+export const DISC_DIAMETER_MM_MIN = 20;
+export const DISC_DIAMETER_MM_MAX = 500;
+
 export interface Params {
   /** 全体速度スケール */
   speed: number;

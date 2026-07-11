@@ -1,4 +1,13 @@
-import { DIV_DEFAULT, DIV_MAX, DIV_MIN, PAINT_SIZE } from "../config";
+import {
+  DIV_DEFAULT,
+  DIV_MAX,
+  DIV_MIN,
+  DISC_DIAMETER_MM_DEFAULT,
+  DISC_DIAMETER_MM_MIN,
+  DISC_DIAMETER_MM_MAX,
+  PAINT_SIZE,
+  PRINT_DPI,
+} from "../config";
 import { saveDrawing, type Drawing } from "../gallery";
 import { fullToWedge, wedgeToFull } from "../engine/wedge";
 import { pictureFromURL, type Picture } from "../images";
@@ -78,6 +87,7 @@ export class PaintEditor {
   private previewScheduled = false;
 
   private divisions = DIV_DEFAULT;
+  private diskDiameterMm = DISC_DIAMETER_MM_DEFAULT;
   private tool: Tool = "brush";
   private color = "#ffd23c";
   private bgColor = "#000000"; // 背景色（描画レイヤの下に敷く単色）
@@ -496,17 +506,21 @@ export class PaintEditor {
   // =========================================================
   // 保存
   // =========================================================
-  private buildFullImage(): HTMLCanvasElement {
+  private buildFullImageAtSize(N: number): HTMLCanvasElement {
     const out = document.createElement("canvas");
-    out.width = out.height = PAINT_SIZE;
+    out.width = out.height = N;
     const ctx = out.getContext("2d")!;
     // photo（下地）+ art（手描き）を合成してから展開する
     this.wctx.clearRect(0, 0, PAINT_SIZE, PAINT_SIZE);
     this.wctx.drawImage(this.photo, 0, 0);
     this.wctx.drawImage(this.art, 0, 0);
     const src = this.wctx.getImageData(0, 0, PAINT_SIZE, PAINT_SIZE);
-    this.compositeToDisc(ctx, PAINT_SIZE, this.stretch(src, PAINT_SIZE));
+    this.compositeToDisc(ctx, N, this.stretch(src, N));
     return out;
+  }
+
+  private buildFullImage(): HTMLCanvasElement {
+    return this.buildFullImageAtSize(PAINT_SIZE);
   }
 
   private save(): void {
@@ -528,6 +542,20 @@ export class PaintEditor {
     this.onSaved(d);
     showToast("保存しました");
     this.close(); // 保存後は通常表示（その絵を使ったシミュレータ）へ戻る
+  }
+
+  private downloadDisc(): void {
+    const px = Math.round((this.diskDiameterMm / 25.4) * PRINT_DPI);
+    const canvas = this.buildFullImageAtSize(px);
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `anorthoscope_360_${this.diskDiameterMm}mm.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }, "image/png");
   }
 
   // =========================================================
@@ -712,6 +740,26 @@ export class PaintEditor {
       pbtn("全消し", () => this.clearAll()),
     );
 
+    // 展開画像のPNG書き出し
+    const exportGroup = document.createElement("div");
+    exportGroup.className = "paint-group";
+    const diameterInput = document.createElement("input");
+    diameterInput.type = "number";
+    diameterInput.className = "num";
+    diameterInput.min = String(DISC_DIAMETER_MM_MIN);
+    diameterInput.max = String(DISC_DIAMETER_MM_MAX);
+    diameterInput.value = String(this.diskDiameterMm);
+    diameterInput.oninput = () => {
+      const v = Number(diameterInput.value);
+      if (!Number.isNaN(v)) this.diskDiameterMm = v;
+    };
+    const downloadBtn = pbtn(
+      "PNGダウンロード",
+      () => this.downloadDisc(),
+      "展開した360°画像を指定した直径(mm)でPNG保存（印刷用）",
+    );
+    exportGroup.append(label("直径"), diameterInput, label("mm"), downloadBtn);
+
     // 保存・閉じる
     const endGroup = document.createElement("div");
     endGroup.className = "paint-group paint-end";
@@ -719,7 +767,7 @@ export class PaintEditor {
     saveBtn.classList.add("primary");
     endGroup.append(saveBtn, pbtn("閉じる", () => this.close()));
 
-    bar.append(loadGroup, divGroup, toolGroup, styleGroup, actGroup, endGroup);
+    bar.append(loadGroup, divGroup, toolGroup, styleGroup, actGroup, exportGroup, endGroup);
 
     // キャンバス（左：描画面 / 右：展開プレビュー）
     const stage = document.createElement("div");
