@@ -15,19 +15,21 @@ type Tool = "brush" | "eraser" | "line" | "circle" | "fill";
 const CX = PAINT_SIZE / 2;
 const CY = PAINT_SIZE / 2;
 const R = PAINT_SIZE / 2;
-const CENTER_ANGLE = -Math.PI / 2;
+const CENTER_ANGLE = -Math.PI / 2; // 基準扇形（1ピース）の中心＝真上
 const UNDO_LIMIT = 30;
+const WEDGE_LIVE_RES = 300; // 左→右の圧縮（fullToWedge）をライブ計算する解像度
 
 /**
- * 圧縮モード（ペイントモードの逆）のエディタ。
+ * 作画エディタ（旧・圧縮モード）。左右2つの円のどちらにも描ける。
  *
- * **左（元の360°画像）に描くと、右（1/K の扇形）にリアルタイムで圧縮結果が
- * 現れる。**（アノルソスコープで見える像と同じ幾何。隙間を埋める必要はなく、
- * 全周の内容がそのまま扇形へ畳み込まれるだけ。`engine/wedge.ts` の
- * `fullToWedge` を使う。）
+ * - **左＝360°画像**：円内のどこにでも自由に描ける。
+ * - **右＝1/K の繰り返しパターン**：分割数 K を考慮して敷き詰めた円盤。
+ *   どのピース（扇形）にも描け、描いた内容は基準扇形へ畳み込まれて
+ *   全ピースに K 回対称で現れる。
  *
- * 左には既存の360°画像を読み込むこともでき、その上にペイントモードと同じ
- * ツール（ブラシ / 消しゴム / 直線 / 円 / 塗りつぶし）で加筆できる。
+ * 左に描いた内容は右に圧縮（`fullToWedge`）されて全ピースに、
+ * 右に描いた内容は左に展開（K 回コピー）されて現れる。両者は合成され、
+ * 保存されるのは左の 360°画像そのもの。
  */
 export class CompressEditor {
   private readonly onSaved: (d: Drawing) => void;
@@ -36,40 +38,47 @@ export class CompressEditor {
   private getImages: () => Picture[] = () => [];
 
   private root!: HTMLDivElement;
-  private srcPane!: HTMLDivElement;
-  private outPane!: HTMLDivElement;
-  private srcCanvas!: HTMLCanvasElement; // 左：元の360°画像＋加筆（描画対象）
-  private srcCtx!: CanvasRenderingContext2D;
-  private outCanvas!: HTMLCanvasElement; // 右：圧縮結果（ライブプレビュー、低解像度）
-  private outCtx!: CanvasRenderingContext2D;
+  private leftPane!: HTMLDivElement;
+  private rightPane!: HTMLDivElement;
+  private leftCanvas!: HTMLCanvasElement; // 左：360°画像（描画可能）
+  private leftCtx!: CanvasRenderingContext2D;
+  private rightCanvas!: HTMLCanvasElement; // 右：繰り返しパターン（描画可能）
+  private rightCtx!: CanvasRenderingContext2D;
   private fileInput!: HTMLInputElement;
   private divInput!: HTMLInputElement;
   private saveBtn!: HTMLButtonElement;
   private bgInput!: HTMLInputElement;
   private toolButtons = new Map<Tool, HTMLButtonElement>();
 
-  // 読み込んだ元画像（PAINT_SIZE 四方に letterbox 済み、写真レイヤー）
+  // 読み込んだ画像（PAINT_SIZE 四方に letterbox 済み、写真レイヤー）
   private readonly src = document.createElement("canvas");
   private readonly sctx: CanvasRenderingContext2D;
   private hasImage = false;
 
-  // 手描き加筆レイヤー（左パネルの円全体、透明背景）
-  private readonly art = document.createElement("canvas");
-  private readonly actx: CanvasRenderingContext2D;
+  // 左に描く手描きレイヤー（360°、透明背景）
+  private readonly fullArt = document.createElement("canvas");
+  private readonly fctx: CanvasRenderingContext2D;
+  // 右に描く手描きレイヤー（基準扇形＝1ピース分だけ。透明背景）
+  private readonly wedgeArt = document.createElement("canvas");
+  private readonly wctx: CanvasRenderingContext2D;
 
-  // src + art を合成した作業用（fullToWedge への入力元）
+  // 左（写真＋fullArt）を fullToWedge へ渡す作業用
   private readonly work = document.createElement("canvas");
   private readonly workCtx: CanvasRenderingContext2D;
-  // work をライブプレビュー解像度へ縮小する作業用
   private readonly previewSrc = document.createElement("canvas");
   private readonly previewSrcCtx: CanvasRenderingContext2D;
-  // ImageData → 描画可能キャンバスへ変換する合成用
   private readonly tmp = document.createElement("canvas");
   private readonly tctx: CanvasRenderingContext2D;
+  // 左の内容を圧縮した基準扇形（フル解像度へ拡大したもの）のキャッシュ
+  private readonly fullWedge = document.createElement("canvas");
+  private readonly fullWedgeCtx: CanvasRenderingContext2D;
+  // fullWedge ＋ wedgeArt を合成した「右の基準扇形」
+  private readonly combine = document.createElement("canvas");
+  private readonly combineCtx: CanvasRenderingContext2D;
+  private fullDirty = true; // 左の内容が変わった＝fullToWedge の再計算が必要
 
-  private static readonly PREVIEW_RES = 300;
-  private previewDirty = false;
-  private previewScheduled = false;
+  private rightDirty = false;
+  private rightScheduled = false;
 
   private divisions = COMPRESS_DIV_DEFAULT;
   private bgColor = "#000000";
@@ -77,31 +86,38 @@ export class CompressEditor {
   private color = "#ffd23c";
   private size = 14;
 
+  // 描画中の状態
   private drawing = false;
+  private activeCtx: CanvasRenderingContext2D | null = null;
+  private activeCanvas: HTMLCanvasElement | null = null;
+  private activeIsWedge = false;
   private startX = 0;
   private startY = 0;
   private lastX = 0;
   private lastY = 0;
   private previewX = 0;
   private previewY = 0;
-  private undoStack: ImageData[] = [];
+  private undoStack: { ctx: CanvasRenderingContext2D; data: ImageData }[] = [];
 
   constructor(onSaved: (d: Drawing) => void, onClose: () => void) {
     this.onSaved = onSaved;
     this.onClose = onClose;
-    this.src.width = this.src.height = PAINT_SIZE;
+    for (const c of [this.src, this.fullArt, this.wedgeArt, this.work, this.fullWedge, this.combine]) {
+      c.width = c.height = PAINT_SIZE;
+    }
     this.sctx = this.src.getContext("2d")!;
-    this.art.width = this.art.height = PAINT_SIZE;
-    this.actx = this.art.getContext("2d")!;
-    this.work.width = this.work.height = PAINT_SIZE;
+    this.fctx = this.fullArt.getContext("2d")!;
+    this.wctx = this.wedgeArt.getContext("2d")!;
     this.workCtx = this.work.getContext("2d")!;
-    this.previewSrc.width = this.previewSrc.height = CompressEditor.PREVIEW_RES;
+    this.fullWedgeCtx = this.fullWedge.getContext("2d")!;
+    this.combineCtx = this.combine.getContext("2d")!;
+    this.previewSrc.width = this.previewSrc.height = WEDGE_LIVE_RES;
     this.previewSrcCtx = this.previewSrc.getContext("2d")!;
-    this.tmp.width = this.tmp.height = CompressEditor.PREVIEW_RES;
+    this.tmp.width = this.tmp.height = WEDGE_LIVE_RES;
     this.tctx = this.tmp.getContext("2d")!;
     this.picker = new ImagePicker(
       (i) => this.loadPicture(this.getImages()[i]),
-      "圧縮する画像を選ぶ",
+      "下絵にする画像を選ぶ",
       "compress-picker",
     );
     this.buildDOM();
@@ -127,7 +143,7 @@ export class CompressEditor {
   }
 
   // =========================================================
-  // 画像読み込み
+  // 画像読み込み（左＝360°の下絵として）
   // =========================================================
   private loadPicture(pic: Picture | undefined): void {
     if (!pic) return;
@@ -137,6 +153,7 @@ export class CompressEditor {
     const h = pic.height * s;
     this.sctx.drawImage(pic.bitmap, (PAINT_SIZE - w) / 2, (PAINT_SIZE - h) / 2, w, h);
     this.hasImage = true;
+    this.fullDirty = true;
     this.render();
   }
 
@@ -152,9 +169,30 @@ export class CompressEditor {
     return (Math.PI * 2) / this.divisions;
   }
 
-  /** 円内判定（左パネル：描画は全周どこでも可） */
+  /** 円内判定（左：全周どこでも可） */
   private inCircle(x: number, y: number): boolean {
     return Math.hypot(x - CX, y - CY) <= R;
+  }
+
+  /** 基準扇形（上向き1ピース）内判定 */
+  private inWedge(x: number, y: number): boolean {
+    const dx = x - CX;
+    const dy = y - CY;
+    if (Math.hypot(dx, dy) > R) return false;
+    const rel = norm(Math.atan2(dy, dx) - CENTER_ANGLE);
+    return Math.abs(rel) <= this.wedgeAngle / 2 + 1e-6;
+  }
+
+  /** 任意ピース上の点を、基準扇形（上向き）へ回転で畳み込む */
+  private foldToWedge(x: number, y: number): [number, number] {
+    const dx = x - CX;
+    const dy = y - CY;
+    const r = Math.hypot(dx, dy);
+    const ang = Math.atan2(dy, dx);
+    const seg = this.wedgeAngle;
+    const k = Math.round(norm(ang - CENTER_ANGLE) / seg);
+    const folded = ang - k * seg;
+    return [CX + r * Math.cos(folded), CY + r * Math.sin(folded)];
   }
 
   private wedgePathAt(ctx: CanvasRenderingContext2D, cx: number, cy: number, radius: number): void {
@@ -165,24 +203,44 @@ export class CompressEditor {
     ctx.closePath();
   }
 
+  private circleClip(ctx: CanvasRenderingContext2D): void {
+    ctx.beginPath();
+    ctx.arc(CX, CY, R, 0, Math.PI * 2);
+    ctx.clip();
+  }
+
+  private wedgeClip(ctx: CanvasRenderingContext2D): void {
+    this.wedgePathAt(ctx, CX, CY, R);
+    ctx.clip();
+  }
+
+  private activeClip(ctx: CanvasRenderingContext2D): void {
+    if (this.activeIsWedge) this.wedgeClip(ctx);
+    else this.circleClip(ctx);
+  }
+
   // =========================================================
-  // 手描き加筆（左パネル＝元の360°画像に描く。全周どこでも可）
+  // 手描き
   // =========================================================
-  private snapshot(): void {
-    this.undoStack.push(this.actx.getImageData(0, 0, PAINT_SIZE, PAINT_SIZE));
+  private snapshot(ctx: CanvasRenderingContext2D): void {
+    this.undoStack.push({ ctx, data: ctx.getImageData(0, 0, PAINT_SIZE, PAINT_SIZE) });
     if (this.undoStack.length > UNDO_LIMIT) this.undoStack.shift();
   }
 
   private undo(): void {
     const prev = this.undoStack.pop();
     if (!prev) return;
-    this.actx.putImageData(prev, 0, 0);
+    prev.ctx.putImageData(prev.data, 0, 0);
+    if (prev.ctx === this.fctx) this.fullDirty = true;
     this.render();
   }
 
   private clearArt(): void {
-    this.snapshot();
-    this.actx.clearRect(0, 0, PAINT_SIZE, PAINT_SIZE);
+    this.snapshot(this.fctx);
+    this.snapshot(this.wctx);
+    this.fctx.clearRect(0, 0, PAINT_SIZE, PAINT_SIZE);
+    this.wctx.clearRect(0, 0, PAINT_SIZE, PAINT_SIZE);
+    this.fullDirty = true;
     this.render();
   }
 
@@ -194,16 +252,10 @@ export class CompressEditor {
     ctx.fillStyle = this.color;
   }
 
-  private circleClip(ctx: CanvasRenderingContext2D): void {
-    ctx.beginPath();
-    ctx.arc(CX, CY, R, 0, Math.PI * 2);
-    ctx.clip();
-  }
-
   private drawSegment(x0: number, y0: number, x1: number, y1: number): void {
-    const ctx = this.actx;
+    const ctx = this.activeCtx!;
     ctx.save();
-    this.circleClip(ctx);
+    this.activeClip(ctx);
     ctx.globalCompositeOperation = this.tool === "eraser" ? "destination-out" : "source-over";
     this.strokeStyle(ctx);
     ctx.beginPath();
@@ -214,39 +266,40 @@ export class CompressEditor {
   }
 
   private commitShape(): void {
-    const ctx = this.actx;
+    const ctx = this.activeCtx!;
     ctx.save();
-    this.circleClip(ctx);
+    this.activeClip(ctx);
     ctx.globalCompositeOperation = "source-over";
     this.strokeStyle(ctx);
-    this.pathShape(ctx, this.startX, this.startY, this.previewX, this.previewY);
+    ctx.beginPath();
+    if (this.tool === "line") {
+      ctx.moveTo(this.startX, this.startY);
+      ctx.lineTo(this.previewX, this.previewY);
+    } else {
+      ctx.arc(
+        this.startX,
+        this.startY,
+        Math.hypot(this.previewX - this.startX, this.previewY - this.startY),
+        0,
+        Math.PI * 2,
+      );
+    }
     ctx.stroke();
     ctx.restore();
   }
 
-  private pathShape(
+  private floodFill(
     ctx: CanvasRenderingContext2D,
-    x0: number,
-    y0: number,
-    x1: number,
-    y1: number,
+    inBounds: (x: number, y: number) => boolean,
+    sx: number,
+    sy: number,
   ): void {
-    ctx.beginPath();
-    if (this.tool === "line") {
-      ctx.moveTo(x0, y0);
-      ctx.lineTo(x1, y1);
-    } else {
-      ctx.arc(x0, y0, Math.hypot(x1 - x0, y1 - y0), 0, Math.PI * 2);
-    }
-  }
-
-  private floodFill(sx: number, sy: number): void {
     const ix = Math.round(sx);
     const iy = Math.round(sy);
-    if (!this.inCircle(ix, iy)) return;
-    this.snapshot();
+    if (!inBounds(ix, iy)) return;
+    this.snapshot(ctx);
 
-    const img = this.actx.getImageData(0, 0, PAINT_SIZE, PAINT_SIZE);
+    const img = ctx.getImageData(0, 0, PAINT_SIZE, PAINT_SIZE);
     const data = img.data;
     const at = (x: number, y: number) => (y * PAINT_SIZE + x) * 4;
     const start = at(ix, iy);
@@ -266,7 +319,7 @@ export class CompressEditor {
       const y = stack.pop()!;
       const x = stack.pop()!;
       if (x < 0 || y < 0 || x >= PAINT_SIZE || y >= PAINT_SIZE) continue;
-      if (!this.inCircle(x, y)) continue;
+      if (!inBounds(x, y)) continue;
       const i = at(x, y);
       if (!match(i)) continue;
       data[i] = fill[0];
@@ -275,83 +328,10 @@ export class CompressEditor {
       data[i + 3] = fill[3];
       stack.push(x + 1, y, x - 1, y, x, y + 1, x, y - 1);
     }
-    this.actx.putImageData(img, 0, 0);
-    this.render();
+    ctx.putImageData(img, 0, 0);
   }
 
-  // =========================================================
-  // 表示
-  //   左：読み込んだ 360° の元画像 + 手描き加筆（描画対象）
-  //   右：1/K の扇形へ圧縮したライブプレビュー（低解像度・rAF デバウンス）
-  // =========================================================
-  private render(): void {
-    this.renderSource();
-    this.schedulePreview();
-  }
-
-  private renderSource(): void {
-    const sctx = this.srcCtx;
-    sctx.clearRect(0, 0, PAINT_SIZE, PAINT_SIZE);
-    sctx.save();
-    this.circleClip(sctx);
-    sctx.fillStyle = "#111";
-    sctx.fillRect(0, 0, PAINT_SIZE, PAINT_SIZE);
-    if (this.hasImage) sctx.drawImage(this.src, 0, 0);
-    sctx.drawImage(this.art, 0, 0); // 手描き加筆をアルファ合成で重ねる
-    sctx.restore();
-    // 左＝描画エリア。ここに描くことを示すため黄色で縁取りする
-    sctx.strokeStyle = "rgba(255,210,60,0.95)";
-    sctx.lineWidth = 3;
-    sctx.beginPath();
-    sctx.arc(CX, CY, R - 2, 0, Math.PI * 2);
-    sctx.stroke();
-  }
-
-  /** 右パネル（圧縮ライブプレビュー）の再計算をフレーム単位でまとめる */
-  private schedulePreview(): void {
-    this.previewDirty = true;
-    if (this.previewScheduled) return;
-    this.previewScheduled = true;
-    requestAnimationFrame(() => {
-      this.previewScheduled = false;
-      if (!this.previewDirty) return;
-      this.previewDirty = false;
-      this.computePreview();
-    });
-  }
-
-  private computePreview(): void {
-    const N = CompressEditor.PREVIEW_RES;
-
-    // work = src(あれば) + art を合成した「元の360°画像」
-    this.workCtx.clearRect(0, 0, PAINT_SIZE, PAINT_SIZE);
-    if (this.hasImage) this.workCtx.drawImage(this.src, 0, 0);
-    this.workCtx.drawImage(this.art, 0, 0);
-
-    // 高速化のため低解像度へ縮小してから圧縮
-    this.previewSrcCtx.clearRect(0, 0, N, N);
-    this.previewSrcCtx.drawImage(this.work, 0, 0, N, N);
-    const full = this.previewSrcCtx.getImageData(0, 0, N, N);
-    const wedge = fullToWedge(full, N, this.divisions);
-
-    const octx = this.outCtx;
-    octx.clearRect(0, 0, N, N);
-    octx.save();
-    octx.beginPath();
-    octx.arc(N / 2, N / 2, N / 2, 0, Math.PI * 2);
-    octx.clip();
-    octx.fillStyle = this.bgColor;
-    octx.fillRect(0, 0, N, N);
-    // 圧縮した 1/K 扇形を、中心を合わせて K 回コピー配置し全周を埋める（同じ絵の
-    // 単純なコピペ。つなぎ目が見えるように、実際に回す原盤と同じ K 回対称の円盤にする）
-    this.tctx.clearRect(0, 0, N, N);
-    this.tctx.putImageData(wedge, 0, 0);
-    this.tileWedge(octx, N, this.tmp);
-    octx.restore();
-    this.drawGridOverlay(octx, N / 2, N / 2, N / 2);
-  }
-
-  /** 上部 1/K 区画に描かれた扇形キャンバスを、中心を軸に K 回回転コピーして全周へ敷き詰める */
+  /** 基準扇形の1ピースを、中心を軸に K 回コピーして全周へ敷き詰める */
   private tileWedge(ctx: CanvasRenderingContext2D, N: number, wedgeCanvas: HTMLCanvasElement): void {
     const c = N / 2;
     for (let i = 0; i < this.divisions; i++) {
@@ -364,27 +344,98 @@ export class CompressEditor {
     }
   }
 
-  private drawGridOverlay(ctx: CanvasRenderingContext2D, cx: number, cy: number, radius: number): void {
+  // =========================================================
+  // 表示
+  // =========================================================
+  private render(): void {
+    this.renderLeft();
+    this.scheduleRight();
+  }
+
+  /** 左＝360°画像。写真＋fullArt に、右で描いた内容（K回コピー）を重ねて表示 */
+  private renderLeft(): void {
+    const ctx = this.leftCtx;
+    ctx.clearRect(0, 0, PAINT_SIZE, PAINT_SIZE);
+    ctx.save();
+    this.circleClip(ctx);
+    ctx.fillStyle = this.bgColor;
+    ctx.fillRect(0, 0, PAINT_SIZE, PAINT_SIZE);
+    if (this.hasImage) ctx.drawImage(this.src, 0, 0);
+    ctx.drawImage(this.fullArt, 0, 0);
+    this.tileWedge(ctx, PAINT_SIZE, this.wedgeArt);
+    ctx.restore();
+    this.drawDrawableRing(ctx);
+  }
+
+  private scheduleRight(): void {
+    this.rightDirty = true;
+    if (this.rightScheduled) return;
+    this.rightScheduled = true;
+    requestAnimationFrame(() => {
+      this.rightScheduled = false;
+      if (!this.rightDirty) return;
+      this.rightDirty = false;
+      this.computeRight();
+    });
+  }
+
+  /** 右＝繰り返しパターン。左の圧縮結果＋右で描いた扇形を、K回コピーで敷き詰める */
+  private computeRight(): void {
+    if (this.fullDirty) {
+      // 左（写真＋fullArt）を基準扇形へ圧縮（低解像度で高速に）
+      this.workCtx.clearRect(0, 0, PAINT_SIZE, PAINT_SIZE);
+      if (this.hasImage) this.workCtx.drawImage(this.src, 0, 0);
+      this.workCtx.drawImage(this.fullArt, 0, 0);
+      const N = WEDGE_LIVE_RES;
+      this.previewSrcCtx.clearRect(0, 0, N, N);
+      this.previewSrcCtx.drawImage(this.work, 0, 0, N, N);
+      const wedge = fullToWedge(this.previewSrcCtx.getImageData(0, 0, N, N), N, this.divisions);
+      this.tctx.clearRect(0, 0, N, N);
+      this.tctx.putImageData(wedge, 0, 0);
+      this.fullWedgeCtx.clearRect(0, 0, PAINT_SIZE, PAINT_SIZE);
+      this.fullWedgeCtx.drawImage(this.tmp, 0, 0, PAINT_SIZE, PAINT_SIZE);
+      this.fullDirty = false;
+    }
+
+    // 右の基準扇形 ＝ 左の圧縮結果 ＋ 右で描いた wedgeArt
+    this.combineCtx.clearRect(0, 0, PAINT_SIZE, PAINT_SIZE);
+    this.combineCtx.drawImage(this.fullWedge, 0, 0);
+    this.combineCtx.drawImage(this.wedgeArt, 0, 0);
+
+    const ctx = this.rightCtx;
+    ctx.clearRect(0, 0, PAINT_SIZE, PAINT_SIZE);
+    ctx.save();
+    this.circleClip(ctx);
+    ctx.fillStyle = this.bgColor;
+    ctx.fillRect(0, 0, PAINT_SIZE, PAINT_SIZE);
+    this.tileWedge(ctx, PAINT_SIZE, this.combine);
+    ctx.restore();
+    this.drawPieceLines(ctx);
+    this.drawDrawableRing(ctx);
+  }
+
+  /** ピースの区切り線（つなぎ目の確認用） */
+  private drawPieceLines(ctx: CanvasRenderingContext2D): void {
     ctx.save();
     ctx.strokeStyle = "rgba(255,255,255,0.28)";
     ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.arc(cx, cy, radius - 1, 0, Math.PI * 2);
-    ctx.stroke();
     for (let i = 0; i < this.divisions; i++) {
       const a = CENTER_ANGLE + this.wedgeAngle / 2 + i * this.wedgeAngle;
       ctx.beginPath();
-      ctx.moveTo(cx, cy);
-      ctx.lineTo(cx + Math.cos(a) * radius, cy + Math.sin(a) * radius);
+      ctx.moveTo(CX, CY);
+      ctx.lineTo(CX + Math.cos(a) * R, CY + Math.sin(a) * R);
       ctx.stroke();
     }
     ctx.restore();
+  }
 
+  /** 描画可能を示す黄色の縁取り */
+  private drawDrawableRing(ctx: CanvasRenderingContext2D): void {
     ctx.save();
-    this.wedgePathAt(ctx, cx, cy, radius);
-    // 右＝プレビュー（描画不可）。描画エリアと誤認しないよう白で示す
-    ctx.strokeStyle = "rgba(255,255,255,0.9)";
-    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = "rgba(255,210,60,0.95)";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(CX, CY, R - 2, 0, Math.PI * 2);
     ctx.stroke();
     ctx.restore();
   }
@@ -395,40 +446,54 @@ export class CompressEditor {
   private setDivisions(k: number): void {
     this.divisions = Math.min(COMPRESS_DIV_MAX, Math.max(COMPRESS_DIV_MIN, Math.round(k)));
     this.divInput.value = String(this.divisions);
-    this.schedulePreview();
+    this.fullDirty = true;
+    this.render();
   }
 
   // =========================================================
-  // 入力（左パネル＝元の360°画像に直接描く）
+  // 入力
   // =========================================================
-  private toArt(e: PointerEvent): [number, number] {
-    const rect = this.srcCanvas.getBoundingClientRect();
+  private toCanvas(e: PointerEvent, canvas: HTMLCanvasElement): [number, number] {
+    const rect = canvas.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width) * PAINT_SIZE;
     const y = ((e.clientY - rect.top) / rect.height) * PAINT_SIZE;
     return [x, y];
   }
 
-  private onDown(e: PointerEvent): void {
-    const [x, y] = this.toArt(e);
+  private onDown(e: PointerEvent, isWedge: boolean): void {
+    const canvas = isWedge ? this.rightCanvas : this.leftCanvas;
+    let [x, y] = this.toCanvas(e, canvas);
+    if (isWedge) [x, y] = this.foldToWedge(x, y);
+    const ctx = isWedge ? this.wctx : this.fctx;
+    const inBounds = isWedge ? (a: number, b: number) => this.inWedge(a, b) : (a: number, b: number) => this.inCircle(a, b);
+
     if (this.tool === "fill") {
-      this.floodFill(x, y);
+      this.floodFill(ctx, inBounds, x, y);
+      if (!isWedge) this.fullDirty = true;
+      this.render();
       return;
     }
-    if (!this.inCircle(x, y)) return;
-    this.srcCanvas.setPointerCapture(e.pointerId);
-    this.snapshot();
+    if (!inBounds(x, y)) return;
+
+    canvas.setPointerCapture(e.pointerId);
     this.drawing = true;
+    this.activeIsWedge = isWedge;
+    this.activeCanvas = canvas;
+    this.activeCtx = ctx;
+    this.snapshot(ctx);
     this.startX = this.lastX = this.previewX = x;
     this.startY = this.lastY = this.previewY = y;
     if (this.tool === "brush" || this.tool === "eraser") {
       this.drawSegment(x, y, x, y);
+      if (!isWedge) this.fullDirty = true;
       this.render();
     }
   }
 
   private onMove(e: PointerEvent): void {
-    if (!this.drawing) return;
-    const [x, y] = this.toArt(e);
+    if (!this.drawing || !this.activeCanvas) return;
+    let [x, y] = this.toCanvas(e, this.activeCanvas);
+    if (this.activeIsWedge) [x, y] = this.foldToWedge(x, y);
     if (this.tool === "brush" || this.tool === "eraser") {
       this.drawSegment(this.lastX, this.lastY, x, y);
       this.lastX = x;
@@ -437,13 +502,19 @@ export class CompressEditor {
       this.previewX = x;
       this.previewY = y;
     }
+    if (!this.activeIsWedge) this.fullDirty = true;
     this.render();
   }
 
   private onUp(): void {
     if (!this.drawing) return;
-    if (this.tool === "line" || this.tool === "circle") this.commitShape();
+    if (this.tool === "line" || this.tool === "circle") {
+      this.commitShape();
+      if (!this.activeIsWedge) this.fullDirty = true;
+    }
     this.drawing = false;
+    this.activeCtx = null;
+    this.activeCanvas = null;
     this.render();
   }
 
@@ -453,11 +524,9 @@ export class CompressEditor {
   }
 
   // =========================================================
-  // 保存（フル解像度で再圧縮）
+  // 保存（左の 360°画像そのもの）
   // =========================================================
   private save(): void {
-    // 「書いたままの360°画像」＝左パネル（元画像＋手描き加筆）そのものを保存する。
-    // 右の圧縮結果はつなぎ目確認用のプレビューであって、保存対象ではない。
     const out = document.createElement("canvas");
     out.width = out.height = PAINT_SIZE;
     const ctx = out.getContext("2d")!;
@@ -468,14 +537,15 @@ export class CompressEditor {
     ctx.fillStyle = this.bgColor;
     ctx.fillRect(0, 0, PAINT_SIZE, PAINT_SIZE);
     if (this.hasImage) ctx.drawImage(this.src, 0, 0);
-    ctx.drawImage(this.art, 0, 0);
+    ctx.drawImage(this.fullArt, 0, 0);
+    this.tileWedge(ctx, PAINT_SIZE, this.wedgeArt);
     ctx.restore();
 
     const dataURL = out.toDataURL("image/png");
     const d = saveDrawing({ dataURL, bg: this.bgColor, divisions: this.divisions });
     this.onSaved(d);
     showToast("保存しました");
-    this.close(); // 保存後は通常表示（その絵を使ったシミュレータ）へ戻る
+    this.close();
   }
 
   // =========================================================
@@ -565,7 +635,7 @@ export class CompressEditor {
     this.bgInput.title = "背景色";
     this.bgInput.oninput = () => {
       this.bgColor = this.bgInput.value;
-      this.schedulePreview();
+      this.render();
     };
 
     styleGroup.append(
@@ -577,7 +647,7 @@ export class CompressEditor {
       this.bgInput,
     );
 
-    // 元に戻す・消去（手描きレイヤーのみ対象）
+    // 元に戻す・消去
     const actGroup = document.createElement("div");
     actGroup.className = "paint-group";
     actGroup.append(
@@ -594,49 +664,53 @@ export class CompressEditor {
 
     bar.append(loadGroup, divGroup, toolGroup, styleGroup, actGroup, endGroup);
 
-    // キャンバス（左：元の360°画像＋加筆 / 右：圧縮ライブプレビュー）
+    // キャンバス（左：360°画像 / 右：繰り返しパターン。どちらも描画可能）
     const stage = document.createElement("div");
     stage.className = "paint-stage";
 
-    this.srcPane = paintPane("元の360°画像（ここに描けます）");
-    this.srcCanvas = document.createElement("canvas");
-    this.srcCanvas.width = this.srcCanvas.height = PAINT_SIZE;
-    this.srcCanvas.className = "paint-canvas";
-    this.srcCtx = this.srcCanvas.getContext("2d")!;
-    this.srcPane.append(this.srcCanvas);
+    this.leftPane = paintPane("360°画像（ここに描けます）");
+    this.leftCanvas = document.createElement("canvas");
+    this.leftCanvas.width = this.leftCanvas.height = PAINT_SIZE;
+    this.leftCanvas.className = "paint-canvas";
+    this.leftCtx = this.leftCanvas.getContext("2d")!;
+    this.leftPane.append(this.leftCanvas);
 
-    this.outPane = paintPane("圧縮結果（1/K 扇形・ライブプレビュー）");
-    this.outCanvas = document.createElement("canvas");
-    this.outCanvas.width = this.outCanvas.height = CompressEditor.PREVIEW_RES;
-    this.outCanvas.className = "paint-canvas preview";
-    this.outCtx = this.outCanvas.getContext("2d")!;
-    this.outPane.append(this.outCanvas);
+    this.rightPane = paintPane("繰り返しパターン（全ピースに描けます）");
+    this.rightCanvas = document.createElement("canvas");
+    this.rightCanvas.width = this.rightCanvas.height = PAINT_SIZE;
+    this.rightCanvas.className = "paint-canvas";
+    this.rightCtx = this.rightCanvas.getContext("2d")!;
+    this.rightPane.append(this.rightCanvas);
 
-    stage.append(this.srcPane, this.outPane);
+    stage.append(this.leftPane, this.rightPane);
 
     const hint = document.createElement("div");
     hint.className = "paint-hint";
     hint.textContent =
-      "左の360°画像に描くと、右に黄色枠の 1/K 扇形として圧縮結果がリアルタイムに現れます（アノルソスコープで見える像と同じ幾何）。";
+      "左右どちらの円にも描けます。左（360°画像）に描くと右に圧縮、右（繰り返しパターン）に描くと全ピースへ K 回対称でコピーされます。保存されるのは左の360°画像です。";
 
     this.root.append(bar, stage, hint);
     document.body.append(this.root);
 
-    this.srcCanvas.addEventListener("pointerdown", (e) => this.onDown(e));
-    this.srcCanvas.addEventListener("pointermove", (e) => this.onMove(e));
-    this.srcCanvas.addEventListener("pointerup", () => this.onUp());
-    this.srcCanvas.addEventListener("pointercancel", () => this.onUp());
+    this.leftCanvas.addEventListener("pointerdown", (e) => this.onDown(e, false));
+    this.leftCanvas.addEventListener("pointermove", (e) => this.onMove(e));
+    this.leftCanvas.addEventListener("pointerup", () => this.onUp());
+    this.leftCanvas.addEventListener("pointercancel", () => this.onUp());
+    this.rightCanvas.addEventListener("pointerdown", (e) => this.onDown(e, true));
+    this.rightCanvas.addEventListener("pointermove", (e) => this.onMove(e));
+    this.rightCanvas.addEventListener("pointerup", () => this.onUp());
+    this.rightCanvas.addEventListener("pointercancel", () => this.onUp());
 
     new ResizeObserver(() => this.relayout()).observe(stage);
 
     this.setTool("brush");
   }
 
-  /** 各キャンバスの表示サイズを、ペインに収まる最大の正方形へ揃える（または縦画面では結果ペインを非表示） */
+  /** 各キャンバスの表示サイズを、ペインに収まる最大の正方形へ揃える（縦画面では右ペインを隠す） */
   private relayout(): void {
     const isPortrait = window.matchMedia("(orientation: portrait)").matches;
-    for (const pane of [this.srcPane, this.outPane]) {
-      if (isPortrait && pane === this.outPane) continue;
+    for (const pane of [this.leftPane, this.rightPane]) {
+      if (isPortrait && pane === this.rightPane) continue;
       const canvas = pane.querySelector("canvas") as HTMLCanvasElement | null;
       const paneLabel = pane.firstElementChild as HTMLElement | null;
       if (!canvas || !paneLabel) continue;
@@ -651,6 +725,12 @@ export class CompressEditor {
 }
 
 // ---- helpers ----
+/** -π..π に正規化 */
+function norm(a: number): number {
+  while (a > Math.PI) a -= Math.PI * 2;
+  while (a < -Math.PI) a += Math.PI * 2;
+  return a;
+}
 function paintPane(labelText: string): HTMLDivElement {
   const pane = document.createElement("div");
   pane.className = "paint-pane";
