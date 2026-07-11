@@ -5,6 +5,7 @@ import {
   DISC_DIAMETER_MM_DEFAULT,
   DISC_DIAMETER_MM_MIN,
   DISC_DIAMETER_MM_MAX,
+  CENTER_DOT_DIAMETER_MM,
   PAINT_SIZE,
   PRINT_DPI,
 } from "../config";
@@ -547,6 +548,13 @@ export class PaintEditor {
   private downloadDisc(): void {
     const px = Math.round((this.diskDiameterMm / 25.4) * PRINT_DPI);
     const canvas = this.buildFullImageAtSize(px);
+    // 中心に穴あけ位置の目印（白ドット）を描く（回転軸の位置合わせ用）
+    const dotR = ((CENTER_DOT_DIAMETER_MM / 2) / 25.4) * PRINT_DPI;
+    const dctx = canvas.getContext("2d")!;
+    dctx.fillStyle = "#ffffff";
+    dctx.beginPath();
+    dctx.arc(px / 2, px / 2, dotR, 0, Math.PI * 2);
+    dctx.fill();
     canvas.toBlob((blob) => {
       if (!blob) return;
       const url = URL.createObjectURL(blob);

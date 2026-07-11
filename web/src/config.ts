@@ -76,6 +76,8 @@ export const PRINT_DPI = 300;
 export const DISC_DIAMETER_MM_DEFAULT = 100;
 export const DISC_DIAMETER_MM_MIN = 20;
 export const DISC_DIAMETER_MM_MAX = 500;
+/** 中心の穴あけ目印（白ドット）の直径(mm) */
+export const CENTER_DOT_DIAMETER_MM = 2;
 
 export interface Params {
   /** 全体速度スケール */
