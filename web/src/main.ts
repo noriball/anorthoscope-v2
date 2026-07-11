@@ -44,7 +44,14 @@ function currentPicture(): Picture | null {
   return state.images[state.index] ?? null;
 }
 function applyCurrentImage(): void {
-  sim.setImage(currentPicture());
+  const pic = currentPicture();
+  sim.setImage(pic);
+  // ペイント/圧縮モードで作った画像は、圧縮時の分割数(K)とスリット数が
+  // 一致しないと正しく再構成できないため、画像に合わせて自動同期する。
+  if (pic?.divisions !== undefined && state.params.numSlits !== pic.divisions) {
+    state.params = { ...state.params, numSlits: pic.divisions };
+    rotationRatio.update();
+  }
   // 一時停止中に選んでも、再生ボタンを押すまで絵が出ないのを防ぐため、
   // 選択直後に一度だけ描画を強制する（dt=0 なので角度は進まない）
   sim.render(0, state.params, false);
@@ -124,6 +131,7 @@ imagePicker.bind(
 /** 保存された作品を画像リストに反映（上書き or 追加）してその絵に切替 */
 async function onDrawingSaved(d: Drawing): Promise<void> {
   const pic = await pictureFromURL(d.dataURL, d.name);
+  pic.divisions = d.divisions;
   const existing = drawingIndex.get(d.id);
   if (existing !== undefined) {
     state.images[existing] = pic;
@@ -386,6 +394,7 @@ async function boot(): Promise<void> {
   for (const d of listDrawings().slice().reverse()) {
     try {
       const pic = await pictureFromURL(d.dataURL, d.name);
+      pic.divisions = d.divisions;
       drawingIndex.set(d.id, state.images.length);
       state.images.push(pic);
     } catch {

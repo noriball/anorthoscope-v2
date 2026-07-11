@@ -6,6 +6,9 @@ export interface Picture {
   bitmap: ImageBitmap;
   width: number;
   height: number;
+  /** ペイント/圧縮モードで作成された画像の場合、圧縮時の分割数(K)。
+   *  シミュレータのスリット数をこれに自動同期させるために使う。 */
+  divisions?: number;
 }
 
 /** ImageBitmap は drawImage が最速。File / URL 両対応で生成する */
