@@ -299,10 +299,11 @@ export class CompressEditor {
     if (this.hasImage) sctx.drawImage(this.src, 0, 0);
     sctx.drawImage(this.art, 0, 0); // 手描き加筆をアルファ合成で重ねる
     sctx.restore();
-    sctx.strokeStyle = "rgba(255,255,255,0.28)";
-    sctx.lineWidth = 1.5;
+    // 左＝描画エリア。ここに描くことを示すため黄色で縁取りする
+    sctx.strokeStyle = "rgba(255,210,60,0.95)";
+    sctx.lineWidth = 3;
     sctx.beginPath();
-    sctx.arc(CX, CY, R - 1, 0, Math.PI * 2);
+    sctx.arc(CX, CY, R - 2, 0, Math.PI * 2);
     sctx.stroke();
   }
 
@@ -381,7 +382,8 @@ export class CompressEditor {
 
     ctx.save();
     this.wedgePathAt(ctx, cx, cy, radius);
-    ctx.strokeStyle = "rgba(255,210,60,0.9)";
+    // 右＝プレビュー（描画不可）。描画エリアと誤認しないよう白で示す
+    ctx.strokeStyle = "rgba(255,255,255,0.9)";
     ctx.lineWidth = 2.5;
     ctx.stroke();
     ctx.restore();
