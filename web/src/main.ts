@@ -46,12 +46,8 @@ function currentPicture(): Picture | null {
 function applyCurrentImage(): void {
   const pic = currentPicture();
   sim.setImage(pic);
-  // ペイント/圧縮モードで作った画像は、圧縮時の分割数(K)とスリット数が
-  // 一致しないと正しく再構成できないため、画像に合わせて自動同期する。
-  if (pic?.divisions !== undefined && state.params.numSlits !== pic.divisions) {
-    state.params = { ...state.params, numSlits: pic.divisions };
-    rotationRatio.update();
-  }
+  // スリット数は画像によって自動変更しない（1/5で描いても4本が正しく、
+  // 自動で変わるとかえって紛らわしいため、常にユーザー設定のままにする）。
   // 一時停止中に選んでも、再生ボタンを押すまで絵が出ないのを防ぐため、
   // 選択直後に一度だけ描画を強制する（dt=0 なので角度は進まない）
   sim.render(0, state.params, false);
