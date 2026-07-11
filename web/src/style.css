@@ -755,19 +755,21 @@ body {
   }
 }
 
-/* ===== トースト通知（保存完了など） ===== */
+/* ===== トースト通知（保存完了など）：中央に大きめのモーダル風で表示 ===== */
 .toast {
   position: fixed;
   left: 50%;
-  bottom: 90px;
-  transform: translateX(-50%) translateY(8px);
-  background: rgba(20, 22, 30, 0.94);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  top: 50%;
+  transform: translate(-50%, -50%) scale(0.92);
+  background: rgba(18, 20, 27, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.18);
   color: var(--text);
-  padding: 10px 22px;
-  border-radius: 8px;
-  font-size: 14px;
+  padding: 28px 48px;
+  border-radius: 16px;
+  font-size: 22px;
+  font-weight: 600;
   white-space: nowrap;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.2s ease, transform 0.2s ease;
@@ -775,5 +777,5 @@ body {
 }
 .toast.show {
   opacity: 1;
-  transform: translateX(-50%) translateY(0);
+  transform: translate(-50%, -50%) scale(1);
 }
