@@ -341,22 +341,29 @@ export class CompressEditor {
     octx.clip();
     octx.fillStyle = this.bgColor;
     octx.fillRect(0, 0, N, N);
+    // 圧縮した 1/K 扇形を、中心を合わせて K 回コピー配置し全周を埋める（同じ絵の
+    // 単純なコピペ。つなぎ目が見えるように、実際に回す原盤と同じ K 回対称の円盤にする）
     this.tctx.clearRect(0, 0, N, N);
     this.tctx.putImageData(wedge, 0, 0);
-    octx.drawImage(this.tmp, 0, 0);
+    this.tileWedge(octx, N, this.tmp);
     octx.restore();
     this.drawGridOverlay(octx, N / 2, N / 2, N / 2);
   }
 
-  private drawGridOverlay(ctx: CanvasRenderingContext2D, cx: number, cy: number, radius: number): void {
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-    this.wedgePathAt(ctx, cx, cy, radius);
-    ctx.fillStyle = "rgba(0,0,0,0.42)";
-    ctx.fill("evenodd");
-    ctx.restore();
+  /** 上部 1/K 区画に描かれた扇形キャンバスを、中心を軸に K 回回転コピーして全周へ敷き詰める */
+  private tileWedge(ctx: CanvasRenderingContext2D, N: number, wedgeCanvas: HTMLCanvasElement): void {
+    const c = N / 2;
+    for (let i = 0; i < this.divisions; i++) {
+      ctx.save();
+      ctx.translate(c, c);
+      ctx.rotate((i * 2 * Math.PI) / this.divisions);
+      ctx.translate(-c, -c);
+      ctx.drawImage(wedgeCanvas, 0, 0);
+      ctx.restore();
+    }
+  }
 
+  private drawGridOverlay(ctx: CanvasRenderingContext2D, cx: number, cy: number, radius: number): void {
     ctx.save();
     ctx.strokeStyle = "rgba(255,255,255,0.28)";
     ctx.lineWidth = 1.5;
@@ -452,6 +459,11 @@ export class CompressEditor {
     this.workCtx.drawImage(this.art, 0, 0);
     const full = this.workCtx.getImageData(0, 0, PAINT_SIZE, PAINT_SIZE);
     const wedge = fullToWedge(full, PAINT_SIZE, this.divisions);
+    // 圧縮した 1/K 扇形を、中心を合わせて K 回コピー配置し全周を埋めた円盤を保存する。
+    // これで他のサンプル歪み円盤と同じ「回すことのできる原盤」になる（K 回対称）。
+    const wedgeCanvas = document.createElement("canvas");
+    wedgeCanvas.width = wedgeCanvas.height = PAINT_SIZE;
+    wedgeCanvas.getContext("2d")!.putImageData(wedge, 0, 0);
 
     const out = document.createElement("canvas");
     out.width = out.height = PAINT_SIZE;
@@ -462,10 +474,7 @@ export class CompressEditor {
     ctx.clip();
     ctx.fillStyle = this.bgColor;
     ctx.fillRect(0, 0, PAINT_SIZE, PAINT_SIZE);
-    const wedgeCanvas = document.createElement("canvas");
-    wedgeCanvas.width = wedgeCanvas.height = PAINT_SIZE;
-    wedgeCanvas.getContext("2d")!.putImageData(wedge, 0, 0);
-    ctx.drawImage(wedgeCanvas, 0, 0);
+    this.tileWedge(ctx, PAINT_SIZE, wedgeCanvas);
     ctx.restore();
 
     const dataURL = out.toDataURL("image/png");
