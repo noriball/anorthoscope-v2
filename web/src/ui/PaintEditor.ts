@@ -527,6 +527,7 @@ export class PaintEditor {
     this.editingId = d.id;
     this.onSaved(d);
     showToast("保存しました");
+    this.close(); // 保存後は通常表示（その絵を使ったシミュレータ）へ戻る
   }
 
   // =========================================================
