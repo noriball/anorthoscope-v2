@@ -454,17 +454,8 @@ export class CompressEditor {
   // 保存（フル解像度で再圧縮）
   // =========================================================
   private save(): void {
-    this.workCtx.clearRect(0, 0, PAINT_SIZE, PAINT_SIZE);
-    if (this.hasImage) this.workCtx.drawImage(this.src, 0, 0);
-    this.workCtx.drawImage(this.art, 0, 0);
-    const full = this.workCtx.getImageData(0, 0, PAINT_SIZE, PAINT_SIZE);
-    const wedge = fullToWedge(full, PAINT_SIZE, this.divisions);
-    // 圧縮した 1/K 扇形を、中心を合わせて K 回コピー配置し全周を埋めた円盤を保存する。
-    // これで他のサンプル歪み円盤と同じ「回すことのできる原盤」になる（K 回対称）。
-    const wedgeCanvas = document.createElement("canvas");
-    wedgeCanvas.width = wedgeCanvas.height = PAINT_SIZE;
-    wedgeCanvas.getContext("2d")!.putImageData(wedge, 0, 0);
-
+    // 「書いたままの360°画像」＝左パネル（元画像＋手描き加筆）そのものを保存する。
+    // 右の圧縮結果はつなぎ目確認用のプレビューであって、保存対象ではない。
     const out = document.createElement("canvas");
     out.width = out.height = PAINT_SIZE;
     const ctx = out.getContext("2d")!;
@@ -474,7 +465,8 @@ export class CompressEditor {
     ctx.clip();
     ctx.fillStyle = this.bgColor;
     ctx.fillRect(0, 0, PAINT_SIZE, PAINT_SIZE);
-    this.tileWedge(ctx, PAINT_SIZE, wedgeCanvas);
+    if (this.hasImage) ctx.drawImage(this.src, 0, 0);
+    ctx.drawImage(this.art, 0, 0);
     ctx.restore();
 
     const dataURL = out.toDataURL("image/png");
