@@ -590,8 +590,7 @@ export class PaintEditor {
   private buildExportModal(): void {
     const modal = document.createElement("div");
     this.exportModal = modal;
-    modal.id = "export-modal";
-    modal.className = "hidden";
+    modal.className = "export-modal hidden";
 
     const panel = document.createElement("div");
     panel.className = "export-panel";

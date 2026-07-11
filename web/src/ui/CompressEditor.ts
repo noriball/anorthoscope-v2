@@ -1,8 +1,13 @@
 import {
+  CENTER_DOT_DIAMETER_MM,
   COMPRESS_DIV_DEFAULT,
   COMPRESS_DIV_MAX,
   COMPRESS_DIV_MIN,
+  DISC_DIAMETER_MM_DEFAULT,
+  DISC_DIAMETER_MM_MAX,
+  DISC_DIAMETER_MM_MIN,
   PAINT_SIZE,
+  PRINT_DPI,
 } from "../config";
 import { fullToWedge } from "../engine/wedge";
 import { saveDrawing, type Drawing } from "../gallery";
@@ -49,6 +54,21 @@ export class CompressEditor {
   private saveBtn!: HTMLButtonElement;
   private bgInput!: HTMLInputElement;
   private toolButtons = new Map<Tool, HTMLButtonElement>();
+
+  // 印刷用PNG書き出し
+  private exportModal!: HTMLDivElement;
+  private diskDiameterMm = DISC_DIAMETER_MM_DEFAULT;
+  private exportOutline = true;
+  private exportOutlineColor: "#000000" | "#ffffff" = "#ffffff";
+  private exportCenterMark = true;
+  private exportCenterShape: "dot" | "cross" = "dot";
+  private exportCenterColor: "#000000" | "#ffffff" = "#ffffff";
+  private exportDiameterInput!: HTMLInputElement;
+  private exportOutlineBtn!: HTMLButtonElement;
+  private readonly exportOutlineColorBtns = new Map<string, HTMLButtonElement>();
+  private exportCenterBtn!: HTMLButtonElement;
+  private readonly exportCenterShapeBtns = new Map<string, HTMLButtonElement>();
+  private readonly exportCenterColorBtns = new Map<string, HTMLButtonElement>();
 
   // 読み込んだ画像（PAINT_SIZE 四方に letterbox 済み、写真レイヤー）
   private readonly src = document.createElement("canvas");
@@ -524,28 +544,204 @@ export class CompressEditor {
   }
 
   // =========================================================
-  // 保存（左の 360°画像そのもの）
+  // 合成（左の 360°画像そのもの）を任意解像度で生成
   // =========================================================
-  private save(): void {
+  private buildDiscAtSize(N: number): HTMLCanvasElement {
     const out = document.createElement("canvas");
-    out.width = out.height = PAINT_SIZE;
+    out.width = out.height = N;
     const ctx = out.getContext("2d")!;
     ctx.save();
     ctx.beginPath();
-    ctx.arc(CX, CY, R, 0, Math.PI * 2);
+    ctx.arc(N / 2, N / 2, N / 2, 0, Math.PI * 2);
     ctx.clip();
+    ctx.scale(N / PAINT_SIZE, N / PAINT_SIZE); // 以降は PAINT_SIZE 座標系で描く
     ctx.fillStyle = this.bgColor;
     ctx.fillRect(0, 0, PAINT_SIZE, PAINT_SIZE);
     if (this.hasImage) ctx.drawImage(this.src, 0, 0);
     ctx.drawImage(this.fullArt, 0, 0);
     this.tileWedge(ctx, PAINT_SIZE, this.wedgeArt);
     ctx.restore();
+    return out;
+  }
 
-    const dataURL = out.toDataURL("image/png");
+  // =========================================================
+  // 保存（ギャラリーへ）
+  // =========================================================
+  private save(): void {
+    const dataURL = this.buildDiscAtSize(PAINT_SIZE).toDataURL("image/png");
     const d = saveDrawing({ dataURL, bg: this.bgColor, divisions: this.divisions });
     this.onSaved(d);
     showToast("保存しました");
     this.close();
+  }
+
+  // =========================================================
+  // 印刷用PNG書き出し（直径mm指定・円周ライン・中心マーク）
+  // =========================================================
+  private openExportModal(): void {
+    this.exportDiameterInput.value = String(this.diskDiameterMm);
+    this.updateExportModalUI();
+    this.exportModal.classList.remove("hidden");
+  }
+
+  private closeExportModal(): void {
+    this.exportModal.classList.add("hidden");
+  }
+
+  private updateExportModalUI(): void {
+    this.exportOutlineBtn.classList.toggle("on", this.exportOutline);
+    this.exportOutlineBtn.textContent = `円周ライン：${this.exportOutline ? "あり" : "なし"}`;
+    this.exportCenterBtn.classList.toggle("on", this.exportCenterMark);
+    this.exportCenterBtn.textContent = `中心マーク：${this.exportCenterMark ? "あり" : "なし"}`;
+    this.exportOutlineColorBtns.forEach((btn, color) =>
+      btn.classList.toggle("on", color === this.exportOutlineColor),
+    );
+    this.exportCenterShapeBtns.forEach((btn, shape) =>
+      btn.classList.toggle("on", shape === this.exportCenterShape),
+    );
+    this.exportCenterColorBtns.forEach((btn, color) =>
+      btn.classList.toggle("on", color === this.exportCenterColor),
+    );
+  }
+
+  private buildExportModal(): void {
+    const modal = document.createElement("div");
+    this.exportModal = modal;
+    modal.className = "export-modal hidden";
+
+    const panel = document.createElement("div");
+    panel.className = "export-panel";
+    panel.onclick = (e) => e.stopPropagation();
+
+    const title = document.createElement("h2");
+    title.textContent = "PNGダウンロード設定";
+
+    this.exportDiameterInput = document.createElement("input");
+    this.exportDiameterInput.type = "number";
+    this.exportDiameterInput.className = "num";
+    this.exportDiameterInput.min = String(DISC_DIAMETER_MM_MIN);
+    this.exportDiameterInput.max = String(DISC_DIAMETER_MM_MAX);
+    this.exportDiameterInput.value = String(this.diskDiameterMm);
+    this.exportDiameterInput.oninput = () => {
+      const v = Number(this.exportDiameterInput.value);
+      if (!Number.isNaN(v)) this.diskDiameterMm = v;
+    };
+    const diameterRow = document.createElement("div");
+    diameterRow.className = "export-row";
+    diameterRow.append(label("直径"), this.exportDiameterInput, label("mm"));
+
+    this.exportOutlineBtn = pbtn("円周ライン", () => {
+      this.exportOutline = !this.exportOutline;
+      this.updateExportModalUI();
+    });
+    const outlineColorGroup = document.createElement("div");
+    outlineColorGroup.className = "export-color-group";
+    for (const [name, hex] of [
+      ["黒", "#000000"],
+      ["白", "#ffffff"],
+    ] as const) {
+      const b = pbtn(name, () => {
+        this.exportOutlineColor = hex;
+        this.updateExportModalUI();
+      });
+      this.exportOutlineColorBtns.set(hex, b);
+      outlineColorGroup.append(b);
+    }
+    const outlineRow = document.createElement("div");
+    outlineRow.className = "export-row";
+    outlineRow.append(this.exportOutlineBtn, outlineColorGroup);
+
+    this.exportCenterBtn = pbtn("中心マーク", () => {
+      this.exportCenterMark = !this.exportCenterMark;
+      this.updateExportModalUI();
+    });
+    const centerShapeGroup = document.createElement("div");
+    centerShapeGroup.className = "export-color-group";
+    for (const [name, shape] of [
+      ["ドット", "dot"],
+      ["十字", "cross"],
+    ] as const) {
+      const b = pbtn(name, () => {
+        this.exportCenterShape = shape;
+        this.updateExportModalUI();
+      });
+      this.exportCenterShapeBtns.set(shape, b);
+      centerShapeGroup.append(b);
+    }
+    const centerColorGroup = document.createElement("div");
+    centerColorGroup.className = "export-color-group";
+    for (const [name, hex] of [
+      ["黒", "#000000"],
+      ["白", "#ffffff"],
+    ] as const) {
+      const b = pbtn(name, () => {
+        this.exportCenterColor = hex;
+        this.updateExportModalUI();
+      });
+      this.exportCenterColorBtns.set(hex, b);
+      centerColorGroup.append(b);
+    }
+    const centerRow = document.createElement("div");
+    centerRow.className = "export-row";
+    centerRow.append(this.exportCenterBtn, centerShapeGroup, centerColorGroup);
+
+    const actionsRow = document.createElement("div");
+    actionsRow.className = "export-actions";
+    const downloadBtn = pbtn("ダウンロード", () => this.downloadDisc());
+    downloadBtn.classList.add("primary");
+    actionsRow.append(downloadBtn, pbtn("キャンセル", () => this.closeExportModal()));
+
+    panel.append(title, diameterRow, outlineRow, centerRow, actionsRow);
+    modal.append(panel);
+    modal.onclick = () => this.closeExportModal(); // 背景クリックで閉じる
+  }
+
+  private downloadDisc(): void {
+    const px = Math.round((this.diskDiameterMm / 25.4) * PRINT_DPI);
+    const canvas = this.buildDiscAtSize(px);
+    const ctx = canvas.getContext("2d")!;
+    const cx = px / 2;
+    const cy = px / 2;
+
+    if (this.exportOutline) {
+      const lineW = Math.max(1, px * 0.003);
+      ctx.strokeStyle = this.exportOutlineColor;
+      ctx.lineWidth = lineW;
+      ctx.beginPath();
+      ctx.arc(cx, cy, px / 2 - lineW / 2, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    if (this.exportCenterMark) {
+      ctx.fillStyle = this.exportCenterColor;
+      ctx.strokeStyle = this.exportCenterColor;
+      if (this.exportCenterShape === "dot") {
+        const dotR = ((CENTER_DOT_DIAMETER_MM / 2) / 25.4) * PRINT_DPI;
+        ctx.beginPath();
+        ctx.arc(cx, cy, dotR, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        const armLen = (CENTER_DOT_DIAMETER_MM / 25.4) * PRINT_DPI;
+        ctx.lineWidth = Math.max(1, px * 0.0015);
+        ctx.beginPath();
+        ctx.moveTo(cx - armLen, cy);
+        ctx.lineTo(cx + armLen, cy);
+        ctx.moveTo(cx, cy - armLen);
+        ctx.lineTo(cx, cy + armLen);
+        ctx.stroke();
+      }
+    }
+
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `anorthoscope_360_${this.diskDiameterMm}mm.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }, "image/png");
+    this.closeExportModal();
   }
 
   // =========================================================
@@ -655,6 +851,13 @@ export class CompressEditor {
       pbtn("消去", () => this.clearArt()),
     );
 
+    // 印刷用PNG書き出し
+    const exportGroup = document.createElement("div");
+    exportGroup.className = "paint-group";
+    exportGroup.append(
+      pbtn("PNG書き出し", () => this.openExportModal()),
+    );
+
     // 保存・閉じる
     const endGroup = document.createElement("div");
     endGroup.className = "paint-group paint-end";
@@ -662,7 +865,7 @@ export class CompressEditor {
     this.saveBtn.classList.add("primary");
     endGroup.append(this.saveBtn, pbtn("閉じる", () => this.close()));
 
-    bar.append(loadGroup, divGroup, toolGroup, styleGroup, actGroup, endGroup);
+    bar.append(loadGroup, divGroup, toolGroup, styleGroup, actGroup, exportGroup, endGroup);
 
     // キャンバス（左：360°画像 / 右：繰り返しパターン。どちらも描画可能）
     const stage = document.createElement("div");
@@ -689,7 +892,8 @@ export class CompressEditor {
     hint.textContent =
       "左右どちらの円にも描けます。左（360°画像）に描くと右に圧縮、右（繰り返しパターン）に描くと全ピースへ K 回対称でコピーされます。保存されるのは左の360°画像です。";
 
-    this.root.append(bar, stage, hint);
+    this.buildExportModal();
+    this.root.append(bar, stage, hint, this.exportModal);
     document.body.append(this.root);
 
     this.leftCanvas.addEventListener("pointerdown", (e) => this.onDown(e, false));

@@ -511,7 +511,7 @@ body {
 }
 
 /* ===== PNGダウンロード設定モーダル（ペイントモード） ===== */
-#export-modal {
+.export-modal {
   position: fixed;
   inset: 0;
   z-index: 25;
@@ -520,7 +520,7 @@ body {
   align-items: center;
   justify-content: center;
 }
-#export-modal.hidden {
+.export-modal.hidden {
   display: none;
 }
 .export-panel {
