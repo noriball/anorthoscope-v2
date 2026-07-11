@@ -125,6 +125,11 @@ export class Simulation {
     return this.stageH;
   }
 
+  /** 現在のズーム倍率。main.ts がスワイプ/パン/ピンチの判別に使う */
+  getZoomScale(): number {
+    return this.zoomScale;
+  }
+
   getRotRatioAnchor(): { axis: "horizontal" | "vertical"; x: number; y: number } {
     if (this.stackAxis === "vertical") {
       // 2円の下（ステージ最下部の予約スペース）の中央

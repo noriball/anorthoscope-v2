@@ -188,20 +188,60 @@ function toggleFullscreen(): void {
 
 // ===========================================================
 // フォーカス（円をクリックして単一表示）・ドラッグでパン・ボタンでズーム
+// タッチ対応：等倍時の1本指ドラッグ＝スワイプ（左右で円切替／下で解除）、
+// ズーム中の1本指ドラッグ＝パン（既存動作）、2本指＝ピンチズーム。
+// 等倍時はパン自体が clampPan() で常に0に矯正され無効なので、
+// 「スワイプ」に転用しても既存のパン操作とは競合しない。
 // ===========================================================
 const FOCUS_DRAG_THRESHOLD = 6; // px（CSS px）。これ未満の移動はクリック扱い
+const FOCUS_SWIPE_THRESHOLD = 60; // px（CSS px）。これを超えたら切替/解除とみなす
 let pointerDownPos: { x: number; y: number } | null = null;
 let dragLast: { x: number; y: number } | null = null;
 let isDragging = false;
+let dragMode: "pan" | "swipe" | null = null;
+
+// 2本指ピンチズーム用の状態
+const activePointers = new Map<number, { x: number; y: number }>();
+let lastPinchDist = 0;
 
 view.addEventListener("pointerdown", (e) => {
+  activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  view.setPointerCapture(e.pointerId);
+
+  if (activePointers.size >= 2) {
+    // 2本指目：単指ジェスチャーは中断し、ピンチ計測を開始する
+    pointerDownPos = null;
+    dragLast = null;
+    isDragging = false;
+    dragMode = null;
+    const pts = [...activePointers.values()];
+    lastPinchDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+    return;
+  }
+
   pointerDownPos = { x: e.clientX, y: e.clientY };
   dragLast = { x: e.clientX, y: e.clientY };
   isDragging = false;
-  view.setPointerCapture(e.pointerId);
+  // 等倍（パンが無効）ならスワイプ、ズーム中なら従来通りパンとして扱う
+  dragMode = sim.getZoomScale() > 1 ? "pan" : "swipe";
 });
 
 view.addEventListener("pointermove", (e) => {
+  if (activePointers.has(e.pointerId)) {
+    activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  }
+
+  if (activePointers.size >= 2) {
+    if (sim.getFocus() === "both") return;
+    const pts = [...activePointers.values()];
+    const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+    if (lastPinchDist > 0) {
+      sim.zoomBy(dist / lastPinchDist);
+    }
+    lastPinchDist = dist;
+    return;
+  }
+
   if (!dragLast || !pointerDownPos) return;
   const dx = e.clientX - dragLast.x;
   const dy = e.clientY - dragLast.y;
@@ -210,7 +250,7 @@ view.addEventListener("pointermove", (e) => {
     const totalDy = e.clientY - pointerDownPos.y;
     if (Math.hypot(totalDx, totalDy) > FOCUS_DRAG_THRESHOLD) isDragging = true;
   }
-  if (isDragging && sim.getFocus() !== "both") {
+  if (isDragging && dragMode === "pan" && sim.getFocus() !== "both") {
     const rect = view.getBoundingClientRect();
     const cssToStage = sim.getStageHeight() / rect.height; // アスペクト維持なので幅でも同じ比
     sim.pan(dx * cssToStage, dy * cssToStage);
@@ -219,14 +259,50 @@ view.addEventListener("pointermove", (e) => {
 });
 
 view.addEventListener("pointerup", (e) => {
+  activePointers.delete(e.pointerId);
+  if (activePointers.size < 2) lastPinchDist = 0;
+
   if (pointerDownPos && !isDragging) {
     handleStageClick(e.clientX, e.clientY);
+  } else if (
+    isDragging &&
+    dragMode === "swipe" &&
+    sim.getFocus() !== "both" &&
+    pointerDownPos
+  ) {
+    handleFocusSwipe(e.clientX - pointerDownPos.x, e.clientY - pointerDownPos.y);
   }
   pointerDownPos = null;
   dragLast = null;
   isDragging = false;
+  dragMode = null;
   view.releasePointerCapture(e.pointerId);
 });
+
+view.addEventListener("pointercancel", (e) => {
+  activePointers.delete(e.pointerId);
+  if (activePointers.size < 2) lastPinchDist = 0;
+  pointerDownPos = null;
+  dragLast = null;
+  isDragging = false;
+  dragMode = null;
+});
+
+/** 等倍時のスワイプ：横スワイプで左右パネルを切替、下スワイプでフォーカス解除 */
+function handleFocusSwipe(totalDx: number, totalDy: number): void {
+  if (Math.abs(totalDx) > Math.abs(totalDy)) {
+    if (Math.abs(totalDx) < FOCUS_SWIPE_THRESHOLD) return;
+    const current = sim.getFocus();
+    if (current === "left" || current === "right") {
+      sim.setFocus(current === "left" ? "right" : "left");
+      syncFocusUI();
+    }
+  } else {
+    if (totalDy < FOCUS_SWIPE_THRESHOLD) return; // 下方向のみ（上スワイプでは解除しない）
+    sim.setFocus("both");
+    syncFocusUI();
+  }
+}
 
 /** クリックされた位置から、フォーカス対象（左/右/解除）を決める */
 function handleStageClick(clientX: number, clientY: number): void {
