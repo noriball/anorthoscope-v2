@@ -117,6 +117,7 @@ export class CompressEditor {
   private lastY = 0;
   private previewX = 0;
   private previewY = 0;
+  private lastFoldK = 0; // 直前に描いた点のピース番号（境界またぎ検出用）
   private undoStack: { ctx: CanvasRenderingContext2D; data: ImageData }[] = [];
 
   constructor(onSaved: (d: Drawing) => void, onClose: () => void) {
@@ -203,8 +204,9 @@ export class CompressEditor {
     return Math.abs(rel) <= this.wedgeAngle / 2 + 1e-6;
   }
 
-  /** 任意ピース上の点を、基準扇形（上向き）へ回転で畳み込む */
-  private foldToWedge(x: number, y: number): [number, number] {
+  /** 任意ピース上の点を、基準扇形（上向き）へ回転で畳み込む。
+   *  返り値の3つ目はピース番号 k（境界をまたいだ検出＝線を途切れさせるために使う）。 */
+  private foldToWedge(x: number, y: number): [number, number, number] {
     const dx = x - CX;
     const dy = y - CY;
     const r = Math.hypot(dx, dy);
@@ -212,7 +214,7 @@ export class CompressEditor {
     const seg = this.wedgeAngle;
     const k = Math.round(norm(ang - CENTER_ANGLE) / seg);
     const folded = ang - k * seg;
-    return [CX + r * Math.cos(folded), CY + r * Math.sin(folded)];
+    return [CX + r * Math.cos(folded), CY + r * Math.sin(folded), k];
   }
 
   private wedgePathAt(ctx: CanvasRenderingContext2D, cx: number, cy: number, radius: number): void {
@@ -483,7 +485,12 @@ export class CompressEditor {
   private onDown(e: PointerEvent, isWedge: boolean): void {
     const canvas = isWedge ? this.rightCanvas : this.leftCanvas;
     let [x, y] = this.toCanvas(e, canvas);
-    if (isWedge) [x, y] = this.foldToWedge(x, y);
+    if (isWedge) {
+      const f = this.foldToWedge(x, y);
+      x = f[0];
+      y = f[1];
+      this.lastFoldK = f[2];
+    }
     const ctx = isWedge ? this.wctx : this.fctx;
     const inBounds = isWedge ? (a: number, b: number) => this.inWedge(a, b) : (a: number, b: number) => this.inCircle(a, b);
 
@@ -513,9 +520,19 @@ export class CompressEditor {
   private onMove(e: PointerEvent): void {
     if (!this.drawing || !this.activeCanvas) return;
     let [x, y] = this.toCanvas(e, this.activeCanvas);
-    if (this.activeIsWedge) [x, y] = this.foldToWedge(x, y);
+    // 右（繰り返しパターン）でピース境界をまたいだら、畳み込み先が扇形の反対側へ
+    // 飛ぶ。そのまま直線で結ぶと「描いていない直線」が現れるので、境界またぎ時は
+    // 線を繋がず途切れさせる（＝実際に描いた形だけが残る）。
+    let crossedBoundary = false;
+    if (this.activeIsWedge) {
+      const f = this.foldToWedge(x, y);
+      x = f[0];
+      y = f[1];
+      if (f[2] !== this.lastFoldK) crossedBoundary = true;
+      this.lastFoldK = f[2];
+    }
     if (this.tool === "brush" || this.tool === "eraser") {
-      this.drawSegment(this.lastX, this.lastY, x, y);
+      if (!crossedBoundary) this.drawSegment(this.lastX, this.lastY, x, y);
       this.lastX = x;
       this.lastY = y;
     } else {
