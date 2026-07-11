@@ -26,7 +26,7 @@ export const FADE_STEP = 0.0005;
 export const BASE_OMEGA = 0.6;
 
 // パラメータの可動域
-export const SPEED_MIN = 0.0;
+export const SPEED_MIN = -3.0;
 export const SPEED_MAX = 3.0;
 export const SPEED_STEP = 0.1;
 
