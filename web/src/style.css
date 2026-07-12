@@ -514,6 +514,19 @@ body {
   padding: 8px;
 }
 
+/* ===== スリット形状の手描きキャンバス ===== */
+.slit-shape-canvas {
+  display: block;
+  width: 100%;
+  max-width: 480px;
+  height: 140px;
+  background: #000;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: crosshair;
+  touch-action: none;
+}
+
 /* ===== PNGダウンロード設定モーダル（ペイントモード） ===== */
 .export-modal {
   position: fixed;

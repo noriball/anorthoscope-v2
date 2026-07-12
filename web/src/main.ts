@@ -2,6 +2,7 @@ import "./style.css";
 import { DEFAULT_PARAMS, ZOOM_STEP_FACTOR, type Params } from "./config";
 import { loadInitialImages, pictureFromURL, type Picture } from "./images";
 import { listDrawings, type Drawing } from "./gallery";
+import { loadSlitMask } from "./slitMask";
 import { Simulation } from "./engine/Simulation";
 import { ControlBar, type AppHooks } from "./ui/Controls";
 import { RotationRatio } from "./ui/RotationRatio";
@@ -31,6 +32,7 @@ const stage = document.getElementById("stage") as HTMLElement;
 const controlsRoot = document.getElementById("controls") as HTMLElement;
 
 const sim = new Simulation(view);
+sim.setSlitMask(loadSlitMask());
 const guide = new Guide();
 
 function currentPicture(): Picture | null {
@@ -105,7 +107,7 @@ function syncFocusUI(): void {
 // ===========================================================
 // ペイント / ギャラリー
 // ===========================================================
-const compress = new CompressEditor(onDrawingSaved, useWithoutSaving, () => {});
+const compress = new CompressEditor(onDrawingSaved, useWithoutSaving, onSlitMaskChanged, () => {});
 compress.bind(() => state.images);
 const gallery = new Gallery(useDrawing, editDrawing, onDrawingDeleted);
 const imagePicker = new ImagePicker((i) => setIndex(i));
@@ -142,6 +144,11 @@ async function useWithoutSaving(dataURL: string, divisions: number): Promise<voi
   pic.divisions = divisions;
   state.images.push(pic);
   setIndex(state.images.length - 1);
+}
+
+/** 作画の「スリット形状」保存：スリット板の穴の形をシミュレータへ即反映する */
+function onSlitMaskChanged(dataURL: string): void {
+  sim.setSlitMask(dataURL);
 }
 
 /** ギャラリーの「編集」/「新規作成」：作画エディタで開く */

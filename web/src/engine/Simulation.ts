@@ -1,5 +1,6 @@
 import {
   BASE_OMEGA,
+  SLIT_ENVELOPE_HEIGHT,
   STAGE_MAX_HEIGHT,
   TRIM_HEIGHT,
   TRIM_OFFSET,
@@ -44,6 +45,14 @@ export class Simulation {
   private sctx!: CanvasRenderingContext2D;
   private platectx!: CanvasRenderingContext2D;
 
+  // カスタムスリット形状（手描き。null なら既定の直線スリット）
+  private slitMaskSrc: HTMLImageElement | null = null;
+  private readonly maskScaled = document.createElement("canvas"); // trimWidth×SLIT_ENVELOPE_HEIGHT にスケール済み
+  private maskScaledCtx!: CanvasRenderingContext2D;
+  private maskScaledForTrimWidth = -1; // キャッシュ済み trimWidth（変われば再構築）
+  private readonly maskScratch = document.createElement("canvas"); // stampRightPanel の作業用
+  private maskScratchCtx!: CanvasRenderingContext2D;
+
   // 内部解像度
   private stageW = 0;
   private stageH = 0;
@@ -84,6 +93,38 @@ export class Simulation {
     this.rctx = must(this.right.getContext("2d", { alpha: false }));
     this.sctx = must(this.sample.getContext("2d", { alpha: true }));
     this.platectx = must(this.plate.getContext("2d", { alpha: true }));
+    this.maskScaledCtx = must(this.maskScaled.getContext("2d", { alpha: true }));
+    this.maskScratchCtx = must(this.maskScratch.getContext("2d", { alpha: true }));
+  }
+
+  /** カスタムスリット形状を設定する（null で既定の直線スリットに戻す） */
+  setSlitMask(dataURL: string | null): void {
+    if (!dataURL) {
+      this.slitMaskSrc = null;
+      this.maskScaledForTrimWidth = -1;
+      return;
+    }
+    const img = new Image();
+    img.onload = () => {
+      this.slitMaskSrc = img;
+      this.maskScaledForTrimWidth = -1; // 次回参照時に再構築させる
+    };
+    img.src = dataURL;
+  }
+
+  /** 現在の trimWidth に合わせてスケール済みマスクを用意する（未設定なら null） */
+  private ensureMaskCanvas(): HTMLCanvasElement | null {
+    if (!this.slitMaskSrc) return null;
+    if (this.maskScaledForTrimWidth !== this.trimWidth) {
+      this.maskScaled.width = this.trimWidth;
+      this.maskScaled.height = SLIT_ENVELOPE_HEIGHT;
+      this.maskScaledCtx.clearRect(0, 0, this.trimWidth, SLIT_ENVELOPE_HEIGHT);
+      this.maskScaledCtx.drawImage(this.slitMaskSrc, 0, 0, this.trimWidth, SLIT_ENVELOPE_HEIGHT);
+      this.maskScratch.width = this.trimWidth;
+      this.maskScratch.height = SLIT_ENVELOPE_HEIGHT;
+      this.maskScaledForTrimWidth = this.trimWidth;
+    }
+    return this.maskScaled;
   }
 
   /** CSS 表示サイズ（px）に合わせて内部解像度を決め直す */
@@ -385,6 +426,7 @@ export class Simulation {
     const cy = this.rightCy;
     const sc = this.sampleSize / 2; // sample バッファ中心
     const n = p.numSlits;
+    const mask = this.ensureMaskCanvas();
 
     for (let i = 0; i < n; i++) {
       const theta = (i * Math.PI * 2) / n;
@@ -402,17 +444,39 @@ export class Simulation {
       ctx.save();
       ctx.translate(cx, cy);
       ctx.rotate(this.slitAngle + theta);
-      ctx.drawImage(
-        this.sample,
-        sc + TRIM_OFFSET, // sx
-        sc - TRIM_HEIGHT / 2, // sy
-        this.trimWidth, // sw
-        TRIM_HEIGHT, // sh
-        TRIM_OFFSET, // dx
-        -TRIM_HEIGHT / 2, // dy
-        this.trimWidth, // dw
-        TRIM_HEIGHT, // dh
-      );
+      if (mask) {
+        // カスタムスリット形状：envelope 領域を切り出してから、マスクの形へ絞り込む
+        const sctx = this.maskScratchCtx;
+        sctx.clearRect(0, 0, this.trimWidth, SLIT_ENVELOPE_HEIGHT);
+        sctx.drawImage(
+          this.sample,
+          sc + TRIM_OFFSET,
+          sc - SLIT_ENVELOPE_HEIGHT / 2,
+          this.trimWidth,
+          SLIT_ENVELOPE_HEIGHT,
+          0,
+          0,
+          this.trimWidth,
+          SLIT_ENVELOPE_HEIGHT,
+        );
+        sctx.globalCompositeOperation = "destination-in";
+        sctx.drawImage(mask, 0, 0);
+        sctx.globalCompositeOperation = "source-over";
+        ctx.drawImage(this.maskScratch, TRIM_OFFSET, -SLIT_ENVELOPE_HEIGHT / 2);
+      } else {
+        // 既定：直線スリット（矩形ストリップをそのままコピー）
+        ctx.drawImage(
+          this.sample,
+          sc + TRIM_OFFSET, // sx
+          sc - TRIM_HEIGHT / 2, // sy
+          this.trimWidth, // sw
+          TRIM_HEIGHT, // sh
+          TRIM_OFFSET, // dx
+          -TRIM_HEIGHT / 2, // dy
+          this.trimWidth, // dw
+          TRIM_HEIGHT, // dh
+        );
+      }
       ctx.restore();
     }
   }
@@ -519,6 +583,8 @@ export class Simulation {
     ctx.fill();
 
     // スリット窓を切り抜く（透明化）
+    const mask = this.ensureMaskCanvas();
+    const h = mask ? SLIT_ENVELOPE_HEIGHT : TRIM_HEIGHT;
     ctx.globalCompositeOperation = "destination-out";
     ctx.save();
     ctx.translate(cx, cy);
@@ -526,7 +592,11 @@ export class Simulation {
     for (let i = 0; i < n; i++) {
       ctx.save();
       ctx.rotate((i * Math.PI * 2) / n);
-      ctx.fillRect(TRIM_OFFSET, -TRIM_HEIGHT / 2, this.trimWidth, TRIM_HEIGHT);
+      if (mask) {
+        ctx.drawImage(mask, TRIM_OFFSET, -h / 2, this.trimWidth, h);
+      } else {
+        ctx.fillRect(TRIM_OFFSET, -h / 2, this.trimWidth, h);
+      }
       ctx.restore();
     }
     ctx.restore();
@@ -547,6 +617,7 @@ export class Simulation {
   private drawGuideLines(cx: number, cy: number, alpha: number): void {
     const ctx = this.vctx;
     const n = this.currentNumSlits;
+    const h = this.ensureMaskCanvas() ? SLIT_ENVELOPE_HEIGHT : TRIM_HEIGHT;
     ctx.save();
     ctx.globalAlpha = alpha;
     ctx.translate(cx, cy);
@@ -556,7 +627,7 @@ export class Simulation {
     for (let i = 0; i < n; i++) {
       ctx.save();
       ctx.rotate((i * Math.PI * 2) / n);
-      ctx.strokeRect(TRIM_OFFSET, -TRIM_HEIGHT / 2, this.trimWidth, TRIM_HEIGHT);
+      ctx.strokeRect(TRIM_OFFSET, -h / 2, this.trimWidth, h);
       ctx.restore();
     }
     ctx.restore();

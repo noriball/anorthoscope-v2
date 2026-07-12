@@ -8,10 +8,15 @@ import {
   DISC_DIAMETER_MM_MIN,
   PAINT_SIZE,
   PRINT_DPI,
+  SLIT_ENVELOPE_HEIGHT,
+  SLIT_MASK_DESIGN_H,
+  SLIT_MASK_DESIGN_W,
+  TRIM_HEIGHT,
 } from "../config";
 import { fullToWedge, wedgeToFull } from "../engine/wedge";
 import { saveDrawing, type Drawing } from "../gallery";
 import { loadFromFiles, pictureFromURL, type Picture } from "../images";
+import { loadSlitMask, saveSlitMask } from "../slitMask";
 import { ImagePicker } from "./ImagePicker";
 import { showToast } from "./toast";
 
@@ -42,6 +47,7 @@ const PHOTO_ZOOM_STEP = 1.15;
 export class CompressEditor {
   private readonly onSaved: (d: Drawing) => void;
   private readonly onUseWithoutSaving: (dataURL: string, divisions: number) => void;
+  private readonly onSlitMaskChanged: (dataURL: string) => void;
   private readonly onClose: () => void;
   private readonly picker: ImagePicker;
   private getImages: () => Picture[] = () => [];
@@ -75,6 +81,18 @@ export class CompressEditor {
   private exportCenterBtn!: HTMLButtonElement;
   private readonly exportCenterShapeBtns = new Map<string, HTMLButtonElement>();
   private readonly exportCenterColorBtns = new Map<string, HTMLButtonElement>();
+
+  // スリット形状（スリット板の穴の形を手描きでカスタマイズ。左右の円とは独立したグローバル設定）
+  private slitShapeModal!: HTMLDivElement;
+  private slitShapeCanvas!: HTMLCanvasElement;
+  private slitShapeCtx!: CanvasRenderingContext2D;
+  private slitShapeUndoStack: ImageData[] = [];
+  private slitShapeDrawing = false;
+  private slitShapeErase = false;
+  private slitShapeEraseBtn!: HTMLButtonElement;
+  private slitShapeSize = 10;
+  private slitShapeLastX = 0;
+  private slitShapeLastY = 0;
 
   // 読み込んだ画像（PAINT_SIZE 四方に letterbox 済み、写真レイヤー）
   private readonly src = document.createElement("canvas");
@@ -155,10 +173,12 @@ export class CompressEditor {
   constructor(
     onSaved: (d: Drawing) => void,
     onUseWithoutSaving: (dataURL: string, divisions: number) => void,
+    onSlitMaskChanged: (dataURL: string) => void,
     onClose: () => void,
   ) {
     this.onSaved = onSaved;
     this.onUseWithoutSaving = onUseWithoutSaving;
+    this.onSlitMaskChanged = onSlitMaskChanged;
     this.onClose = onClose;
     for (const c of [
       this.src,
@@ -1064,6 +1084,177 @@ export class CompressEditor {
   }
 
   // =========================================================
+  // スリット形状（スリット板の穴の形を手描きでカスタマイズ）
+  // =========================================================
+  private static readonly DEFAULT_SLIT_BAND_H =
+    (SLIT_MASK_DESIGN_H * TRIM_HEIGHT) / SLIT_ENVELOPE_HEIGHT;
+
+  /** 既定の直線スリット（帯）を描く */
+  private drawDefaultSlitShape(): void {
+    const ctx = this.slitShapeCtx;
+    ctx.clearRect(0, 0, SLIT_MASK_DESIGN_W, SLIT_MASK_DESIGN_H);
+    ctx.fillStyle = "#fff";
+    const bandH = CompressEditor.DEFAULT_SLIT_BAND_H;
+    ctx.fillRect(0, (SLIT_MASK_DESIGN_H - bandH) / 2, SLIT_MASK_DESIGN_W, bandH);
+  }
+
+  private openSlitShapeModal(): void {
+    const saved = loadSlitMask();
+    if (saved) {
+      const img = new Image();
+      img.onload = () => {
+        this.slitShapeCtx.clearRect(0, 0, SLIT_MASK_DESIGN_W, SLIT_MASK_DESIGN_H);
+        this.slitShapeCtx.drawImage(img, 0, 0, SLIT_MASK_DESIGN_W, SLIT_MASK_DESIGN_H);
+      };
+      img.src = saved;
+    } else {
+      this.drawDefaultSlitShape();
+    }
+    this.slitShapeUndoStack = [];
+    this.slitShapeModal.classList.remove("hidden");
+  }
+
+  private closeSlitShapeModal(): void {
+    this.slitShapeModal.classList.add("hidden");
+  }
+
+  private slitShapeToCanvas(e: PointerEvent): [number, number] {
+    const rect = this.slitShapeCanvas.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * SLIT_MASK_DESIGN_W;
+    const y = ((e.clientY - rect.top) / rect.height) * SLIT_MASK_DESIGN_H;
+    return [x, y];
+  }
+
+  private snapshotSlitShape(): void {
+    this.slitShapeUndoStack.push(
+      this.slitShapeCtx.getImageData(0, 0, SLIT_MASK_DESIGN_W, SLIT_MASK_DESIGN_H),
+    );
+    if (this.slitShapeUndoStack.length > UNDO_LIMIT) this.slitShapeUndoStack.shift();
+  }
+
+  private slitShapeStroke(x0: number, y0: number, x1: number, y1: number): void {
+    const ctx = this.slitShapeCtx;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.lineWidth = this.slitShapeSize;
+    ctx.globalCompositeOperation = this.slitShapeErase ? "destination-out" : "source-over";
+    ctx.strokeStyle = "#fff";
+    ctx.beginPath();
+    ctx.moveTo(x0, y0);
+    ctx.lineTo(x1, y1);
+    ctx.stroke();
+    ctx.globalCompositeOperation = "source-over";
+  }
+
+  private slitShapeOnDown(e: PointerEvent): void {
+    const [x, y] = this.slitShapeToCanvas(e);
+    this.slitShapeCanvas.setPointerCapture(e.pointerId);
+    this.snapshotSlitShape();
+    this.slitShapeDrawing = true;
+    this.slitShapeLastX = x;
+    this.slitShapeLastY = y;
+    this.slitShapeStroke(x, y, x, y);
+  }
+
+  private slitShapeOnMove(e: PointerEvent): void {
+    if (!this.slitShapeDrawing) return;
+    const [x, y] = this.slitShapeToCanvas(e);
+    this.slitShapeStroke(this.slitShapeLastX, this.slitShapeLastY, x, y);
+    this.slitShapeLastX = x;
+    this.slitShapeLastY = y;
+  }
+
+  private slitShapeOnUp(): void {
+    this.slitShapeDrawing = false;
+  }
+
+  private undoSlitShape(): void {
+    const prev = this.slitShapeUndoStack.pop();
+    if (!prev) return;
+    this.slitShapeCtx.putImageData(prev, 0, 0);
+  }
+
+  private clearSlitShapeToBlank(): void {
+    this.snapshotSlitShape();
+    this.slitShapeCtx.clearRect(0, 0, SLIT_MASK_DESIGN_W, SLIT_MASK_DESIGN_H);
+  }
+
+  private resetSlitShapeToDefault(): void {
+    this.snapshotSlitShape();
+    this.drawDefaultSlitShape();
+  }
+
+  private saveSlitShape(): void {
+    const dataURL = this.slitShapeCanvas.toDataURL("image/png");
+    saveSlitMask(dataURL);
+    this.onSlitMaskChanged(dataURL);
+    showToast("スリット形状を保存しました");
+    this.closeSlitShapeModal();
+  }
+
+  private buildSlitShapeModal(): void {
+    const modal = document.createElement("div");
+    this.slitShapeModal = modal;
+    modal.className = "export-modal hidden";
+
+    const panel = document.createElement("div");
+    panel.className = "export-panel";
+    panel.onclick = (e) => e.stopPropagation();
+
+    const title = document.createElement("h2");
+    title.textContent = "スリット形状";
+
+    const desc = document.createElement("div");
+    desc.className = "paint-hint";
+    desc.textContent =
+      "スリット板の穴の形を手描きで変えられます。直線だけでなく、斜め・ギザギザ・波形なども描けます（白＝開いている部分）。";
+
+    this.slitShapeCanvas = document.createElement("canvas");
+    this.slitShapeCanvas.width = SLIT_MASK_DESIGN_W;
+    this.slitShapeCanvas.height = SLIT_MASK_DESIGN_H;
+    this.slitShapeCanvas.className = "slit-shape-canvas";
+    this.slitShapeCtx = this.slitShapeCanvas.getContext("2d")!;
+
+    const toolRow = document.createElement("div");
+    toolRow.className = "export-row";
+    const sizeIn = document.createElement("input");
+    sizeIn.type = "range";
+    sizeIn.min = "2";
+    sizeIn.max = "30";
+    sizeIn.value = String(this.slitShapeSize);
+    sizeIn.className = "paint-size";
+    sizeIn.oninput = () => (this.slitShapeSize = Number(sizeIn.value));
+    this.slitShapeEraseBtn = pbtn("消しゴム", () => {
+      this.slitShapeErase = !this.slitShapeErase;
+      this.slitShapeEraseBtn.classList.toggle("on", this.slitShapeErase);
+    });
+    toolRow.append(label("太さ"), sizeIn, this.slitShapeEraseBtn);
+
+    const actRow = document.createElement("div");
+    actRow.className = "export-row";
+    actRow.append(
+      pbtn("元に戻す", () => this.undoSlitShape()),
+      pbtn("消去", () => this.clearSlitShapeToBlank()),
+      pbtn("既定の直線に戻す", () => this.resetSlitShapeToDefault()),
+    );
+
+    const actionsRow = document.createElement("div");
+    actionsRow.className = "export-actions";
+    const saveBtn = pbtn("保存", () => this.saveSlitShape());
+    saveBtn.classList.add("primary");
+    actionsRow.append(saveBtn, pbtn("閉じる", () => this.closeSlitShapeModal()));
+
+    panel.append(title, desc, this.slitShapeCanvas, toolRow, actRow, actionsRow);
+    modal.append(panel);
+    modal.onclick = () => this.closeSlitShapeModal(); // 背景クリックで閉じる
+
+    this.slitShapeCanvas.addEventListener("pointerdown", (e) => this.slitShapeOnDown(e));
+    this.slitShapeCanvas.addEventListener("pointermove", (e) => this.slitShapeOnMove(e));
+    this.slitShapeCanvas.addEventListener("pointerup", () => this.slitShapeOnUp());
+    this.slitShapeCanvas.addEventListener("pointercancel", () => this.slitShapeOnUp());
+  }
+
+  // =========================================================
   // DOM
   // =========================================================
   private buildDOM(): void {
@@ -1187,6 +1378,13 @@ export class CompressEditor {
       pbtn("消去", () => this.clearArt()),
     );
 
+    // スリット形状（スリット板の穴の形を手描きでカスタマイズ）
+    const slitShapeGroup = document.createElement("div");
+    slitShapeGroup.className = "paint-group";
+    const slitShapeBtn = pbtn("🕳 スリット形状", () => this.openSlitShapeModal());
+    slitShapeBtn.title = "スリット板の穴の形を手描きで変える（直線・斜め・ギザギザ・波形など）";
+    slitShapeGroup.append(slitShapeBtn);
+
     // 印刷用PNG書き出し
     const exportGroup = document.createElement("div");
     exportGroup.className = "paint-group";
@@ -1211,6 +1409,7 @@ export class CompressEditor {
       toolGroup,
       styleGroup,
       actGroup,
+      slitShapeGroup,
       exportGroup,
       endGroup,
     );
@@ -1243,7 +1442,8 @@ export class CompressEditor {
 
     this.buildLoadModal();
     this.buildExportModal();
-    this.root.append(bar, stage, hint, this.loadModal, this.exportModal);
+    this.buildSlitShapeModal();
+    this.root.append(bar, stage, hint, this.loadModal, this.exportModal, this.slitShapeModal);
     document.body.append(this.root);
 
     this.leftCanvas.addEventListener("pointerdown", (e) => this.onDown(e, false));

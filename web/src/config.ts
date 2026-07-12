@@ -79,6 +79,14 @@ export const DISC_DIAMETER_MM_MAX = 500;
 /** 中心の穴あけ目印（白ドット）の直径(mm) */
 export const CENTER_DOT_DIAMETER_MM = 2;
 
+// スリット形状（スリット板の穴の形を手描きでカスタマイズ）
+/** 編集キャンバスの解像度（幅＝スリット長手方向、高さ＝形状の振れ幅の余裕込み） */
+export const SLIT_MASK_DESIGN_W = 400;
+export const SLIT_MASK_DESIGN_H = 120;
+/** シミュレータ内部でのスリット envelope 高さ[px]。既定の TRIM_HEIGHT より大きく取り、
+ *  手描きの振れ幅（斜め・ギザギザ・波形など）を許容する */
+export const SLIT_ENVELOPE_HEIGHT = 40;
+
 export interface Params {
   /** 全体速度スケール */
   speed: number;
