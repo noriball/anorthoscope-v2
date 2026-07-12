@@ -10,11 +10,18 @@ export class SlitPicker {
   private readonly root: HTMLDivElement;
   private readonly grid: HTMLDivElement;
   private readonly onSelect: (index: number) => void;
+  private readonly onCreate: () => void;
   private getSlitShapes: () => SlitShape[] = () => [];
   private getIndex: () => number = () => 0;
 
-  constructor(onSelect: (index: number) => void, title = "スリット形状を選ぶ", rootId = "slit-picker") {
+  constructor(
+    onSelect: (index: number) => void,
+    onCreate: () => void,
+    title = "スリット形状を選ぶ",
+    rootId = "slit-picker",
+  ) {
     this.onSelect = onSelect;
+    this.onCreate = onCreate;
 
     this.root = document.createElement("div");
     this.root.id = rootId;
@@ -103,5 +110,25 @@ export class SlitPicker {
       };
       this.grid.append(cell);
     });
+
+    // 末尾に「＋ 新規作成」セル（作画を経由せずスリット形状を手描きで作る）
+    const createCell = document.createElement("button");
+    createCell.className = "picker-cell picker-create";
+    const plus = document.createElement("span");
+    plus.className = "picker-create-plus";
+    plus.textContent = "＋";
+    const createLabel = document.createElement("span");
+    createLabel.className = "picker-num";
+    createLabel.textContent = "新規作成";
+    createLabel.style.fontSize = "12px";
+    createLabel.style.padding = "4px";
+    createLabel.style.textAlign = "center";
+    createLabel.style.whiteSpace = "normal";
+    createCell.append(plus, createLabel);
+    createCell.onclick = () => {
+      this.hide();
+      this.onCreate();
+    };
+    this.grid.append(createCell);
   }
 }

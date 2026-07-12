@@ -130,7 +130,10 @@ imagePicker.bind(
   () => state.images,
   () => state.index,
 );
-const slitPicker = new SlitPicker((i) => setSlitShape(i));
+const slitPicker = new SlitPicker(
+  (i) => setSlitShape(i),
+  () => compress.openSlitEditor(),
+);
 slitPicker.bind(
   () => state.slitShapes,
   () => state.slitIndex,
@@ -166,9 +169,15 @@ async function useWithoutSaving(dataURL: string, divisions: number): Promise<voi
   setIndex(state.images.length - 1);
 }
 
-/** 作画の「スリット形状」保存：スリット板の穴の形をシミュレータへ即反映する */
-function onSlitMaskChanged(dataURL: string): void {
+/** 「スリット形状」の新規作成保存：シミュレータへ即反映し、
+ *  スリット選択一覧に「マイスリット」として取り込んで選択状態にする */
+async function onSlitMaskChanged(dataURL: string): Promise<void> {
   sim.setSlitMask(dataURL);
+  // プリセット＋新しいカスタムを読み直し、末尾（マイスリット）を選択
+  state.slitShapes = await loadSlitShapes();
+  const customIdx = state.slitShapes.findIndex((s) => s.id === "custom");
+  state.slitIndex = customIdx >= 0 ? customIdx : state.slitIndex;
+  setSlitShapeIndex(state.slitIndex);
 }
 
 /** ギャラリーの「編集」/「新規作成」：作画エディタで開く */

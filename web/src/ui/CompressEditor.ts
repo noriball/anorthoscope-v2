@@ -231,6 +231,12 @@ export class CompressEditor {
     this.getNumSlits = getNumSlits;
   }
 
+  /** スリット形状エディタ（新規作成）を単独で開く。作画を経由せず、
+   *  スリット選択の「新規作成」から呼ぶ。 */
+  openSlitEditor(): void {
+    this.openSlitShapeModal();
+  }
+
   // =========================================================
   // 公開 API
   // =========================================================
@@ -1426,13 +1432,6 @@ export class CompressEditor {
       pbtn("消去", () => this.clearArt()),
     );
 
-    // スリット形状（スリット板の穴の形を手描きでカスタマイズ）
-    const slitShapeGroup = document.createElement("div");
-    slitShapeGroup.className = "paint-group";
-    const slitShapeBtn = pbtn("🕳 スリット形状", () => this.openSlitShapeModal());
-    slitShapeBtn.title = "スリット板の穴の形を手描きで変える（直線・斜め・ギザギザ・波形など）";
-    slitShapeGroup.append(slitShapeBtn);
-
     // 印刷用PNG書き出し
     const exportGroup = document.createElement("div");
     exportGroup.className = "paint-group";
@@ -1457,7 +1456,6 @@ export class CompressEditor {
       toolGroup,
       styleGroup,
       actGroup,
-      slitShapeGroup,
       exportGroup,
       endGroup,
     );
@@ -1491,8 +1489,11 @@ export class CompressEditor {
     this.buildLoadModal();
     this.buildExportModal();
     this.buildSlitShapeModal();
-    this.root.append(bar, stage, hint, this.loadModal, this.exportModal, this.slitShapeModal);
+    this.root.append(bar, stage, hint, this.loadModal, this.exportModal);
     document.body.append(this.root);
+    // スリット形状エディタは作画（#compress）とは独立して開けるよう body 直下に置く
+    // （スリット選択の「新規作成」から作画を経由せず呼び出すため）
+    document.body.append(this.slitShapeModal);
 
     this.leftCanvas.addEventListener("pointerdown", (e) => this.onDown(e, false));
     this.leftCanvas.addEventListener("pointermove", (e) => this.onMove(e));

@@ -726,6 +726,28 @@ body {
   border-radius: 6px;
 }
 
+/* 「＋ 新規作成」セル：破線タイルに大きな＋ */
+.picker-create {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1 / 1;
+  border: 2px dashed var(--border-hi);
+  background: #16161d;
+}
+.picker-create:hover {
+  border-color: var(--accent);
+  border-style: dashed;
+}
+.picker-create-plus {
+  font-size: 40px;
+  line-height: 1;
+  color: var(--text-dim);
+}
+.picker-create:hover .picker-create-plus {
+  color: var(--accent);
+}
+
 /* 縦画面のスマホ（幅が狭い）に加え、横向きスマホ（幅は広いが高さが低い）にも
    同じコンパクト表示を適用する。横向きスマホは幅700pxを超えることが多いが、
    高さは375〜430px程度しかなく、デスクトップ用の1行レイアウトでは収まらない。 */
