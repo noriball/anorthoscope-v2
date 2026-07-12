@@ -650,7 +650,7 @@ body {
 .picker-overlay {
   position: fixed;
   inset: 0;
-  z-index: 15;
+  z-index: 22; /* #compress（作画エディタ、z-index:20）の上に重ねて表示する */
   background: rgba(0, 0, 0, 0.72);
   display: flex;
   align-items: center;

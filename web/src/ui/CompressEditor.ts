@@ -94,7 +94,13 @@ export class CompressEditor {
   private photoX = 0; // 基準扇形の中心からのオフセット（PAINT_SIZE 単位）
   private photoY = 0;
   private photoScale = 1; // フィット表示を 1.0 とする追加倍率
-  private wedgePhotoFileInput!: HTMLInputElement;
+
+  // 画像読み込みモーダル（単一ボタン→左/右をタブで選ぶ）
+  private loadModal!: HTMLDivElement;
+  private loadTarget: "left" | "right" = "left";
+  private loadTabLeftBtn!: HTMLButtonElement;
+  private loadTabRightBtn!: HTMLButtonElement;
+  private loadHint!: HTMLDivElement;
 
   // 左（写真＋fullArt）を fullToWedge へ渡す作業用
   private readonly work = document.createElement("canvas");
@@ -175,8 +181,13 @@ export class CompressEditor {
     this.expandTmp.width = this.expandTmp.height = WEDGE_LIVE_RES;
     this.expandTmpCtx = this.expandTmp.getContext("2d")!;
     this.picker = new ImagePicker(
-      (i) => this.loadPicture(this.getImages()[i]),
-      "下絵にする画像を選ぶ",
+      (i) => {
+        const pic = this.getImages()[i];
+        if (!pic) return;
+        if (this.loadTarget === "left") this.loadPicture(pic);
+        else this.loadWedgePhoto(pic);
+      },
+      "画像を選ぶ",
       "compress-picker",
     );
     this.buildDOM();
@@ -798,6 +809,74 @@ export class CompressEditor {
   }
 
   // =========================================================
+  // 画像読み込みモーダル（原盤＝左／写真配置＝右をタブで選ぶ）
+  // =========================================================
+  private openLoadModal(): void {
+    this.updateLoadModalUI();
+    this.loadModal.classList.remove("hidden");
+  }
+
+  private closeLoadModal(): void {
+    this.loadModal.classList.add("hidden");
+  }
+
+  private setLoadTarget(t: "left" | "right"): void {
+    this.loadTarget = t;
+    this.updateLoadModalUI();
+  }
+
+  private updateLoadModalUI(): void {
+    this.loadTabLeftBtn.classList.toggle("on", this.loadTarget === "left");
+    this.loadTabRightBtn.classList.toggle("on", this.loadTarget === "right");
+    this.loadHint.textContent =
+      this.loadTarget === "left"
+        ? "あらかじめ歪ませた360°原盤を、左にそのまま読み込みます。"
+        : "自分で描いた絵や撮影した写真を、右の扇形の中に配置します（はみ出た部分は自動的に除外。あとで✋ツールと＋／－で位置・大きさを調整できます）。";
+  }
+
+  private buildLoadModal(): void {
+    const modal = document.createElement("div");
+    this.loadModal = modal;
+    modal.className = "export-modal hidden";
+
+    const panel = document.createElement("div");
+    panel.className = "export-panel";
+    panel.onclick = (e) => e.stopPropagation();
+
+    const title = document.createElement("h2");
+    title.textContent = "画像を読み込む";
+
+    const tabRow = document.createElement("div");
+    tabRow.className = "export-row";
+    this.loadTabLeftBtn = pbtn("原盤（左へ）", () => this.setLoadTarget("left"));
+    this.loadTabRightBtn = pbtn("写真配置（右へ）", () => this.setLoadTarget("right"));
+    tabRow.append(this.loadTabLeftBtn, this.loadTabRightBtn);
+
+    this.loadHint = document.createElement("div");
+    this.loadHint.className = "paint-hint";
+
+    const actionsRow = document.createElement("div");
+    actionsRow.className = "export-row";
+    const pickBtn = pbtn("🖼 画像一覧から選ぶ", () => {
+      this.closeLoadModal();
+      this.picker.show();
+    });
+    const fileBtn = pbtn("＋ファイルから", () => {
+      this.closeLoadModal();
+      this.fileInput.click();
+    });
+    actionsRow.append(pickBtn, fileBtn);
+
+    const closeRow = document.createElement("div");
+    closeRow.className = "export-actions";
+    closeRow.append(pbtn("閉じる", () => this.closeLoadModal()));
+
+    panel.append(title, tabRow, this.loadHint, actionsRow, closeRow);
+    modal.append(panel);
+    modal.onclick = () => this.closeLoadModal(); // 背景クリックで閉じる
+  }
+
+  // =========================================================
   // 印刷用PNG書き出し（直径mm指定・円周ライン・中心マーク）
   // =========================================================
   private openExportModal(): void {
@@ -977,55 +1056,33 @@ export class CompressEditor {
     const bar = document.createElement("div");
     bar.className = "paint-bar";
 
-    // 画像読み込み（左＝あらかじめ歪ませた原盤をそのまま読み込む）
+    // 画像読み込み（単一ボタン→モーダルで「原盤（左へ）／写真配置（右へ）」を選ぶ）
     const loadGroup = document.createElement("div");
     loadGroup.className = "paint-group";
-    const pickBtn = pbtn("🖼 原盤を選ぶ（左へ）", () => this.picker.show());
-    pickBtn.classList.add("wide");
-    pickBtn.title = "あらかじめ歪ませた360°原盤を、左にそのまま読み込む";
-    const fileBtn = pbtn("＋ファイルから（左へ）", () => this.fileInput.click());
-    fileBtn.classList.add("wide");
-    fileBtn.title = "あらかじめ歪ませた360°原盤を、左にそのまま読み込む";
+    const loadBtn = pbtn("🖼 画像を読み込む", () => this.openLoadModal());
+    loadBtn.classList.add("wide");
     this.fileInput = document.createElement("input");
     this.fileInput.type = "file";
     this.fileInput.accept = "image/png,image/jpeg,image/gif";
     this.fileInput.hidden = true;
     this.fileInput.onchange = () => {
       if (this.fileInput.files && this.fileInput.files.length > 0) {
-        this.loadFile(this.fileInput.files);
+        if (this.loadTarget === "left") this.loadFile(this.fileInput.files);
+        else this.loadWedgePhotoFile(this.fileInput.files);
         this.fileInput.value = "";
       }
     };
-    loadGroup.append(pickBtn, fileBtn, this.fileInput);
+    loadGroup.append(loadBtn, this.fileInput);
 
-    // 画像読み込み（右＝自分で描いた絵・撮影した写真を扇形に配置。移動・拡大縮小可）
+    // 写真の調整（右に配置した写真の拡大縮小・削除。移動は✋ツール）
     const wedgePhotoGroup = document.createElement("div");
     wedgePhotoGroup.className = "paint-group";
-    const wedgeFileBtn = pbtn("＋写真を配置（右へ）", () => this.wedgePhotoFileInput.click());
-    wedgeFileBtn.classList.add("wide");
-    wedgeFileBtn.title = "自分で描いた絵や撮影した写真を、右の扇形の中に配置する（はみ出た部分は自動的に除外）";
-    this.wedgePhotoFileInput = document.createElement("input");
-    this.wedgePhotoFileInput.type = "file";
-    this.wedgePhotoFileInput.accept = "image/png,image/jpeg,image/gif";
-    this.wedgePhotoFileInput.hidden = true;
-    this.wedgePhotoFileInput.onchange = () => {
-      if (this.wedgePhotoFileInput.files && this.wedgePhotoFileInput.files.length > 0) {
-        this.loadWedgePhotoFile(this.wedgePhotoFileInput.files);
-        this.wedgePhotoFileInput.value = "";
-      }
-    };
     const wedgePhotoZoomOut = pbtn("－", () => this.zoomWedgePhoto(1 / PHOTO_ZOOM_STEP));
     wedgePhotoZoomOut.title = "写真を縮小";
     const wedgePhotoZoomIn = pbtn("＋", () => this.zoomWedgePhoto(PHOTO_ZOOM_STEP));
     wedgePhotoZoomIn.title = "写真を拡大";
     const wedgePhotoRemove = pbtn("写真を消す", () => this.clearWedgePhoto());
-    wedgePhotoGroup.append(
-      wedgeFileBtn,
-      this.wedgePhotoFileInput,
-      wedgePhotoZoomOut,
-      wedgePhotoZoomIn,
-      wedgePhotoRemove,
-    );
+    wedgePhotoGroup.append(wedgePhotoZoomOut, wedgePhotoZoomIn, wedgePhotoRemove);
 
     // 分割数（1/K）
     const divGroup = document.createElement("div");
@@ -1153,10 +1210,11 @@ export class CompressEditor {
     const hint = document.createElement("div");
     hint.className = "paint-hint";
     hint.textContent =
-      "左右どちらの円にも描けます。左（360°画像）に描くと右に圧縮、右（繰り返しパターン）に描くと全ピースへ K 回対称でコピーされます。「原盤を選ぶ／ファイルから」は左へ、「写真を配置」は自分の絵や写真を右の扇形へ（✋ツールで移動、＋／－で拡大縮小、はみ出た部分は自動的に除外）。保存されるのは左の360°画像です。";
+      "左右どちらの円にも描けます。左（360°画像）に描くと右に圧縮、右（繰り返しパターン）に描くと全ピースへ K 回対称でコピーされます。「画像を読み込む」で原盤（左へ）／写真配置（右へ）を選べます（写真は✋ツールで移動、＋／－で拡大縮小、はみ出た部分は自動的に除外）。保存されるのは左の360°画像です。";
 
+    this.buildLoadModal();
     this.buildExportModal();
-    this.root.append(bar, stage, hint, this.exportModal);
+    this.root.append(bar, stage, hint, this.loadModal, this.exportModal);
     document.body.append(this.root);
 
     this.leftCanvas.addEventListener("pointerdown", (e) => this.onDown(e, false));
