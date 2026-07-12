@@ -12,7 +12,6 @@ import { ControlBar, type AppHooks } from "./ui/Controls";
 import { RotationRatio } from "./ui/RotationRatio";
 import { ZoomControls } from "./ui/ZoomControls";
 import { Guide } from "./ui/Guide";
-import { PaintEditor } from "./ui/PaintEditor";
 import { CompressEditor } from "./ui/CompressEditor";
 import { Gallery } from "./ui/Gallery";
 import { ImagePicker } from "./ui/ImagePicker";
@@ -82,7 +81,6 @@ const hooks: AppHooks = {
   addImages: () => fileInput.click(),
   toggleFullscreen,
   openGuide: () => guide.show(),
-  openPaint: () => paint.open(),
   openCompress: () => compress.open(),
   openGallery: () => gallery.show(),
   openImagePicker: () => imagePicker.show(),
@@ -114,7 +112,6 @@ function syncFocusUI(): void {
 // ===========================================================
 // ペイント / ギャラリー
 // ===========================================================
-const paint = new PaintEditor(onDrawingSaved, () => {});
 const compress = new CompressEditor(onDrawingSaved, () => {});
 compress.bind(() => state.images);
 const gallery = new Gallery(useDrawing, editDrawing, onDrawingDeleted);
@@ -146,9 +143,9 @@ function useDrawing(d: Drawing): void {
   else onDrawingSaved(d); // 未読み込みなら取り込む
 }
 
-/** ギャラリーの「編集」/「新規作成」 */
+/** ギャラリーの「編集」/「新規作成」：作画エディタで開く */
 function editDrawing(d: Drawing | null): void {
-  paint.open(d ?? undefined);
+  compress.open(d ?? undefined);
 }
 
 /** ギャラリー削除時：画像リストからも外す */

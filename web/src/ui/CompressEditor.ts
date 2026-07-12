@@ -11,7 +11,7 @@ import {
 } from "../config";
 import { fullToWedge, wedgeToFull } from "../engine/wedge";
 import { saveDrawing, type Drawing } from "../gallery";
-import { loadFromFiles, type Picture } from "../images";
+import { loadFromFiles, pictureFromURL, type Picture } from "../images";
 import { ImagePicker } from "./ImagePicker";
 import { showToast } from "./toast";
 
@@ -104,6 +104,7 @@ export class CompressEditor {
   private readonly expandWedge = document.createElement("canvas");
   private readonly expandWedgeCtx: CanvasRenderingContext2D;
   private wedgeDirty = true; // 右の内容が変わった＝wedgeToFull の再計算が必要
+  private editingId: string | null = null; // 再編集中の作品ID（保存で上書き）
 
   private rightDirty = false;
   private rightScheduled = false;
@@ -165,10 +166,31 @@ export class CompressEditor {
   // =========================================================
   // 公開 API
   // =========================================================
-  open(): void {
+  /** 引数なし＝新規（白紙）。作品を渡すと、その絵を下地に読み込んで再編集する。 */
+  open(d?: Drawing): void {
+    this.resetState(d);
     this.root.classList.remove("hidden");
     requestAnimationFrame(() => this.relayout());
     this.render();
+    if (d) {
+      // 保存済みの360°画像を下地（写真レイヤー）として読み込む
+      pictureFromURL(d.dataURL, d.name).then((pic) => this.loadPicture(pic)).catch(() => {});
+    }
+  }
+
+  private resetState(d?: Drawing): void {
+    this.fctx.clearRect(0, 0, PAINT_SIZE, PAINT_SIZE);
+    this.wctx.clearRect(0, 0, PAINT_SIZE, PAINT_SIZE);
+    this.sctx.clearRect(0, 0, PAINT_SIZE, PAINT_SIZE);
+    this.hasImage = false;
+    this.undoStack = [];
+    this.fullDirty = true;
+    this.wedgeDirty = true;
+    this.editingId = d?.id ?? null;
+    this.divisions = d?.divisions ?? COMPRESS_DIV_DEFAULT;
+    this.divInput.value = String(this.divisions);
+    this.bgColor = d?.bg ?? "#000000";
+    this.bgInput.value = this.bgColor;
   }
 
   close(): void {
@@ -636,7 +658,12 @@ export class CompressEditor {
   // =========================================================
   private save(): void {
     const dataURL = this.buildDiscAtSize(PAINT_SIZE).toDataURL("image/png");
-    const d = saveDrawing({ dataURL, bg: this.bgColor, divisions: this.divisions });
+    const d = saveDrawing({
+      id: this.editingId ?? undefined,
+      dataURL,
+      bg: this.bgColor,
+      divisions: this.divisions,
+    });
     this.onSaved(d);
     showToast("保存しました");
     this.close();

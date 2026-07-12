@@ -22,7 +22,6 @@ export interface AppHooks {
   addImages(): void;
   toggleFullscreen(): void;
   openGuide(): void;
-  openPaint(): void;
   openCompress(): void;
   openGallery(): void;
   openImagePicker(): void;
@@ -95,8 +94,6 @@ export class ControlBar {
     // --- アクション ---
     this.lineBtn = this.button("Line", () => this.toggleLine(), "赤ガイドライン表示");
     this.plateBtn = this.button("スリット板", () => this.togglePlate(), "スリット板モード");
-    const paint = this.button("🖌 ペイント", () => this.hooks.openPaint(), "ペイントモード");
-    paint.classList.add("wide");
     const compress = this.button(
       "🎨 作画",
       () => this.hooks.openCompress(),
@@ -112,7 +109,6 @@ export class ControlBar {
     const actions = group(
       this.lineBtn,
       this.plateBtn,
-      paint,
       compress,
       gallery,
       add,
