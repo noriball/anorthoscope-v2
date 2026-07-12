@@ -15,7 +15,7 @@ import { loadFromFiles, pictureFromURL, type Picture } from "../images";
 import { ImagePicker } from "./ImagePicker";
 import { showToast } from "./toast";
 
-type Tool = "brush" | "eraser" | "line" | "circle" | "fill";
+type Tool = "brush" | "eraser" | "line" | "circle" | "fill" | "photo";
 
 const CX = PAINT_SIZE / 2;
 const CY = PAINT_SIZE / 2;
@@ -23,6 +23,9 @@ const R = PAINT_SIZE / 2;
 const CENTER_ANGLE = -Math.PI / 2; // 基準扇形（1ピース）の中心＝真上
 const UNDO_LIMIT = 30;
 const WEDGE_LIVE_RES = 300; // 左→右の圧縮（fullToWedge）をライブ計算する解像度
+const PHOTO_SCALE_MIN = 0.1;
+const PHOTO_SCALE_MAX = 8;
+const PHOTO_ZOOM_STEP = 1.15;
 
 /**
  * 作画エディタ（旧・圧縮モード）。左右2つの円のどちらにも描ける。
@@ -81,6 +84,17 @@ export class CompressEditor {
   // 右に描く手描きレイヤー（基準扇形＝1ピース分だけ。透明背景）
   private readonly wedgeArt = document.createElement("canvas");
   private readonly wctx: CanvasRenderingContext2D;
+  // 右（扇形）に配置する写真（自分で描いた絵・撮影した画像）。移動・拡大縮小可、扇形にクリップ
+  private readonly wedgePhoto = document.createElement("canvas");
+  private readonly photoCtx: CanvasRenderingContext2D;
+  private photoBitmap: ImageBitmap | null = null;
+  private photoNaturalW = 0;
+  private photoNaturalH = 0;
+  private photoBaseScale = 1; // 読み込み時のフィット倍率
+  private photoX = 0; // 基準扇形の中心からのオフセット（PAINT_SIZE 単位）
+  private photoY = 0;
+  private photoScale = 1; // フィット表示を 1.0 とする追加倍率
+  private wedgePhotoFileInput!: HTMLInputElement;
 
   // 左（写真＋fullArt）を fullToWedge へ渡す作業用
   private readonly work = document.createElement("canvas");
@@ -132,12 +146,22 @@ export class CompressEditor {
   constructor(onSaved: (d: Drawing) => void, onClose: () => void) {
     this.onSaved = onSaved;
     this.onClose = onClose;
-    for (const c of [this.src, this.fullArt, this.wedgeArt, this.work, this.fullWedge, this.combine, this.expandWedge]) {
+    for (const c of [
+      this.src,
+      this.fullArt,
+      this.wedgeArt,
+      this.wedgePhoto,
+      this.work,
+      this.fullWedge,
+      this.combine,
+      this.expandWedge,
+    ]) {
       c.width = c.height = PAINT_SIZE;
     }
     this.sctx = this.src.getContext("2d")!;
     this.fctx = this.fullArt.getContext("2d")!;
     this.wctx = this.wedgeArt.getContext("2d")!;
+    this.photoCtx = this.wedgePhoto.getContext("2d")!;
     this.workCtx = this.work.getContext("2d")!;
     this.fullWedgeCtx = this.fullWedge.getContext("2d")!;
     this.combineCtx = this.combine.getContext("2d")!;
@@ -182,6 +206,11 @@ export class CompressEditor {
     this.fctx.clearRect(0, 0, PAINT_SIZE, PAINT_SIZE);
     this.wctx.clearRect(0, 0, PAINT_SIZE, PAINT_SIZE);
     this.sctx.clearRect(0, 0, PAINT_SIZE, PAINT_SIZE);
+    this.photoCtx.clearRect(0, 0, PAINT_SIZE, PAINT_SIZE);
+    this.photoBitmap = null;
+    this.photoX = 0;
+    this.photoY = 0;
+    this.photoScale = 1;
     this.hasImage = false;
     this.undoStack = [];
     this.fullDirty = true;
@@ -216,6 +245,57 @@ export class CompressEditor {
   private async loadFile(files: FileList): Promise<void> {
     const pics = await loadFromFiles(files);
     if (pics.length > 0) this.loadPicture(pics[0]);
+  }
+
+  // =========================================================
+  // 画像読み込み（右＝扇形の中に配置する写真。移動・拡大縮小が可能）
+  // =========================================================
+  private loadWedgePhoto(pic: Picture): void {
+    this.photoBitmap = pic.bitmap;
+    this.photoNaturalW = pic.width;
+    this.photoNaturalH = pic.height;
+    this.photoBaseScale = Math.min(PAINT_SIZE / pic.width, PAINT_SIZE / pic.height);
+    this.photoX = 0;
+    this.photoY = 0;
+    this.photoScale = 1;
+    this.renderWedgePhoto();
+    this.wedgeDirty = true;
+    this.render();
+  }
+
+  private async loadWedgePhotoFile(files: FileList): Promise<void> {
+    const pics = await loadFromFiles(files);
+    if (pics.length > 0) this.loadWedgePhoto(pics[0]);
+  }
+
+  private clearWedgePhoto(): void {
+    this.photoBitmap = null;
+    this.photoX = 0;
+    this.photoY = 0;
+    this.photoScale = 1;
+    this.photoCtx.clearRect(0, 0, PAINT_SIZE, PAINT_SIZE);
+    this.wedgeDirty = true;
+    this.render();
+  }
+
+  /** 現在の位置・拡大率で wedgePhoto を描き直す（基準扇形にクリップ） */
+  private renderWedgePhoto(): void {
+    this.photoCtx.clearRect(0, 0, PAINT_SIZE, PAINT_SIZE);
+    if (!this.photoBitmap) return;
+    const w = this.photoNaturalW * this.photoBaseScale * this.photoScale;
+    const h = this.photoNaturalH * this.photoBaseScale * this.photoScale;
+    this.photoCtx.save();
+    this.wedgeClip(this.photoCtx);
+    this.photoCtx.drawImage(this.photoBitmap, CX + this.photoX - w / 2, CY + this.photoY - h / 2, w, h);
+    this.photoCtx.restore();
+  }
+
+  private zoomWedgePhoto(factor: number): void {
+    if (!this.photoBitmap) return;
+    this.photoScale = Math.min(PHOTO_SCALE_MAX, Math.max(PHOTO_SCALE_MIN, this.photoScale * factor));
+    this.renderWedgePhoto();
+    this.wedgeDirty = true;
+    this.render();
   }
 
   // =========================================================
@@ -431,6 +511,7 @@ export class CompressEditor {
   private computeExpand(): void {
     const N = WEDGE_LIVE_RES;
     this.expandSrcCtx.clearRect(0, 0, N, N);
+    this.expandSrcCtx.drawImage(this.wedgePhoto, 0, 0, N, N);
     this.expandSrcCtx.drawImage(this.wedgeArt, 0, 0, N, N);
     const full = wedgeToFull(
       this.expandSrcCtx.getImageData(0, 0, N, N),
@@ -475,9 +556,10 @@ export class CompressEditor {
       this.fullDirty = false;
     }
 
-    // 右の基準扇形 ＝ 左の圧縮結果 ＋ 右で描いた wedgeArt
+    // 右の基準扇形 ＝ 左の圧縮結果 ＋ 右に配置した写真 ＋ 右で描いた wedgeArt
     this.combineCtx.clearRect(0, 0, PAINT_SIZE, PAINT_SIZE);
     this.combineCtx.drawImage(this.fullWedge, 0, 0);
+    this.combineCtx.drawImage(this.wedgePhoto, 0, 0);
     this.combineCtx.drawImage(this.wedgeArt, 0, 0);
 
     const ctx = this.rightCtx;
@@ -524,15 +606,20 @@ export class CompressEditor {
   private setDivisions(k: number): void {
     const next = Math.min(COMPRESS_DIV_MAX, Math.max(COMPRESS_DIV_MIN, Math.round(k)));
     if (next === this.divisions) return;
-    // 右に手描きした内容（wedgeArt）は旧分割数の扇形基準なので、新しい分割数では
+    // 右の内容（wedgeArt・配置した写真）は旧分割数の扇形基準なので、新しい分割数では
     // 形状が合わなくなる。まず「今、左に見えている絵」（fullArt ＋ 旧分割数での
-    // 右の展開）をそのまま左画像として焼き込み、右の手描きレイヤーは破棄する。
+    // 右の展開）をそのまま左画像として焼き込み、右の手描きレイヤー・写真は破棄する。
     // 新しい分割数での右側は、この左画像を基準に生成し直す。
     this.snapshot(this.fctx);
     this.snapshot(this.wctx);
     if (this.wedgeDirty) this.computeExpand(); // 現在（旧）分割数での展開を最新化
     this.fctx.drawImage(this.expandWedge, 0, 0);
     this.wctx.clearRect(0, 0, PAINT_SIZE, PAINT_SIZE);
+    this.photoBitmap = null;
+    this.photoX = 0;
+    this.photoY = 0;
+    this.photoScale = 1;
+    this.photoCtx.clearRect(0, 0, PAINT_SIZE, PAINT_SIZE);
 
     this.divisions = next;
     this.divInput.value = String(this.divisions);
@@ -560,6 +647,18 @@ export class CompressEditor {
       y = f[1];
       this.lastFoldK = f[2];
     }
+    if (this.tool === "photo") {
+      if (!isWedge || !this.photoBitmap || !this.inWedge(x, y)) return;
+      canvas.setPointerCapture(e.pointerId);
+      this.drawing = true;
+      this.activeIsWedge = true;
+      this.activeCanvas = canvas;
+      this.activeCtx = null;
+      this.startX = this.lastX = x;
+      this.startY = this.lastY = y;
+      return;
+    }
+
     const ctx = isWedge ? this.wctx : this.fctx;
     const inBounds = isWedge ? (a: number, b: number) => this.inWedge(a, b) : (a: number, b: number) => this.inCircle(a, b);
 
@@ -602,6 +701,18 @@ export class CompressEditor {
       if (f[2] !== this.lastFoldK) crossedBoundary = true;
       this.lastFoldK = f[2];
     }
+    if (this.tool === "photo") {
+      if (!crossedBoundary) {
+        this.photoX += x - this.lastX;
+        this.photoY += y - this.lastY;
+        this.renderWedgePhoto();
+      }
+      this.lastX = x;
+      this.lastY = y;
+      this.wedgeDirty = true;
+      this.render();
+      return;
+    }
     if (this.tool === "brush" || this.tool === "eraser") {
       if (!crossedBoundary) this.drawSegment(this.lastX, this.lastY, x, y);
       this.lastX = x;
@@ -620,7 +731,7 @@ export class CompressEditor {
     if (this.tool === "line" || this.tool === "circle") {
       this.commitShape();
       if (this.activeIsWedge) this.wedgeDirty = true;
-    else this.fullDirty = true;
+      else this.fullDirty = true;
     }
     this.drawing = false;
     this.activeCtx = null;
@@ -637,9 +748,14 @@ export class CompressEditor {
   // 合成（左の 360°画像そのもの）を任意解像度で生成
   // =========================================================
   private buildDiscAtSize(N: number): HTMLCanvasElement {
-    // 右で描いた扇形を、保存用にフル解像度で 360° へ展開（wedgeToFull）する
+    // 右の扇形（配置した写真＋手描き線）を、保存用にフル解像度で 360° へ展開（wedgeToFull）する
+    const ownWedge = document.createElement("canvas");
+    ownWedge.width = ownWedge.height = PAINT_SIZE;
+    const ownCtx = ownWedge.getContext("2d")!;
+    ownCtx.drawImage(this.wedgePhoto, 0, 0);
+    ownCtx.drawImage(this.wedgeArt, 0, 0);
     const expanded = wedgeToFull(
-      this.wctx.getImageData(0, 0, PAINT_SIZE, PAINT_SIZE),
+      ownCtx.getImageData(0, 0, PAINT_SIZE, PAINT_SIZE),
       PAINT_SIZE,
       PAINT_SIZE,
       this.divisions,
@@ -861,13 +977,15 @@ export class CompressEditor {
     const bar = document.createElement("div");
     bar.className = "paint-bar";
 
-    // 画像読み込み
+    // 画像読み込み（左＝あらかじめ歪ませた原盤をそのまま読み込む）
     const loadGroup = document.createElement("div");
     loadGroup.className = "paint-group";
-    const pickBtn = pbtn("🖼 画像から選ぶ", () => this.picker.show());
+    const pickBtn = pbtn("🖼 原盤を選ぶ（左へ）", () => this.picker.show());
     pickBtn.classList.add("wide");
-    const fileBtn = pbtn("＋ファイルから", () => this.fileInput.click());
+    pickBtn.title = "あらかじめ歪ませた360°原盤を、左にそのまま読み込む";
+    const fileBtn = pbtn("＋ファイルから（左へ）", () => this.fileInput.click());
     fileBtn.classList.add("wide");
+    fileBtn.title = "あらかじめ歪ませた360°原盤を、左にそのまま読み込む";
     this.fileInput = document.createElement("input");
     this.fileInput.type = "file";
     this.fileInput.accept = "image/png,image/jpeg,image/gif";
@@ -879,6 +997,35 @@ export class CompressEditor {
       }
     };
     loadGroup.append(pickBtn, fileBtn, this.fileInput);
+
+    // 画像読み込み（右＝自分で描いた絵・撮影した写真を扇形に配置。移動・拡大縮小可）
+    const wedgePhotoGroup = document.createElement("div");
+    wedgePhotoGroup.className = "paint-group";
+    const wedgeFileBtn = pbtn("＋写真を配置（右へ）", () => this.wedgePhotoFileInput.click());
+    wedgeFileBtn.classList.add("wide");
+    wedgeFileBtn.title = "自分で描いた絵や撮影した写真を、右の扇形の中に配置する（はみ出た部分は自動的に除外）";
+    this.wedgePhotoFileInput = document.createElement("input");
+    this.wedgePhotoFileInput.type = "file";
+    this.wedgePhotoFileInput.accept = "image/png,image/jpeg,image/gif";
+    this.wedgePhotoFileInput.hidden = true;
+    this.wedgePhotoFileInput.onchange = () => {
+      if (this.wedgePhotoFileInput.files && this.wedgePhotoFileInput.files.length > 0) {
+        this.loadWedgePhotoFile(this.wedgePhotoFileInput.files);
+        this.wedgePhotoFileInput.value = "";
+      }
+    };
+    const wedgePhotoZoomOut = pbtn("－", () => this.zoomWedgePhoto(1 / PHOTO_ZOOM_STEP));
+    wedgePhotoZoomOut.title = "写真を縮小";
+    const wedgePhotoZoomIn = pbtn("＋", () => this.zoomWedgePhoto(PHOTO_ZOOM_STEP));
+    wedgePhotoZoomIn.title = "写真を拡大";
+    const wedgePhotoRemove = pbtn("写真を消す", () => this.clearWedgePhoto());
+    wedgePhotoGroup.append(
+      wedgeFileBtn,
+      this.wedgePhotoFileInput,
+      wedgePhotoZoomOut,
+      wedgePhotoZoomIn,
+      wedgePhotoRemove,
+    );
 
     // 分割数（1/K）
     const divGroup = document.createElement("div");
@@ -906,6 +1053,7 @@ export class CompressEditor {
       ["line", "直線", "／"],
       ["circle", "円", "◯"],
       ["fill", "塗り", "塗"],
+      ["photo", "写真を移動（右）", "✋"],
     ];
     for (const [t, title, icon] of tools) {
       const b = pbtn(icon, () => this.setTool(t));
@@ -971,7 +1119,16 @@ export class CompressEditor {
     this.saveBtn.classList.add("primary");
     endGroup.append(this.saveBtn, pbtn("閉じる", () => this.close()));
 
-    bar.append(loadGroup, divGroup, toolGroup, styleGroup, actGroup, exportGroup, endGroup);
+    bar.append(
+      loadGroup,
+      wedgePhotoGroup,
+      divGroup,
+      toolGroup,
+      styleGroup,
+      actGroup,
+      exportGroup,
+      endGroup,
+    );
 
     // キャンバス（左：360°画像 / 右：繰り返しパターン。どちらも描画可能）
     const stage = document.createElement("div");
@@ -996,7 +1153,7 @@ export class CompressEditor {
     const hint = document.createElement("div");
     hint.className = "paint-hint";
     hint.textContent =
-      "左右どちらの円にも描けます。左（360°画像）に描くと右に圧縮、右（繰り返しパターン）に描くと全ピースへ K 回対称でコピーされます。保存されるのは左の360°画像です。";
+      "左右どちらの円にも描けます。左（360°画像）に描くと右に圧縮、右（繰り返しパターン）に描くと全ピースへ K 回対称でコピーされます。「原盤を選ぶ／ファイルから」は左へ、「写真を配置」は自分の絵や写真を右の扇形へ（✋ツールで移動、＋／－で拡大縮小、はみ出た部分は自動的に除外）。保存されるのは左の360°画像です。";
 
     this.buildExportModal();
     this.root.append(bar, stage, hint, this.exportModal);
