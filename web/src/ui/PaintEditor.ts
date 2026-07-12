@@ -861,7 +861,7 @@ export class PaintEditor {
       ["eraser", "消しゴム", "◧"],
       ["line", "直線", "／"],
       ["circle", "円", "◯"],
-      ["fill", "塗り", "🪣"],
+      ["fill", "塗り", "塗"],
       ["photo", "写真を移動", "✋"],
     ];
     for (const [t, title, icon] of tools) {

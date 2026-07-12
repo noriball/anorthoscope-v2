@@ -816,7 +816,7 @@ export class CompressEditor {
       ["eraser", "消しゴム", "◧"],
       ["line", "直線", "／"],
       ["circle", "円", "◯"],
-      ["fill", "塗り", "🪣"],
+      ["fill", "塗り", "塗"],
     ];
     for (const [t, title, icon] of tools) {
       const b = pbtn(icon, () => this.setTool(t));

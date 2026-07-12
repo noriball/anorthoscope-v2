@@ -98,9 +98,9 @@ export class ControlBar {
     const paint = this.button("🖌 ペイント", () => this.hooks.openPaint(), "ペイントモード");
     paint.classList.add("wide");
     const compress = this.button(
-      "🔄 圧縮",
+      "🎨 作画",
       () => this.hooks.openCompress(),
-      "360°画像を1/2〜1/16の扇形へ圧縮",
+      "作画モード：左右どちらの円にも描ける（右は繰り返しパターン）",
     );
     compress.classList.add("wide");
     const gallery = this.button("🖼 ギャラリー", () => this.hooks.openGallery(), "保存した絵");
