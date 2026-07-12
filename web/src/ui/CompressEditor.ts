@@ -46,8 +46,10 @@ export class CompressEditor {
   private getImages: () => Picture[] = () => [];
 
   private root!: HTMLDivElement;
+  private stageEl!: HTMLDivElement;
   private leftPane!: HTMLDivElement;
   private rightPane!: HTMLDivElement;
+  private portraitShowLeft = false; // 縦画面での表示切替（既定は右＝繰り返しパターン）
   private leftCanvas!: HTMLCanvasElement; // 左：360°画像（描画可能）
   private leftCtx!: CanvasRenderingContext2D;
   private rightCanvas!: HTMLCanvasElement; // 右：繰り返しパターン（描画可能）
@@ -231,6 +233,9 @@ export class CompressEditor {
     this.divInput.value = String(this.divisions);
     this.bgColor = d?.bg ?? "#000000";
     this.bgInput.value = this.bgColor;
+    // 縦画面の表示は毎回、右（繰り返しパターン）を優先表示にリセットする
+    this.portraitShowLeft = false;
+    this.stageEl.classList.remove("show-left");
   }
 
   close(): void {
@@ -1084,6 +1089,13 @@ export class CompressEditor {
     const wedgePhotoRemove = pbtn("写真を消す", () => this.clearWedgePhoto());
     wedgePhotoGroup.append(wedgePhotoZoomOut, wedgePhotoZoomIn, wedgePhotoRemove);
 
+    // 表示切替（スマホ縦画面専用。既定は右＝繰り返しパターンを表示、押すと左＝360°全円に切替）
+    const portraitToggleGroup = document.createElement("div");
+    portraitToggleGroup.className = "paint-group portrait-only";
+    const portraitToggleBtn = pbtn("⇄ 表示切替", () => this.togglePortraitPane());
+    portraitToggleBtn.title = "縦画面で表示する円を切り替え（右＝繰り返しパターン／左＝360°全円）";
+    portraitToggleGroup.append(portraitToggleBtn);
+
     // 分割数（1/K）
     const divGroup = document.createElement("div");
     divGroup.className = "paint-group";
@@ -1179,6 +1191,7 @@ export class CompressEditor {
     bar.append(
       loadGroup,
       wedgePhotoGroup,
+      portraitToggleGroup,
       divGroup,
       toolGroup,
       styleGroup,
@@ -1189,6 +1202,7 @@ export class CompressEditor {
 
     // キャンバス（左：360°画像 / 右：繰り返しパターン。どちらも描画可能）
     const stage = document.createElement("div");
+    this.stageEl = stage;
     stage.className = "paint-stage";
 
     this.leftPane = paintPane("360°画像（ここに描けます）");
@@ -1231,11 +1245,19 @@ export class CompressEditor {
     this.setTool("brush");
   }
 
-  /** 各キャンバスの表示サイズを、ペインに収まる最大の正方形へ揃える（縦画面では右ペインを隠す） */
+  /** 縦画面で表示する円を切り替える（既定は右＝繰り返しパターン、切替で左＝360°全円） */
+  private togglePortraitPane(): void {
+    this.portraitShowLeft = !this.portraitShowLeft;
+    this.stageEl.classList.toggle("show-left", this.portraitShowLeft);
+    this.relayout();
+  }
+
+  /** 各キャンバスの表示サイズを、ペインに収まる最大の正方形へ揃える（縦画面では片方のみ表示） */
   private relayout(): void {
     const isPortrait = window.matchMedia("(orientation: portrait)").matches;
+    const hiddenPane = isPortrait ? (this.portraitShowLeft ? this.rightPane : this.leftPane) : null;
     for (const pane of [this.leftPane, this.rightPane]) {
-      if (isPortrait && pane === this.rightPane) continue;
+      if (pane === hiddenPane) continue;
       const canvas = pane.querySelector("canvas") as HTMLCanvasElement | null;
       const paneLabel = pane.firstElementChild as HTMLElement | null;
       if (!canvas || !paneLabel) continue;

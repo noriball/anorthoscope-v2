@@ -420,6 +420,10 @@ body {
 .paint-end {
   margin-left: auto;
 }
+/* 縦画面専用のボタン（例：表示切替）。横画面／PCでは常に非表示 */
+.paint-group.portrait-only {
+  display: none;
+}
 .paint-label {
   font-size: 11px;
   color: var(--text-dim);
@@ -791,13 +795,27 @@ body {
     flex: 1 1 0;
     width: 100%;
   }
-  /* プレビュー/結果側は非表示にし、描画/元画像側だけを拡大表示する */
-  .paint-stage > .paint-pane:last-child {
+  /* 縦画面では片方だけを拡大表示する。既定は右（繰り返しパターン）。
+     .show-left が付くと左（360°全円）を表示する（表示切替ボタンで制御）。 */
+  .paint-stage > .paint-pane:first-child {
     display: none;
   }
-  .paint-stage > .paint-pane:first-child {
+  .paint-stage > .paint-pane:last-child {
+    display: block;
     position: relative;
     overflow: hidden;
+  }
+  .paint-stage.show-left > .paint-pane:first-child {
+    display: block;
+    position: relative;
+    overflow: hidden;
+  }
+  .paint-stage.show-left > .paint-pane:last-child {
+    display: none;
+  }
+
+  .paint-group.portrait-only {
+    display: flex;
   }
 }
 
