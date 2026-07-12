@@ -9,7 +9,7 @@ import {
   PAINT_SIZE,
   PRINT_DPI,
 } from "../config";
-import { fullToWedge } from "../engine/wedge";
+import { fullToWedge, wedgeToFull } from "../engine/wedge";
 import { saveDrawing, type Drawing } from "../gallery";
 import { loadFromFiles, type Picture } from "../images";
 import { ImagePicker } from "./ImagePicker";
@@ -96,6 +96,14 @@ export class CompressEditor {
   private readonly combine = document.createElement("canvas");
   private readonly combineCtx: CanvasRenderingContext2D;
   private fullDirty = true; // 左の内容が変わった＝fullToWedge の再計算が必要
+  // 右（扇形）に描いた内容を 360° へ展開（wedgeToFull）したキャッシュ（左表示用）
+  private readonly expandSrc = document.createElement("canvas");
+  private readonly expandSrcCtx: CanvasRenderingContext2D;
+  private readonly expandTmp = document.createElement("canvas");
+  private readonly expandTmpCtx: CanvasRenderingContext2D;
+  private readonly expandWedge = document.createElement("canvas");
+  private readonly expandWedgeCtx: CanvasRenderingContext2D;
+  private wedgeDirty = true; // 右の内容が変わった＝wedgeToFull の再計算が必要
 
   private rightDirty = false;
   private rightScheduled = false;
@@ -123,7 +131,7 @@ export class CompressEditor {
   constructor(onSaved: (d: Drawing) => void, onClose: () => void) {
     this.onSaved = onSaved;
     this.onClose = onClose;
-    for (const c of [this.src, this.fullArt, this.wedgeArt, this.work, this.fullWedge, this.combine]) {
+    for (const c of [this.src, this.fullArt, this.wedgeArt, this.work, this.fullWedge, this.combine, this.expandWedge]) {
       c.width = c.height = PAINT_SIZE;
     }
     this.sctx = this.src.getContext("2d")!;
@@ -132,10 +140,15 @@ export class CompressEditor {
     this.workCtx = this.work.getContext("2d")!;
     this.fullWedgeCtx = this.fullWedge.getContext("2d")!;
     this.combineCtx = this.combine.getContext("2d")!;
+    this.expandWedgeCtx = this.expandWedge.getContext("2d")!;
     this.previewSrc.width = this.previewSrc.height = WEDGE_LIVE_RES;
     this.previewSrcCtx = this.previewSrc.getContext("2d")!;
     this.tmp.width = this.tmp.height = WEDGE_LIVE_RES;
     this.tctx = this.tmp.getContext("2d")!;
+    this.expandSrc.width = this.expandSrc.height = WEDGE_LIVE_RES;
+    this.expandSrcCtx = this.expandSrc.getContext("2d")!;
+    this.expandTmp.width = this.expandTmp.height = WEDGE_LIVE_RES;
+    this.expandTmpCtx = this.expandTmp.getContext("2d")!;
     this.picker = new ImagePicker(
       (i) => this.loadPicture(this.getImages()[i]),
       "下絵にする画像を選ぶ",
@@ -254,6 +267,7 @@ export class CompressEditor {
     if (!prev) return;
     prev.ctx.putImageData(prev.data, 0, 0);
     if (prev.ctx === this.fctx) this.fullDirty = true;
+    if (prev.ctx === this.wctx) this.wedgeDirty = true;
     this.render();
   }
 
@@ -263,6 +277,7 @@ export class CompressEditor {
     this.fctx.clearRect(0, 0, PAINT_SIZE, PAINT_SIZE);
     this.wctx.clearRect(0, 0, PAINT_SIZE, PAINT_SIZE);
     this.fullDirty = true;
+    this.wedgeDirty = true;
     this.render();
   }
 
@@ -374,8 +389,9 @@ export class CompressEditor {
     this.scheduleRight();
   }
 
-  /** 左＝360°画像。写真＋fullArt に、右で描いた内容（K回コピー）を重ねて表示 */
+  /** 左＝360°画像。写真＋fullArt に、右で描いた扇形を円周方向へ展開（wedgeToFull）して重ねる */
   private renderLeft(): void {
+    if (this.wedgeDirty) this.computeExpand();
     const ctx = this.leftCtx;
     ctx.clearRect(0, 0, PAINT_SIZE, PAINT_SIZE);
     ctx.save();
@@ -384,9 +400,27 @@ export class CompressEditor {
     ctx.fillRect(0, 0, PAINT_SIZE, PAINT_SIZE);
     if (this.hasImage) ctx.drawImage(this.src, 0, 0);
     ctx.drawImage(this.fullArt, 0, 0);
-    this.tileWedge(ctx, PAINT_SIZE, this.wedgeArt);
+    ctx.drawImage(this.expandWedge, 0, 0);
     ctx.restore();
     this.drawDrawableRing(ctx);
+  }
+
+  /** 右（扇形）で描いた内容を 360° へ展開した結果を expandWedge に用意する（ライブ解像度） */
+  private computeExpand(): void {
+    const N = WEDGE_LIVE_RES;
+    this.expandSrcCtx.clearRect(0, 0, N, N);
+    this.expandSrcCtx.drawImage(this.wedgeArt, 0, 0, N, N);
+    const full = wedgeToFull(
+      this.expandSrcCtx.getImageData(0, 0, N, N),
+      N,
+      N,
+      this.divisions,
+    );
+    this.expandTmpCtx.clearRect(0, 0, N, N);
+    this.expandTmpCtx.putImageData(full, 0, 0);
+    this.expandWedgeCtx.clearRect(0, 0, PAINT_SIZE, PAINT_SIZE);
+    this.expandWedgeCtx.drawImage(this.expandTmp, 0, 0, PAINT_SIZE, PAINT_SIZE);
+    this.wedgeDirty = false;
   }
 
   private scheduleRight(): void {
@@ -469,6 +503,7 @@ export class CompressEditor {
     this.divisions = Math.min(COMPRESS_DIV_MAX, Math.max(COMPRESS_DIV_MIN, Math.round(k)));
     this.divInput.value = String(this.divisions);
     this.fullDirty = true;
+    this.wedgeDirty = true;
     this.render();
   }
 
@@ -496,7 +531,8 @@ export class CompressEditor {
 
     if (this.tool === "fill") {
       this.floodFill(ctx, inBounds, x, y);
-      if (!isWedge) this.fullDirty = true;
+      if (isWedge) this.wedgeDirty = true;
+      else this.fullDirty = true;
       this.render();
       return;
     }
@@ -512,7 +548,8 @@ export class CompressEditor {
     this.startY = this.lastY = this.previewY = y;
     if (this.tool === "brush" || this.tool === "eraser") {
       this.drawSegment(x, y, x, y);
-      if (!isWedge) this.fullDirty = true;
+      if (isWedge) this.wedgeDirty = true;
+      else this.fullDirty = true;
       this.render();
     }
   }
@@ -539,7 +576,8 @@ export class CompressEditor {
       this.previewX = x;
       this.previewY = y;
     }
-    if (!this.activeIsWedge) this.fullDirty = true;
+    if (this.activeIsWedge) this.wedgeDirty = true;
+    else this.fullDirty = true;
     this.render();
   }
 
@@ -547,7 +585,8 @@ export class CompressEditor {
     if (!this.drawing) return;
     if (this.tool === "line" || this.tool === "circle") {
       this.commitShape();
-      if (!this.activeIsWedge) this.fullDirty = true;
+      if (this.activeIsWedge) this.wedgeDirty = true;
+    else this.fullDirty = true;
     }
     this.drawing = false;
     this.activeCtx = null;
@@ -564,6 +603,17 @@ export class CompressEditor {
   // 合成（左の 360°画像そのもの）を任意解像度で生成
   // =========================================================
   private buildDiscAtSize(N: number): HTMLCanvasElement {
+    // 右で描いた扇形を、保存用にフル解像度で 360° へ展開（wedgeToFull）する
+    const expanded = wedgeToFull(
+      this.wctx.getImageData(0, 0, PAINT_SIZE, PAINT_SIZE),
+      PAINT_SIZE,
+      PAINT_SIZE,
+      this.divisions,
+    );
+    const expandedCanvas = document.createElement("canvas");
+    expandedCanvas.width = expandedCanvas.height = PAINT_SIZE;
+    expandedCanvas.getContext("2d")!.putImageData(expanded, 0, 0);
+
     const out = document.createElement("canvas");
     out.width = out.height = N;
     const ctx = out.getContext("2d")!;
@@ -576,7 +626,7 @@ export class CompressEditor {
     ctx.fillRect(0, 0, PAINT_SIZE, PAINT_SIZE);
     if (this.hasImage) ctx.drawImage(this.src, 0, 0);
     ctx.drawImage(this.fullArt, 0, 0);
-    this.tileWedge(ctx, PAINT_SIZE, this.wedgeArt);
+    ctx.drawImage(expandedCanvas, 0, 0);
     ctx.restore();
     return out;
   }
