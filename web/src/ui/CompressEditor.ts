@@ -522,7 +522,19 @@ export class CompressEditor {
   // 分割数
   // =========================================================
   private setDivisions(k: number): void {
-    this.divisions = Math.min(COMPRESS_DIV_MAX, Math.max(COMPRESS_DIV_MIN, Math.round(k)));
+    const next = Math.min(COMPRESS_DIV_MAX, Math.max(COMPRESS_DIV_MIN, Math.round(k)));
+    if (next === this.divisions) return;
+    // 右に手描きした内容（wedgeArt）は旧分割数の扇形基準なので、新しい分割数では
+    // 形状が合わなくなる。まず「今、左に見えている絵」（fullArt ＋ 旧分割数での
+    // 右の展開）をそのまま左画像として焼き込み、右の手描きレイヤーは破棄する。
+    // 新しい分割数での右側は、この左画像を基準に生成し直す。
+    this.snapshot(this.fctx);
+    this.snapshot(this.wctx);
+    if (this.wedgeDirty) this.computeExpand(); // 現在（旧）分割数での展開を最新化
+    this.fctx.drawImage(this.expandWedge, 0, 0);
+    this.wctx.clearRect(0, 0, PAINT_SIZE, PAINT_SIZE);
+
+    this.divisions = next;
     this.divInput.value = String(this.divisions);
     this.fullDirty = true;
     this.wedgeDirty = true;
