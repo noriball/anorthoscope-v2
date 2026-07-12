@@ -143,6 +143,9 @@ export class ControlBar {
 
     this.playBtn.textContent = this.hooks.isPaused() ? "▶ 再生" : "⏸ 停止";
     this.lineBtn.classList.toggle("on", p.showGuideLines);
+    // スリット板モードが完全に表示されている間は赤ガイドラインが出ないため、
+    // Line の切替が無効であることをグレーアウトで示す
+    this.lineBtn.classList.toggle("dimmed", p.slitPlate);
     this.plateBtn.classList.toggle("on", p.slitPlate);
 
     // 入力欄はフォーカス中なら上書きしない（打鍵・ドラッグの邪魔をしない）

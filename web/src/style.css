@@ -274,6 +274,9 @@ body {
   border-color: var(--accent);
   color: var(--accent);
 }
+.btn.dimmed {
+  opacity: 0.4;
+}
 .btn.wide {
   padding: 0 12px;
 }
