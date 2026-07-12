@@ -514,17 +514,29 @@ body {
   padding: 8px;
 }
 
-/* ===== スリット形状の手描きキャンバス ===== */
-.slit-shape-canvas {
-  display: block;
+/* ===== スリット形状の手描きキャンバス（1/n ピザ型） ===== */
+.slit-shape-stage {
+  position: relative;
+  width: min(320px, 80vw);
+  height: min(320px, 80vw);
+  margin: 0 auto;
+}
+.slit-shape-canvas,
+.slit-shape-guide {
+  position: absolute;
+  inset: 0;
   width: 100%;
-  max-width: 480px;
-  height: 140px;
+  height: 100%;
+  border-radius: 50%;
+}
+.slit-shape-canvas {
   background: #000;
-  border: 1px solid var(--border);
-  border-radius: 6px;
   cursor: crosshair;
   touch-action: none;
+  box-shadow: 0 0 0 1px #2a2a35;
+}
+.slit-shape-guide {
+  pointer-events: none;
 }
 
 /* ===== PNGダウンロード設定モーダル（ペイントモード） ===== */

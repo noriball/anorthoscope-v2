@@ -109,6 +109,7 @@ function syncFocusUI(): void {
 // ===========================================================
 const compress = new CompressEditor(onDrawingSaved, useWithoutSaving, onSlitMaskChanged, () => {});
 compress.bind(() => state.images);
+compress.bindNumSlits(() => state.params.numSlits);
 const gallery = new Gallery(useDrawing, editDrawing, onDrawingDeleted);
 const imagePicker = new ImagePicker((i) => setIndex(i));
 imagePicker.bind(

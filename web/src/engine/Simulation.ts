@@ -1,6 +1,5 @@
 import {
   BASE_OMEGA,
-  SLIT_ENVELOPE_HEIGHT,
   STAGE_MAX_HEIGHT,
   TRIM_HEIGHT,
   TRIM_OFFSET,
@@ -45,13 +44,17 @@ export class Simulation {
   private sctx!: CanvasRenderingContext2D;
   private platectx!: CanvasRenderingContext2D;
 
-  // カスタムスリット形状（手描き。null なら既定の直線スリット）
+  // カスタムスリット形状（手描き、1/n のピザ型で定義。null なら既定の直線スリット）
+  // 元画像は PAINT_SIZE 系の正方形キャンバスで、頂点（中心）がキャンバス中心、
+  // +X 方向（角度0）へ向かって半径いっぱいに伸びる扇形として描かれている。
   private slitMaskSrc: HTMLImageElement | null = null;
-  private readonly maskScaled = document.createElement("canvas"); // trimWidth×SLIT_ENVELOPE_HEIGHT にスケール済み
+  private readonly maskScaled = document.createElement("canvas"); // plateR に合わせて頂点中心でスケール済み（一辺 2*plateR の正方形）
   private maskScaledCtx!: CanvasRenderingContext2D;
-  private maskScaledForTrimWidth = -1; // キャッシュ済み trimWidth（変われば再構築）
+  private maskScaledForPlateR = -1; // キャッシュ済み plateR（変われば再構築）
   private readonly maskScratch = document.createElement("canvas"); // stampRightPanel の作業用
   private maskScratchCtx!: CanvasRenderingContext2D;
+  private readonly maskTint = document.createElement("canvas"); // 赤ガイド表示用（形状を赤く着色）
+  private maskTintCtx!: CanvasRenderingContext2D;
 
   // 内部解像度
   private stageW = 0;
@@ -95,36 +98,60 @@ export class Simulation {
     this.platectx = must(this.plate.getContext("2d", { alpha: true }));
     this.maskScaledCtx = must(this.maskScaled.getContext("2d", { alpha: true }));
     this.maskScratchCtx = must(this.maskScratch.getContext("2d", { alpha: true }));
+    this.maskTintCtx = must(this.maskTint.getContext("2d", { alpha: true }));
   }
 
   /** カスタムスリット形状を設定する（null で既定の直線スリットに戻す） */
   setSlitMask(dataURL: string | null): void {
     if (!dataURL) {
       this.slitMaskSrc = null;
-      this.maskScaledForTrimWidth = -1;
+      this.maskScaledForPlateR = -1;
       return;
     }
     const img = new Image();
     img.onload = () => {
       this.slitMaskSrc = img;
-      this.maskScaledForTrimWidth = -1; // 次回参照時に再構築させる
+      this.maskScaledForPlateR = -1; // 次回参照時に再構築させる
     };
     img.src = dataURL;
   }
 
-  /** 現在の trimWidth に合わせてスケール済みマスクを用意する（未設定なら null） */
+  /** 現在の plateR に合わせて頂点中心でスケール済みマスクを用意する（未設定なら null） */
   private ensureMaskCanvas(): HTMLCanvasElement | null {
     if (!this.slitMaskSrc) return null;
-    if (this.maskScaledForTrimWidth !== this.trimWidth) {
-      this.maskScaled.width = this.trimWidth;
-      this.maskScaled.height = SLIT_ENVELOPE_HEIGHT;
-      this.maskScaledCtx.clearRect(0, 0, this.trimWidth, SLIT_ENVELOPE_HEIGHT);
-      this.maskScaledCtx.drawImage(this.slitMaskSrc, 0, 0, this.trimWidth, SLIT_ENVELOPE_HEIGHT);
-      this.maskScratch.width = this.trimWidth;
-      this.maskScratch.height = SLIT_ENVELOPE_HEIGHT;
-      this.maskScaledForTrimWidth = this.trimWidth;
+    if (this.maskScaledForPlateR !== this.plateR) {
+      const size = Math.max(2, Math.round(this.plateR * 2));
+      this.maskScaled.width = size;
+      this.maskScaled.height = size;
+      this.maskScaledCtx.clearRect(0, 0, size, size);
+      // 元画像は「上向き」（CENTER_ANGLE=-π/2）の扇形。ここでの利用側は「+X向き（角度0）」
+      // を基準とするため、頂点（キャンバス中心）を軸に +π/2 回転してから貼り付ける。
+      this.maskScaledCtx.save();
+      this.maskScaledCtx.translate(size / 2, size / 2);
+      this.maskScaledCtx.rotate(Math.PI / 2);
+      this.maskScaledCtx.translate(-size / 2, -size / 2);
+      this.maskScaledCtx.drawImage(this.slitMaskSrc, 0, 0, size, size);
+      this.maskScaledCtx.restore();
+      this.maskScratch.width = size;
+      this.maskScratch.height = size;
+      this.maskTint.width = size;
+      this.maskTint.height = size;
+      this.maskScaledForPlateR = this.plateR;
     }
     return this.maskScaled;
+  }
+
+  /** マスク形状を赤く着色して ctx の現在位置（頂点＝原点）に描く（赤ガイド用） */
+  private drawTintedMask(ctx: CanvasRenderingContext2D, mask: HTMLCanvasElement): void {
+    const size = mask.width;
+    const tctx = this.maskTintCtx;
+    tctx.clearRect(0, 0, size, size);
+    tctx.drawImage(mask, 0, 0);
+    tctx.globalCompositeOperation = "source-in";
+    tctx.fillStyle = "rgba(240,0,0,0.85)";
+    tctx.fillRect(0, 0, size, size);
+    tctx.globalCompositeOperation = "source-over";
+    ctx.drawImage(this.maskTint, -size / 2, -size / 2);
   }
 
   /** CSS 表示サイズ（px）に合わせて内部解像度を決め直す */
@@ -445,24 +472,17 @@ export class Simulation {
       ctx.translate(cx, cy);
       ctx.rotate(this.slitAngle + theta);
       if (mask) {
-        // カスタムスリット形状：envelope 領域を切り出してから、マスクの形へ絞り込む
+        // カスタムスリット形状（1/n ピザ型）：頂点＝中心を合わせて正方形領域を
+        // 切り出してから、マスクの形へ絞り込む
+        const size = mask.width;
+        const half = size / 2;
         const sctx = this.maskScratchCtx;
-        sctx.clearRect(0, 0, this.trimWidth, SLIT_ENVELOPE_HEIGHT);
-        sctx.drawImage(
-          this.sample,
-          sc + TRIM_OFFSET,
-          sc - SLIT_ENVELOPE_HEIGHT / 2,
-          this.trimWidth,
-          SLIT_ENVELOPE_HEIGHT,
-          0,
-          0,
-          this.trimWidth,
-          SLIT_ENVELOPE_HEIGHT,
-        );
+        sctx.clearRect(0, 0, size, size);
+        sctx.drawImage(this.sample, sc - half, sc - half, size, size, 0, 0, size, size);
         sctx.globalCompositeOperation = "destination-in";
         sctx.drawImage(mask, 0, 0);
         sctx.globalCompositeOperation = "source-over";
-        ctx.drawImage(this.maskScratch, TRIM_OFFSET, -SLIT_ENVELOPE_HEIGHT / 2);
+        ctx.drawImage(this.maskScratch, -half, -half);
       } else {
         // 既定：直線スリット（矩形ストリップをそのままコピー）
         ctx.drawImage(
@@ -584,7 +604,6 @@ export class Simulation {
 
     // スリット窓を切り抜く（透明化）
     const mask = this.ensureMaskCanvas();
-    const h = mask ? SLIT_ENVELOPE_HEIGHT : TRIM_HEIGHT;
     ctx.globalCompositeOperation = "destination-out";
     ctx.save();
     ctx.translate(cx, cy);
@@ -593,9 +612,10 @@ export class Simulation {
       ctx.save();
       ctx.rotate((i * Math.PI * 2) / n);
       if (mask) {
-        ctx.drawImage(mask, TRIM_OFFSET, -h / 2, this.trimWidth, h);
+        const half = mask.width / 2;
+        ctx.drawImage(mask, -half, -half);
       } else {
-        ctx.fillRect(TRIM_OFFSET, -h / 2, this.trimWidth, h);
+        ctx.fillRect(TRIM_OFFSET, -TRIM_HEIGHT / 2, this.trimWidth, TRIM_HEIGHT);
       }
       ctx.restore();
     }
@@ -617,7 +637,7 @@ export class Simulation {
   private drawGuideLines(cx: number, cy: number, alpha: number): void {
     const ctx = this.vctx;
     const n = this.currentNumSlits;
-    const h = this.ensureMaskCanvas() ? SLIT_ENVELOPE_HEIGHT : TRIM_HEIGHT;
+    const mask = this.ensureMaskCanvas();
     ctx.save();
     ctx.globalAlpha = alpha;
     ctx.translate(cx, cy);
@@ -627,7 +647,12 @@ export class Simulation {
     for (let i = 0; i < n; i++) {
       ctx.save();
       ctx.rotate((i * Math.PI * 2) / n);
-      ctx.strokeRect(TRIM_OFFSET, -h / 2, this.trimWidth, h);
+      if (mask) {
+        // 実際のスリット形状（マスクの輪郭）をそのまま赤く重ねて表示する
+        this.drawTintedMask(ctx, mask);
+      } else {
+        ctx.strokeRect(TRIM_OFFSET, -TRIM_HEIGHT / 2, this.trimWidth, TRIM_HEIGHT);
+      }
       ctx.restore();
     }
     ctx.restore();
