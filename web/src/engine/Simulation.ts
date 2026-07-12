@@ -101,17 +101,21 @@ export class Simulation {
     this.maskTintCtx = must(this.maskTint.getContext("2d", { alpha: true }));
   }
 
-  /** カスタムスリット形状を設定する（null で既定の直線スリットに戻す） */
+  /** カスタムスリット形状を設定する（null で既定の直線スリットに戻す）。
+   *  スリットが変わると右パネルに溜まった軌跡は古い形状のものになるため、
+   *  適用時にバッファをクリアして再構成をやり直す。 */
   setSlitMask(dataURL: string | null): void {
     if (!dataURL) {
       this.slitMaskSrc = null;
       this.maskScaledForPlateR = -1;
+      if (this.picture) this.reset();
       return;
     }
     const img = new Image();
     img.onload = () => {
       this.slitMaskSrc = img;
       this.maskScaledForPlateR = -1; // 次回参照時に再構築させる
+      if (this.picture) this.reset();
     };
     img.src = dataURL;
   }
