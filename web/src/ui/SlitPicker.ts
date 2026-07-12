@@ -73,6 +73,10 @@ export class SlitPicker {
       c.width = c.height = size;
       const ctx = c.getContext("2d")!;
 
+      // Set background color to light gray for better visibility
+      ctx.fillStyle = "#2c2f3e";
+      ctx.fillRect(0, 0, size, size);
+
       // Load and draw thumbnail
       const img = new Image();
       img.onload = () => {
