@@ -41,13 +41,14 @@ const f = (n) => n.toFixed(2);
 
 /** 中心線 off(u)（u=r/R）から「太さ一定 W の線」ポリゴンの d を作る。
  *  太さはパスに対して垂直方向に ±W/2 オフセット＝どこでも厳密に一定。
- *  中心線の振れ幅は各形状側で半径に比例させ、扇形の内側に収める。 */
-function line(offFn) {
+ *  中心線の振れ幅は各形状側で半径に比例させ、扇形の内側に収める。
+ *  rStart/rEnd で半径の一部だけ描ける（分割スリット用）。 */
+function line(offFn, rStart = R0, rEnd = R) {
   // まず中心線の点列を作る
   const pts = [];
   for (let i = 0; i <= N; i++) {
     const t = i / N;
-    const r = R0 + (R - R0) * t; // 中心側 R0 → 外周 R
+    const r = rStart + (rEnd - rStart) * t;
     const u = r / R;
     pts.push([C + offFn(u), C - r]);
   }
@@ -85,41 +86,39 @@ ${body}
 // 三角波（-1..1）：u に対して f 周期
 const tri = (u, freq) => (2 / Math.PI) * Math.asin(Math.sin(2 * Math.PI * freq * u));
 
+// 名前は「基本」＋以降は番号（1〜）。命名しづらい形が多いため番号で統一。
 const presets = [
   {
-    id: "straight",
-    name: "直線",
+    id: "basic",
+    name: "基本",
     // 中心→外周の放射直線（基準・歪みなし）
     d: () => svg([line(() => 0)]),
   },
   {
-    id: "diagonal",
-    name: "斜め",
-    // 片側へ非線形に傾く（u²で中心では軸に沿い、外周で最大に傾く）→ 非放射・歪む
-    d: () => svg([line((u) => K * u * u)]),
-  },
-  {
     id: "zigzag",
-    name: "ギザギザ",
-    // 三角波を「振れ幅∝半径」の扇形包絡に収めた線（中心細く外周で振れる）
-    // 波長を波形の倍に（頂点を減らして波形と差別化）
+    name: "1",
+    // 鋭い三角波（少ない頂点・角ばった折れ線）。波形（滑らか・多い）と強く差別化
     d: () => svg([line((u) => K * u * tri(u, 1.5))]),
   },
   {
     id: "wave",
-    name: "波形",
-    // 正弦波を扇形包絡に収めた線
-    d: () => svg([line((u) => K * u * Math.sin(2 * Math.PI * 2.5 * u))]),
+    name: "2",
+    // 滑らかな正弦波（多めの周期）。ギザギザ（角ばる・少ない）と対照的
+    d: () => svg([line((u) => K * u * Math.sin(2 * Math.PI * 3 * u))]),
   },
   {
-    id: "dual",
-    name: "二重",
-    // 中心の一点からV字に開く2本（各々 ∝半径 で扇形内）→ ずれた二重像
-    d: () => svg([line((u) => -0.8 * K * u), line((u) => 0.8 * K * u)]),
+    id: "split",
+    name: "3",
+    // 外周側の半分＝左ラインのみ／中心側の半分＝右ラインのみ（食い違う2分割）
+    d: () =>
+      svg([
+        line((u) => 0.8 * K * u, R0, R * 0.5), // 中心側（下半分）＝右ライン
+        line((u) => -0.8 * K * u, R * 0.5, R), // 外周側（上半分）＝左ライン
+      ]),
   },
   {
     id: "curved",
-    name: "曲線",
+    name: "4",
     // 片側へ反る弓形（sin(πu)は中心で∝u・外周で軸へ戻る）→ 非放射・歪む
     d: () => svg([line((u) => K * Math.sin(Math.PI * u))]),
   },
