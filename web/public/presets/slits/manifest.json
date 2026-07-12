@@ -1,0 +1,34 @@
+{
+  "presets": [
+    {
+      "name": "直線",
+      "file": "01-straight.png",
+      "id": "straight"
+    },
+    {
+      "name": "斜め",
+      "file": "02-diagonal.png",
+      "id": "diagonal"
+    },
+    {
+      "name": "ギザギザ",
+      "file": "03-zigzag.png",
+      "id": "zigzag"
+    },
+    {
+      "name": "波形",
+      "file": "04-wave.png",
+      "id": "wave"
+    },
+    {
+      "name": "二重",
+      "file": "05-dual.png",
+      "id": "dual"
+    },
+    {
+      "name": "曲線",
+      "file": "06-curved.png",
+      "id": "curved"
+    }
+  ]
+}

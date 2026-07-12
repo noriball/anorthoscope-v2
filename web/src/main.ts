@@ -2,7 +2,7 @@ import "./style.css";
 import { DEFAULT_PARAMS, ZOOM_STEP_FACTOR, type Params } from "./config";
 import { loadInitialImages, pictureFromURL, type Picture } from "./images";
 import { listDrawings, type Drawing } from "./gallery";
-import { loadSlitMask } from "./slitMask";
+import { loadSlitMask, loadSlitShapes, getSlitShapeIndex, setSlitShapeIndex } from "./slitMask";
 import { Simulation } from "./engine/Simulation";
 import { ControlBar, type AppHooks } from "./ui/Controls";
 import { RotationRatio } from "./ui/RotationRatio";
@@ -11,6 +11,7 @@ import { Guide } from "./ui/Guide";
 import { CompressEditor } from "./ui/CompressEditor";
 import { Gallery } from "./ui/Gallery";
 import { ImagePicker } from "./ui/ImagePicker";
+import { SlitPicker, type SlitShape } from "./ui/SlitPicker";
 
 // ===========================================================
 // アプリ状態
@@ -20,6 +21,8 @@ const state = {
   images: [] as Picture[],
   index: 0,
   paused: false,
+  slitShapes: [] as SlitShape[],
+  slitIndex: 0,
 };
 /** ギャラリー作品 id → state.images 内の位置 */
 const drawingIndex = new Map<string, number>();
@@ -34,6 +37,16 @@ const controlsRoot = document.getElementById("controls") as HTMLElement;
 const sim = new Simulation(view);
 sim.setSlitMask(loadSlitMask());
 const guide = new Guide();
+
+/** スリット形状を選択・適用 */
+function setSlitShape(i: number): void {
+  const n = state.slitShapes.length;
+  if (n === 0) return;
+  state.slitIndex = ((i % n) + n) % n;
+  const shape = state.slitShapes[state.slitIndex];
+  sim.setSlitMask(shape.dataURL);
+  setSlitShapeIndex(state.slitIndex);
+}
 
 function currentPicture(): Picture | null {
   return state.images[state.index] ?? null;
@@ -79,6 +92,7 @@ const hooks: AppHooks = {
   openCompress: () => compress.open(),
   openGallery: () => gallery.show(),
   openImagePicker: () => imagePicker.show(),
+  openSlitPicker: () => slitPicker.show(),
   getImages: () => state.images,
   getIndex: () => state.index,
 };
@@ -115,6 +129,11 @@ const imagePicker = new ImagePicker((i) => setIndex(i));
 imagePicker.bind(
   () => state.images,
   () => state.index,
+);
+const slitPicker = new SlitPicker((i) => setSlitShape(i));
+slitPicker.bind(
+  () => state.slitShapes,
+  () => state.slitIndex,
 );
 
 /** 保存された作品を画像リストに反映（上書き or 追加）してその絵に切替 */
@@ -389,6 +408,16 @@ async function boot(): Promise<void> {
     } catch {
       /* 壊れた保存はスキップ */
     }
+  }
+  // スリット形状を読み込む（プリセット + ユーザーカスタム）
+  try {
+    state.slitShapes = await loadSlitShapes();
+    state.slitIndex = getSlitShapeIndex();
+    if (state.slitIndex < state.slitShapes.length) {
+      sim.setSlitMask(state.slitShapes[state.slitIndex].dataURL);
+    }
+  } catch (err) {
+    console.error("スリット形状の読み込みに失敗しました", err);
   }
   setIndex(0);
   requestAnimationFrame((t) => {

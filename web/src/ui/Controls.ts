@@ -24,6 +24,7 @@ export interface AppHooks {
   openCompress(): void;
   openGallery(): void;
   openImagePicker(): void;
+  openSlitPicker(): void;
   getImages(): Picture[];
   getIndex(): number;
 }
@@ -54,6 +55,10 @@ export class ControlBar {
     // --- 画像を選ぶ（一覧から選択。前後移動もここから） ---
     const picker = this.button("🖼 画像を選ぶ", () => this.hooks.openImagePicker(), "画像一覧から選ぶ");
     picker.classList.add("wide");
+
+    // --- スリット形状を選ぶ ---
+    const slitPicker = this.button("🎯 スリット形状", () => this.hooks.openSlitPicker(), "スリット形状を選ぶ");
+    slitPicker.classList.add("wide");
 
     // --- 再生 ---
     this.playBtn = this.button("⏸ 停止", () => this.hooks.togglePause(), "再生 / 停止");
@@ -113,7 +118,7 @@ export class ControlBar {
       help,
     );
 
-    this.root.append(picker, sep(), this.playBtn, sep(), params, spacer(), actions);
+    this.root.append(picker, slitPicker, sep(), this.playBtn, sep(), params, spacer(), actions);
     this.update();
   }
 
