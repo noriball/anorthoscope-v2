@@ -53,11 +53,8 @@ export class Simulation {
   private maskScaledForPlateR = -1; // キャッシュ済み plateR（変われば再構築）
   private readonly maskScratch = document.createElement("canvas"); // stampRightPanel の作業用
   private maskScratchCtx!: CanvasRenderingContext2D;
-  private readonly maskBlur = document.createElement("canvas"); // 接線方向ぼかしの縮小中間バッファ
-  private maskBlurCtx!: CanvasRenderingContext2D;
   private readonly maskTint = document.createElement("canvas"); // 赤ガイド表示用（形状を赤く着色）
   private maskTintCtx!: CanvasRenderingContext2D;
-  private maskBlurPx = 0; // 開口の太さから見積もった接線方向ぼかし量[px]（局所y方向のみ）
 
   // 内部解像度
   private stageW = 0;
@@ -101,7 +98,6 @@ export class Simulation {
     this.platectx = must(this.plate.getContext("2d", { alpha: true }));
     this.maskScaledCtx = must(this.maskScaled.getContext("2d", { alpha: true }));
     this.maskScratchCtx = must(this.maskScratch.getContext("2d", { alpha: true }));
-    this.maskBlurCtx = must(this.maskBlur.getContext("2d", { alpha: true }));
     this.maskTintCtx = must(this.maskTint.getContext("2d", { alpha: true }));
   }
 
@@ -138,21 +134,9 @@ export class Simulation {
       this.maskScaledCtx.restore();
       this.maskScratch.width = size;
       this.maskScratch.height = size;
-      this.maskBlur.width = size;
-      this.maskBlur.height = size;
       this.maskTint.width = size;
       this.maskTint.height = size;
       this.maskScaledForPlateR = this.plateR;
-
-      // 開口の「太さ」を見積もる：不透明ピクセル総数 ÷ 長さ(≈plateR) ≈ 平均の開口幅。
-      // 実機で太いスリットほど像がボケることを、この幅に応じたぼかしフィルタで近似する。
-      const data = this.maskScaledCtx.getImageData(0, 0, size, size).data;
-      let opaque = 0;
-      for (let i = 3; i < data.length; i += 4) {
-        if (data[i] > 10) opaque++;
-      }
-      const avgWidthPx = opaque / Math.max(1, this.plateR);
-      this.maskBlurPx = Math.min(60, avgWidthPx);
     }
     return this.maskScaled;
   }
@@ -489,32 +473,12 @@ export class Simulation {
       ctx.rotate(this.slitAngle + theta);
       if (mask) {
         // カスタムスリット形状（1/n ピザ型）：頂点＝中心を合わせて正方形領域を
-        // 切り出してから、マスクの形へ絞り込む。太い開口ほど実機同様にボケて
-        // 見えるよう、切り出した絵自体にあらかじめぼかしフィルタをかけておく
-        // （マスクの輪郭自体はシャープなまま＝開口の縁は物理的に鋭いため）。
+        // 切り出してから、マスクの形へ絞り込む
         const size = mask.width;
         const half = size / 2;
         const sctx = this.maskScratchCtx;
         sctx.clearRect(0, 0, size, size);
-        if (this.maskBlurPx > 1) {
-          // 接線方向（局所y）のみのぼかし：切り出した絵を y 方向へ少しずつ
-          // ずらしたコピーを重ねて平均する（＝接線方向のボックスブラー）。
-          // ローカル座標は x=半径・y=接線なので、y方向一定量のぼかしは円盤へ戻すと
-          // 半径に応じた角度ボケ（中心ほど強く外周ほど弱い＝ x/r）に自動的になる。
-          const b = this.maskBlurPx;
-          const n = Math.min(24, Math.max(2, Math.round(b / 2)));
-          const bctx = this.maskBlurCtx;
-          bctx.clearRect(0, 0, size, size);
-          bctx.globalAlpha = 1 / n;
-          for (let k = 0; k < n; k++) {
-            const oy = (k / (n - 1) - 0.5) * b;
-            bctx.drawImage(this.sample, sc - half, sc - half, size, size, 0, oy, size, size);
-          }
-          bctx.globalAlpha = 1;
-          sctx.drawImage(this.maskBlur, 0, 0);
-        } else {
-          sctx.drawImage(this.sample, sc - half, sc - half, size, size, 0, 0, size, size);
-        }
+        sctx.drawImage(this.sample, sc - half, sc - half, size, size, 0, 0, size, size);
         sctx.globalCompositeOperation = "destination-in";
         sctx.drawImage(mask, 0, 0);
         sctx.globalCompositeOperation = "source-over";

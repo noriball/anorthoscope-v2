@@ -1254,7 +1254,7 @@ export class CompressEditor {
     const desc = document.createElement("div");
     desc.className = "paint-hint";
     desc.textContent =
-      "黄色の扇形（1/n）の中に、スリット板の穴の形を手描きで変えられます。直線だけでなく、斜め・ギザギザ・波形なども描けます（白＝開いている部分）。頂点が円の中心、外側の弧が円周です。太さは実機と同じく、細いとシャープに、太いとボケた像になります。";
+      "黄色の扇形（1/n）の中に、スリット板の穴の形を手描きで変えられます。直線だけでなく、斜め・ギザギザ・波形なども描けます（白＝開いている部分）。頂点が円の中心、外側の弧が円周です。";
 
     const stageWrap = document.createElement("div");
     stageWrap.className = "slit-shape-stage";
@@ -1272,18 +1272,11 @@ export class CompressEditor {
 
     const toolRow = document.createElement("div");
     toolRow.className = "export-row";
-    const sizeIn = document.createElement("input");
-    sizeIn.type = "range";
-    sizeIn.min = "2";
-    sizeIn.max = "160";
-    sizeIn.value = String(this.slitShapeSize);
-    sizeIn.className = "paint-size";
-    sizeIn.oninput = () => (this.slitShapeSize = Number(sizeIn.value));
     this.slitShapeEraseBtn = pbtn("消しゴム", () => {
       this.slitShapeErase = !this.slitShapeErase;
       this.slitShapeEraseBtn.classList.toggle("on", this.slitShapeErase);
     });
-    toolRow.append(label("太さ"), sizeIn, this.slitShapeEraseBtn);
+    toolRow.append(this.slitShapeEraseBtn);
 
     const actRow = document.createElement("div");
     actRow.className = "export-row";
