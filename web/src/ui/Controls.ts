@@ -19,7 +19,6 @@ export interface AppHooks {
   setBgColor(hex: string): void;
   isPaused(): boolean;
   togglePause(): void;
-  addImages(): void;
   toggleFullscreen(): void;
   openGuide(): void;
   openCompress(): void;
@@ -102,7 +101,6 @@ export class ControlBar {
     compress.classList.add("wide");
     const gallery = this.button("🖼 ギャラリー", () => this.hooks.openGallery(), "保存した絵");
     gallery.classList.add("wide");
-    const add = this.button("＋画像", () => this.hooks.addImages(), "画像ファイルを追加");
     const full = this.button("⛶", () => this.hooks.toggleFullscreen(), "フルスクリーン");
     full.classList.add("icon");
     const help = this.button("?", () => this.hooks.openGuide(), "操作ガイド");
@@ -111,7 +109,6 @@ export class ControlBar {
       this.plateBtn,
       compress,
       gallery,
-      add,
       full,
       help,
     );

@@ -41,6 +41,7 @@ const PHOTO_ZOOM_STEP = 1.15;
  */
 export class CompressEditor {
   private readonly onSaved: (d: Drawing) => void;
+  private readonly onUseWithoutSaving: (dataURL: string, divisions: number) => void;
   private readonly onClose: () => void;
   private readonly picker: ImagePicker;
   private getImages: () => Picture[] = () => [];
@@ -151,8 +152,13 @@ export class CompressEditor {
   private lastFoldK = 0; // 直前に描いた点のピース番号（境界またぎ検出用）
   private undoStack: { ctx: CanvasRenderingContext2D; data: ImageData }[] = [];
 
-  constructor(onSaved: (d: Drawing) => void, onClose: () => void) {
+  constructor(
+    onSaved: (d: Drawing) => void,
+    onUseWithoutSaving: (dataURL: string, divisions: number) => void,
+    onClose: () => void,
+  ) {
     this.onSaved = onSaved;
+    this.onUseWithoutSaving = onUseWithoutSaving;
     this.onClose = onClose;
     for (const c of [
       this.src,
@@ -813,6 +819,13 @@ export class CompressEditor {
     this.close();
   }
 
+  /** ギャラリーには保存せず、今の絵を一時的にシミュレータへ反映するだけ（リロードで消える） */
+  private useWithoutSaving(): void {
+    const dataURL = this.buildDiscAtSize(PAINT_SIZE).toDataURL("image/png");
+    this.onUseWithoutSaving(dataURL, this.divisions);
+    this.close();
+  }
+
   // =========================================================
   // 画像読み込みモーダル（原盤＝左／写真配置＝右をタブで選ぶ）
   // =========================================================
@@ -1184,9 +1197,11 @@ export class CompressEditor {
     // 保存・閉じる
     const endGroup = document.createElement("div");
     endGroup.className = "paint-group paint-end";
+    const useBtn = pbtn("保存せず使う", () => this.useWithoutSaving());
+    useBtn.title = "ギャラリーには保存せず、今の絵を一時的にシミュレータへ反映する（リロードで消えます）";
     this.saveBtn = pbtn("保存", () => this.save());
     this.saveBtn.classList.add("primary");
-    endGroup.append(this.saveBtn, pbtn("閉じる", () => this.close()));
+    endGroup.append(useBtn, this.saveBtn, pbtn("閉じる", () => this.close()));
 
     bar.append(
       loadGroup,

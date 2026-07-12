@@ -1,11 +1,6 @@
 import "./style.css";
 import { DEFAULT_PARAMS, ZOOM_STEP_FACTOR, type Params } from "./config";
-import {
-  loadFromFiles,
-  loadInitialImages,
-  pictureFromURL,
-  type Picture,
-} from "./images";
+import { loadInitialImages, pictureFromURL, type Picture } from "./images";
 import { listDrawings, type Drawing } from "./gallery";
 import { Simulation } from "./engine/Simulation";
 import { ControlBar, type AppHooks } from "./ui/Controls";
@@ -34,7 +29,6 @@ const drawingIndex = new Map<string, number>();
 const view = document.getElementById("view") as HTMLCanvasElement;
 const stage = document.getElementById("stage") as HTMLElement;
 const controlsRoot = document.getElementById("controls") as HTMLElement;
-const fileInput = document.getElementById("file-input") as HTMLInputElement;
 
 const sim = new Simulation(view);
 const guide = new Guide();
@@ -78,7 +72,6 @@ const hooks: AppHooks = {
     state.paused = !state.paused;
     bar.update();
   },
-  addImages: () => fileInput.click(),
   toggleFullscreen,
   openGuide: () => guide.show(),
   openCompress: () => compress.open(),
@@ -112,7 +105,7 @@ function syncFocusUI(): void {
 // ===========================================================
 // ペイント / ギャラリー
 // ===========================================================
-const compress = new CompressEditor(onDrawingSaved, () => {});
+const compress = new CompressEditor(onDrawingSaved, useWithoutSaving, () => {});
 compress.bind(() => state.images);
 const gallery = new Gallery(useDrawing, editDrawing, onDrawingDeleted);
 const imagePicker = new ImagePicker((i) => setIndex(i));
@@ -143,6 +136,14 @@ function useDrawing(d: Drawing): void {
   else onDrawingSaved(d); // 未読み込みなら取り込む
 }
 
+/** 作画の「保存せず使う」：ギャラリーには残さず、一時的にシミュレータへ反映する */
+async function useWithoutSaving(dataURL: string, divisions: number): Promise<void> {
+  const pic = await pictureFromURL(dataURL, "無題");
+  pic.divisions = divisions;
+  state.images.push(pic);
+  setIndex(state.images.length - 1);
+}
+
 /** ギャラリーの「編集」/「新規作成」：作画エディタで開く */
 function editDrawing(d: Drawing | null): void {
   compress.open(d ?? undefined);
@@ -162,19 +163,6 @@ function onDrawingDeleted(id: string): void {
   applyCurrentImage();
   bar.update();
 }
-
-// ===========================================================
-// 画像追加（ファイル選択）
-// ===========================================================
-fileInput.addEventListener("change", async () => {
-  if (!fileInput.files || fileInput.files.length === 0) return;
-  const added = await loadFromFiles(fileInput.files);
-  fileInput.value = "";
-  if (added.length === 0) return;
-  const firstNew = state.images.length;
-  state.images.push(...added);
-  setIndex(firstNew);
-});
 
 // ===========================================================
 // フルスクリーン
