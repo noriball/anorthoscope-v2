@@ -176,14 +176,14 @@ body {
 
 /* ===== 再生／停止（回転比パネルの「スリット数」の右隣。高さはセルに揃える） ===== */
 .play-fab {
-  width: 48px;
-  height: 48px;
+  width: 42px;
+  height: 42px;
   margin-left: 14px;
   border-radius: 50%;
   border: 2px solid var(--accent);
   background: rgba(0, 0, 0, 0.35);
   color: var(--accent);
-  font-size: 22px;
+  font-size: 19px;
   line-height: 1;
   cursor: pointer;
   display: flex;
@@ -815,7 +815,7 @@ body {
   .rr-value { width: 40px; height: 26px; font-size: 17px; }
   .rr-colon { font-size: 18px; }
   .rr-celllabel { font-size: 9px; }
-  .play-fab { width: 40px; height: 40px; margin-left: 10px; font-size: 18px; }
+  .play-fab { width: 36px; height: 36px; margin-left: 10px; font-size: 16px; }
 
   #zoom-controls {
     bottom: calc(16px + env(safe-area-inset-bottom, 0px));
