@@ -80,6 +80,12 @@ body {
   justify-content: center;
   gap: 10px;
 }
+/* スリット数の行：幅を row1 に合わせ、スリット数を左端（スリットの真下）、
+   再生ボタンを右端へ */
+.rr-row-slits {
+  align-self: stretch;
+  justify-content: space-between;
+}
 .rr-cell {
   display: flex;
   flex-direction: column;

@@ -120,9 +120,11 @@ export class RotationRatio {
     );
 
     const row2 = document.createElement("div");
-    row2.className = "rr-row";
+    // rr-row-slits: 幅を row1 に合わせて広げ、スリット数を左端（＝スリットの真下）に、
+    // 再生ボタンを右端に振り分ける
+    row2.className = "rr-row rr-row-slits";
     row2.append(slitCount);
-    if (row2Extra) row2.append(row2Extra); // 「スリット数」の右隣（再生／停止ボタン）
+    if (row2Extra) row2.append(row2Extra); // 右端の再生／停止ボタン
 
     root.append(title, row1, row2);
     parent.append(root);
