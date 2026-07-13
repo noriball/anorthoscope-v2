@@ -1,0 +1,29 @@
+{
+  "presets": [
+    {
+      "name": "基本",
+      "file": "01-basic.png",
+      "id": "basic"
+    },
+    {
+      "name": "1",
+      "file": "02-zigzag.png",
+      "id": "zigzag"
+    },
+    {
+      "name": "2",
+      "file": "03-wave.png",
+      "id": "wave"
+    },
+    {
+      "name": "3",
+      "file": "04-split.png",
+      "id": "split"
+    },
+    {
+      "name": "4",
+      "file": "05-curved.png",
+      "id": "curved"
+    }
+  ]
+}
