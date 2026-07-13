@@ -57,9 +57,10 @@ export class RotationRatio {
   private readonly refreshers: Array<() => void> = [];
   private root!: HTMLDivElement;
 
-  constructor(parent: HTMLElement, hooks: RatioHooks) {
+  /** row2Extra を渡すと「スリット数」の右隣に差し込む（再生／停止ボタン用） */
+  constructor(parent: HTMLElement, hooks: RatioHooks, row2Extra?: HTMLElement) {
     this.hooks = hooks;
-    this.build(parent);
+    this.build(parent, row2Extra);
     this.update();
   }
 
@@ -81,7 +82,7 @@ export class RotationRatio {
     }
   }
 
-  private build(parent: HTMLElement): void {
+  private build(parent: HTMLElement, row2Extra?: HTMLElement): void {
     const root = document.createElement("div");
     this.root = root;
     root.id = "rot-ratio";
@@ -121,6 +122,7 @@ export class RotationRatio {
     const row2 = document.createElement("div");
     row2.className = "rr-row";
     row2.append(slitCount);
+    if (row2Extra) row2.append(row2Extra); // 「スリット数」の右隣（再生／停止ボタン）
 
     root.append(title, row1, row2);
     parent.append(root);

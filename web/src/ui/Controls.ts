@@ -34,7 +34,6 @@ export class ControlBar {
   private readonly root: HTMLElement;
   private readonly hooks: AppHooks;
 
-  private playBtn!: HTMLButtonElement;
   private lineBtn!: HTMLButtonElement;
   private plateBtn!: HTMLButtonElement;
 
@@ -60,9 +59,7 @@ export class ControlBar {
     const slitPicker = this.button("🎯 スリット形状", () => this.hooks.openSlitPicker(), "スリット形状を選ぶ");
     slitPicker.classList.add("wide");
 
-    // --- 再生 ---
-    this.playBtn = this.button("⏸ 停止", () => this.hooks.togglePause(), "再生 / 停止");
-    this.playBtn.classList.add("wide", "play");
+    // 再生 / 停止はステージ右上の大きな円形ボタン（PlayButton）に移動した
 
     // --- 数値パラメータ（回転比・スリット数は中央上の大きな表示で操作） ---
     // 速度はスライダー＋数値表示（フェードと異なり、値を目視で把握したい操作のため）
@@ -118,7 +115,7 @@ export class ControlBar {
       help,
     );
 
-    this.root.append(picker, slitPicker, sep(), this.playBtn, sep(), params, spacer(), actions);
+    this.root.append(picker, slitPicker, sep(), params, spacer(), actions);
     this.update();
   }
 
@@ -146,7 +143,6 @@ export class ControlBar {
   update(): void {
     const p = this.hooks.getParams();
 
-    this.playBtn.textContent = this.hooks.isPaused() ? "▶ 再生" : "⏸ 停止";
     this.lineBtn.classList.toggle("on", p.showGuideLines);
     // スリット板モードが完全に表示されている間は赤ガイドラインが出ないため、
     // Line の切替が無効であることをグレーアウトで示す

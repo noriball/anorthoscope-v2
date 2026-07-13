@@ -13,6 +13,7 @@ import { Simulation } from "./engine/Simulation";
 import { ControlBar, type AppHooks } from "./ui/Controls";
 import { RotationRatio } from "./ui/RotationRatio";
 import { ZoomControls } from "./ui/ZoomControls";
+import { PlayButton } from "./ui/PlayButton";
 import { Guide } from "./ui/Guide";
 import { CompressEditor } from "./ui/CompressEditor";
 import { Gallery } from "./ui/Gallery";
@@ -102,6 +103,7 @@ const hooks: AppHooks = {
   isPaused: () => state.paused,
   togglePause: () => {
     state.paused = !state.paused;
+    playButton.update(state.paused);
     bar.update();
   },
   toggleFullscreen,
@@ -115,12 +117,21 @@ const hooks: AppHooks = {
 };
 
 const bar = new ControlBar(controlsRoot, hooks);
-const rotationRatio = new RotationRatio(stage, {
-  getParams: () => state.params,
-  setParams: (patch) => {
-    state.params = { ...state.params, ...patch };
-  },
+// 再生／停止は回転比パネルの「スリット数」の右隣に差し込む
+const playButton = new PlayButton({
+  toggle: () => hooks.togglePause(),
+  isPaused: () => state.paused,
 });
+const rotationRatio = new RotationRatio(
+  stage,
+  {
+    getParams: () => state.params,
+    setParams: (patch) => {
+      state.params = { ...state.params, ...patch };
+    },
+  },
+  playButton.el,
+);
 const zoomControls = new ZoomControls(stage, {
   zoomIn: () => sim.zoomBy(ZOOM_STEP_FACTOR),
   zoomOut: () => sim.zoomBy(1 / ZOOM_STEP_FACTOR),
