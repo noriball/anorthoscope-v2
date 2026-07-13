@@ -174,18 +174,11 @@ body {
   border-color: var(--border-hi);
 }
 
-/* ===== 再生／停止（回転比パネルの「スリット数」の右隣） ===== */
-#play-button {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  margin-left: 14px;
-  user-select: none;
-}
+/* ===== 再生／停止（回転比パネルの「スリット数」の右隣。高さはセルに揃える） ===== */
 .play-fab {
   width: 48px;
   height: 48px;
+  margin-left: 14px;
   border-radius: 50%;
   border: 2px solid var(--accent);
   background: rgba(0, 0, 0, 0.35);
@@ -208,13 +201,6 @@ body {
 .play-fab.is-paused {
   background: var(--accent);
   color: #000;
-}
-.play-fab-label {
-  font-size: 12px;
-  color: var(--text);
-  background: rgba(0, 0, 0, 0.5);
-  padding: 1px 8px;
-  border-radius: 8px;
 }
 
 /* フォーカス表示中の #view：ドラッグでパンできることを示すカーソル */
@@ -829,6 +815,7 @@ body {
   .rr-value { width: 40px; height: 26px; font-size: 17px; }
   .rr-colon { font-size: 18px; }
   .rr-celllabel { font-size: 9px; }
+  .play-fab { width: 40px; height: 40px; margin-left: 10px; font-size: 18px; }
 
   #zoom-controls {
     bottom: calc(16px + env(safe-area-inset-bottom, 0px));
