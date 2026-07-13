@@ -12,7 +12,6 @@ import {
 import { fullToWedge, wedgeToFull } from "../engine/wedge";
 import { saveDrawing, type Drawing } from "../gallery";
 import { loadFromFiles, pictureFromURL, type Picture } from "../images";
-import { loadSlitMask, saveSlitMask } from "../slitMask";
 import { ImagePicker } from "./ImagePicker";
 import { showToast } from "./toast";
 
@@ -1149,17 +1148,10 @@ export class CompressEditor {
   }
 
   private openSlitShapeModal(): void {
-    const saved = loadSlitMask();
-    if (saved) {
-      const img = new Image();
-      img.onload = () => {
-        this.slitShapeCtx.clearRect(0, 0, PAINT_SIZE, PAINT_SIZE);
-        this.slitShapeCtx.drawImage(img, 0, 0, PAINT_SIZE, PAINT_SIZE);
-      };
-      img.src = saved;
-    } else {
-      this.drawDefaultSlitShape();
-    }
+    // 「新規作成」なので毎回まっさらな既定の直線から描き始める
+    // （複数保存できるため、既存を読み込んで上書きはしない）
+    this.slitShapeCtx.clearRect(0, 0, PAINT_SIZE, PAINT_SIZE);
+    this.drawDefaultSlitShape();
     this.drawSlitShapeGuide();
     this.slitShapeUndoStack = [];
     this.slitShapeModal.classList.remove("hidden");
@@ -1239,7 +1231,7 @@ export class CompressEditor {
 
   private saveSlitShape(): void {
     const dataURL = this.slitShapeCanvas.toDataURL("image/png");
-    saveSlitMask(dataURL);
+    // 永続化（一覧への追加）は main 側の onSlitMaskChanged が担う
     this.onSlitMaskChanged(dataURL);
     showToast("スリット形状を保存しました");
     this.closeSlitShapeModal();

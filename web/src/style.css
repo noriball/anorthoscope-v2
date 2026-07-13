@@ -726,6 +726,27 @@ body {
   border-radius: 6px;
 }
 
+/* 自作スリットの削除ボタン（×）：セル右上 */
+.picker-del {
+  position: absolute;
+  right: 4px;
+  top: 4px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  line-height: 1;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 50%;
+  cursor: pointer;
+}
+.picker-del:hover {
+  background: #c0392b;
+}
+
 /* 「＋ 新規作成」セル：破線タイルに大きな＋ */
 .picker-create {
   display: flex;

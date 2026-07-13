@@ -2,7 +2,13 @@ import "./style.css";
 import { DEFAULT_PARAMS, ZOOM_STEP_FACTOR, type Params } from "./config";
 import { loadInitialImages, pictureFromURL, type Picture } from "./images";
 import { listDrawings, type Drawing } from "./gallery";
-import { loadSlitMask, loadSlitShapes, getSlitShapeIndex, setSlitShapeIndex } from "./slitMask";
+import {
+  loadSlitShapes,
+  getSelectedSlitId,
+  setSelectedSlitId,
+  addCustomSlit,
+  deleteCustomSlit,
+} from "./slitMask";
 import { Simulation } from "./engine/Simulation";
 import { ControlBar, type AppHooks } from "./ui/Controls";
 import { RotationRatio } from "./ui/RotationRatio";
@@ -35,17 +41,28 @@ const stage = document.getElementById("stage") as HTMLElement;
 const controlsRoot = document.getElementById("controls") as HTMLElement;
 
 const sim = new Simulation(view);
-sim.setSlitMask(loadSlitMask());
 const guide = new Guide();
 
-/** スリット形状を選択・適用 */
+/** スリット形状を index 指定で選択・適用し、id を永続化 */
 function setSlitShape(i: number): void {
   const n = state.slitShapes.length;
   if (n === 0) return;
   state.slitIndex = ((i % n) + n) % n;
   const shape = state.slitShapes[state.slitIndex];
   sim.setSlitMask(shape.dataURL);
-  setSlitShapeIndex(state.slitIndex);
+  setSelectedSlitId(shape.id);
+}
+
+/** 選択中の id に一致する形状を適用（無ければ先頭）。一覧再読込後に使う */
+function applySelectedSlit(preferId?: string): void {
+  const n = state.slitShapes.length;
+  if (n === 0) return;
+  const id = preferId ?? getSelectedSlitId();
+  const found = state.slitShapes.findIndex((s) => s.id === id);
+  state.slitIndex = found >= 0 ? found : 0;
+  const shape = state.slitShapes[state.slitIndex];
+  sim.setSlitMask(shape.dataURL);
+  setSelectedSlitId(shape.id);
 }
 
 function currentPicture(): Picture | null {
@@ -133,6 +150,7 @@ imagePicker.bind(
 const slitPicker = new SlitPicker(
   (i) => setSlitShape(i),
   () => compress.openSlitEditor(),
+  (id) => deleteSlit(id),
 );
 slitPicker.bind(
   () => state.slitShapes,
@@ -169,15 +187,23 @@ async function useWithoutSaving(dataURL: string, divisions: number): Promise<voi
   setIndex(state.images.length - 1);
 }
 
-/** 「スリット形状」の新規作成保存：シミュレータへ即反映し、
- *  スリット選択一覧に「マイスリット」として取り込んで選択状態にする */
+/** 「スリット形状」の新規作成保存：一覧へ1つ追加し、それを選択・即反映する */
 async function onSlitMaskChanged(dataURL: string): Promise<void> {
-  sim.setSlitMask(dataURL);
-  // プリセット＋新しいカスタムを読み直し、末尾（マイスリット）を選択
+  const added = addCustomSlit(dataURL); // 一覧に追加（複数保存）
   state.slitShapes = await loadSlitShapes();
-  const customIdx = state.slitShapes.findIndex((s) => s.id === "custom");
-  state.slitIndex = customIdx >= 0 ? customIdx : state.slitIndex;
-  setSlitShapeIndex(state.slitIndex);
+  applySelectedSlit(added.id); // 追加したものを選択・適用
+  bar.update();
+}
+
+/** 自作スリットの削除：一覧から外し、選択が消えたら基本へ戻す。ピッカーは即更新 */
+async function deleteSlit(id: string): Promise<void> {
+  const selectedId = state.slitShapes[state.slitIndex]?.id; // 変更前の選択を控える
+  const wasSelected = selectedId === id;
+  deleteCustomSlit(id);
+  state.slitShapes = await loadSlitShapes();
+  // 削除したものが選択中だったら先頭（基本）へ、それ以外は選択を維持
+  applySelectedSlit(wasSelected ? state.slitShapes[0]?.id : selectedId);
+  if (slitPicker.visible) slitPicker.refresh();
 }
 
 /** ギャラリーの「編集」/「新規作成」：作画エディタで開く */
@@ -418,13 +444,10 @@ async function boot(): Promise<void> {
       /* 壊れた保存はスキップ */
     }
   }
-  // スリット形状を読み込む（プリセット + ユーザーカスタム）
+  // スリット形状を読み込む（プリセット + 自作の複数）。保存済みの選択 id を適用
   try {
     state.slitShapes = await loadSlitShapes();
-    state.slitIndex = getSlitShapeIndex();
-    if (state.slitIndex < state.slitShapes.length) {
-      sim.setSlitMask(state.slitShapes[state.slitIndex].dataURL);
-    }
+    applySelectedSlit();
   } catch (err) {
     console.error("スリット形状の読み込みに失敗しました", err);
   }

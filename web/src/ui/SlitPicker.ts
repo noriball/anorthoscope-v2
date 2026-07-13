@@ -3,6 +3,7 @@ export interface SlitShape {
   id: string;
   name: string;
   dataURL: string; // PNG dataURL
+  deletable?: boolean; // 自作スリット＝削除可
 }
 
 /** スリット形状をサムネイル一覧から選ぶオーバーレイ */
@@ -11,17 +12,20 @@ export class SlitPicker {
   private readonly grid: HTMLDivElement;
   private readonly onSelect: (index: number) => void;
   private readonly onCreate: () => void;
+  private readonly onDelete: (id: string) => void;
   private getSlitShapes: () => SlitShape[] = () => [];
   private getIndex: () => number = () => 0;
 
   constructor(
     onSelect: (index: number) => void,
     onCreate: () => void,
+    onDelete: (id: string) => void,
     title = "スリット形状を選ぶ",
     rootId = "slit-picker",
   ) {
     this.onSelect = onSelect;
     this.onCreate = onCreate;
+    this.onDelete = onDelete;
 
     this.root = document.createElement("div");
     this.root.id = rootId;
@@ -65,7 +69,12 @@ export class SlitPicker {
     this.root.classList.add("hidden");
   }
 
-  private refresh(): void {
+  get visible(): boolean {
+    return !this.root.classList.contains("hidden");
+  }
+
+  /** 一覧を再描画（追加・削除の後に呼ぶ） */
+  refresh(): void {
     this.grid.textContent = "";
     const shapes = this.getSlitShapes();
     const cur = this.getIndex();
@@ -80,11 +89,10 @@ export class SlitPicker {
       c.width = c.height = size;
       const ctx = c.getContext("2d")!;
 
-      // Set background color to light gray for better visibility
+      // 視認性のため薄いグレー地に描く
       ctx.fillStyle = "#2c2f3e";
       ctx.fillRect(0, 0, size, size);
 
-      // Load and draw thumbnail
       const img = new Image();
       img.onload = () => {
         const s = Math.min(size / img.width, size / img.height);
@@ -104,6 +112,22 @@ export class SlitPicker {
       label.style.wordBreak = "break-word";
 
       cell.append(c, label);
+
+      // 自作スリットには削除ボタン（×）
+      if (shape.deletable) {
+        const del = document.createElement("span");
+        del.className = "picker-del";
+        del.textContent = "×";
+        del.title = "この自作スリットを削除";
+        del.onclick = (e) => {
+          e.stopPropagation(); // セル選択と分離
+          if (confirm(`「${shape.name}」を削除しますか？`)) {
+            this.onDelete(shape.id);
+          }
+        };
+        cell.append(del);
+      }
+
       cell.onclick = () => {
         this.onSelect(i);
         this.hide();

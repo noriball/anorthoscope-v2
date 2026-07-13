@@ -1,70 +1,108 @@
 import type { SlitShape } from "./ui/SlitPicker";
 
-const KEY = "anortho.slitMask.v1";
-const INDEX_KEY = "anortho.slitIndex.v1";
+const OLD_KEY = "anortho.slitMask.v1"; // 旧：単一カスタム（移行用）
+const LIST_KEY = "anortho.slitShapes.v1"; // カスタムスリット一覧（複数）
+const SEL_KEY = "anortho.slitId.v1"; // 選択中の形状 id（プリセット id or カスタム id）
 const PRESETS_MANIFEST = "presets/slits/manifest.json";
 
-/** 保存済みのカスタムスリット形状（PNG dataURL）。無ければ null（既定の直線スリット） */
-export function loadSlitMask(): string | null {
+/** 保存済みの自作スリット1つ */
+export interface CustomSlit {
+  id: string;
+  dataURL: string;
+  createdAt: number;
+}
+
+function newId(): string {
+  return `s${Date.now()}${Math.random().toString(36).slice(2, 7)}`;
+}
+
+/** 自作スリット一覧を読む（旧・単一キーがあれば一覧へ移行） */
+export function listCustomSlits(): CustomSlit[] {
   try {
-    return localStorage.getItem(KEY);
+    const raw = localStorage.getItem(LIST_KEY);
+    let list: CustomSlit[] = raw ? (JSON.parse(raw) as CustomSlit[]) : [];
+    if (list.length === 0) {
+      const old = localStorage.getItem(OLD_KEY);
+      if (old) {
+        list = [{ id: newId(), dataURL: old, createdAt: Date.now() }];
+        writeList(list);
+        localStorage.removeItem(OLD_KEY);
+      }
+    }
+    return list;
   } catch {
-    return null;
+    return [];
   }
 }
 
-export function saveSlitMask(dataURL: string): void {
+function writeList(list: CustomSlit[]): void {
   try {
-    localStorage.setItem(KEY, dataURL);
+    localStorage.setItem(LIST_KEY, JSON.stringify(list));
   } catch {
     /* ignore */
   }
 }
 
-/** 全スリット形状を読み込む（プリセット + ユーザーカスタム） */
+/** 自作スリットを1つ追加して、その要素を返す */
+export function addCustomSlit(dataURL: string): CustomSlit {
+  const list = listCustomSlits();
+  const item: CustomSlit = { id: newId(), dataURL, createdAt: Date.now() };
+  list.push(item);
+  writeList(list);
+  return item;
+}
+
+/** 自作スリットを id 指定で削除 */
+export function deleteCustomSlit(id: string): void {
+  writeList(listCustomSlits().filter((s) => s.id !== id));
+}
+
+/** 全スリット形状を読み込む（プリセット + 自作の複数）。自作は deletable=true */
 export async function loadSlitShapes(): Promise<SlitShape[]> {
+  const shapes: SlitShape[] = [];
   try {
     const res = await fetch(PRESETS_MANIFEST);
     if (!res.ok) throw new Error(`Failed to load presets: ${res.status}`);
-    const data = (await res.json()) as { presets: Array<{ name: string; file: string; id: string }> };
-
+    const data = (await res.json()) as {
+      presets: Array<{ name: string; file: string; id: string }>;
+    };
     const presets: SlitShape[] = await Promise.all(
       data.presets.map(async (p) => {
         const fileRes = await fetch(`presets/slits/${p.file}`);
         if (!fileRes.ok) throw new Error(`Failed to load ${p.file}`);
         const blob = await fileRes.blob();
-        const dataURL = await blobToDataURL(blob);
-        return { id: p.id, name: p.name, dataURL };
-      })
+        return {
+          id: p.id,
+          name: p.name,
+          dataURL: await blobToDataURL(blob),
+          deletable: false,
+        };
+      }),
     );
-
-    // Add user's custom slit if exists
-    const custom = loadSlitMask();
-    if (custom) {
-      presets.push({ id: "custom", name: "マイスリット", dataURL: custom });
-    }
-
-    return presets;
+    shapes.push(...presets);
   } catch (e) {
-    console.error("Failed to load slit shapes:", e);
-    return [];
+    console.error("Failed to load slit presets:", e);
   }
+  // 自作スリット（複数・削除可）。名前は「自作N」で連番表示
+  listCustomSlits().forEach((c, i) => {
+    shapes.push({ id: c.id, name: `自作${i + 1}`, dataURL: c.dataURL, deletable: true });
+  });
+  return shapes;
 }
 
-/** 現在選択されているスリット形状インデックスを取得 */
-export function getSlitShapeIndex(): number {
+/** 選択中の形状 id を取得 */
+export function getSelectedSlitId(): string | null {
   try {
-    const idx = localStorage.getItem(INDEX_KEY);
-    return idx ? parseInt(idx, 10) : 0;
+    return localStorage.getItem(SEL_KEY);
   } catch {
-    return 0;
+    return null;
   }
 }
 
-/** 現在選択されているスリット形状インデックスを保存 */
-export function setSlitShapeIndex(index: number): void {
+/** 選択中の形状 id を保存 */
+export function setSelectedSlitId(id: string): void {
   try {
-    localStorage.setItem(INDEX_KEY, String(index));
+    localStorage.setItem(SEL_KEY, id);
   } catch {
     /* ignore */
   }
