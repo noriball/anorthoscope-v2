@@ -108,10 +108,6 @@ export class RotationRatio {
       rotRange,
     );
 
-    const row1 = document.createElement("div");
-    row1.className = "rr-row";
-    row1.append(slit, colon, image);
-
     const slitCount = this.cell(
       "スリット数",
       () => this.hooks.getParams().numSlits,
@@ -119,14 +115,19 @@ export class RotationRatio {
       { min: SLITS_MIN, max: SLITS_MAX, step: 1 },
     );
 
-    const row2 = document.createElement("div");
-    // rr-row-slits: 幅を row1 に合わせて広げ、スリット数を左端（＝スリットの真下）に、
-    // 再生ボタンを右端に振り分ける
-    row2.className = "rr-row rr-row-slits";
-    row2.append(slitCount);
-    if (row2Extra) row2.append(row2Extra); // 右端の再生／停止ボタン
+    // 上下段を同じ3列グリッドに乗せて縦のラインを揃える。
+    //   1列目: スリット / スリット数   2列目: ：   3列目: 絵 / 再生ボタン
+    // 列幅は中身の最大で自動決定されるので、スリット数はスリットの真下、
+    // 再生ボタンは絵（＝「-4」）の真下に中央揃えで並ぶ（モバイルでも自動整合）。
+    const grid = document.createElement("div");
+    grid.className = "rr-grid";
+    const gapCell = document.createElement("div"); // 2列目・下段の空き
+    const playWrap = document.createElement("div");
+    playWrap.className = "rr-playwrap";
+    if (row2Extra) playWrap.append(row2Extra); // 3列目・下段＝再生／停止ボタン
+    grid.append(slit, colon, image, slitCount, gapCell, playWrap);
 
-    root.append(title, row1, row2);
+    root.append(title, grid);
     parent.append(root);
   }
 

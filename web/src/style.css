@@ -74,17 +74,20 @@ body {
   text-transform: uppercase;
   color: var(--text);
 }
-.rr-row {
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  gap: 10px;
+/* 上段（スリット : 絵）と下段（スリット数 / 再生）を同じ3列に揃えるグリッド。
+   列幅は中身の最大で自動決定＝スリット数はスリットの真下、再生ボタンは
+   絵（「-4」）の真下に中央で並ぶ。 */
+.rr-grid {
+  display: grid;
+  grid-template-columns: auto auto auto;
+  column-gap: 10px;
+  row-gap: 4px;
+  align-items: end;
+  justify-items: center;
 }
-/* スリット数の行：幅を row1 に合わせ、スリット数を左端（スリットの真下）、
-   再生ボタンを右端へ */
-.rr-row-slits {
-  align-self: stretch;
-  justify-content: space-between;
+.rr-playwrap {
+  display: flex;
+  justify-content: center;
 }
 .rr-cell {
   display: flex;
@@ -184,7 +187,6 @@ body {
 .play-fab {
   width: 42px;
   height: 42px;
-  margin-left: 14px;
   border-radius: 50%;
   border: 2px solid var(--accent);
   background: rgba(0, 0, 0, 0.35);
@@ -821,7 +823,7 @@ body {
   .rr-value { width: 40px; height: 26px; font-size: 17px; }
   .rr-colon { font-size: 18px; }
   .rr-celllabel { font-size: 9px; }
-  .play-fab { width: 36px; height: 36px; margin-left: 10px; font-size: 16px; }
+  .play-fab { width: 36px; height: 36px; font-size: 16px; }
 
   #zoom-controls {
     bottom: calc(16px + env(safe-area-inset-bottom, 0px));
