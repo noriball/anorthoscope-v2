@@ -43,7 +43,7 @@ interface CellRange {
 /**
  * 2 パネルの間・下側に表示する回転比＋スリット数のコントロール（2段表示）。
  *
- *          ROTATION RATIO
+ *             回転比
  *   スリット + [ 1 ] −  ：  絵 + [ -4 ] −
  *          スリット数 + [ 5 ] −
  *
@@ -89,7 +89,7 @@ export class RotationRatio {
 
     const title = document.createElement("div");
     title.className = "rr-title";
-    title.textContent = "Rotation Ratio";
+    title.textContent = "回転比";
 
     const rotRange: CellRange = { min: ROT_FACTOR_MIN, max: ROT_FACTOR_MAX, step: ROT_FACTOR_STEP };
     const slit = this.cell(
