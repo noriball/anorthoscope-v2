@@ -534,6 +534,14 @@ body {
   color: var(--accent);
   background: #23210f;
 }
+.paint-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.paint-btn:disabled:hover {
+  background: var(--panel);
+  border-color: var(--border);
+}
 .paint-btn.primary {
   background: #2b5b34;
   border-color: #3f8a4c;

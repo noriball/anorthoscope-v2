@@ -244,6 +244,7 @@ export class CompressEditor {
   /** 引数なし＝新規（白紙）。作品を渡すと、その絵を下地に読み込んで再編集する。 */
   open(d?: Drawing): void {
     this.resetState(d);
+    this.syncPhotoTool(); // 開くたび写真は無い状態から始まる
     this.root.classList.remove("hidden");
     requestAnimationFrame(() => this.relayout());
     this.render();
@@ -313,6 +314,7 @@ export class CompressEditor {
     this.photoY = 0;
     this.photoScale = 1;
     this.renderWedgePhoto();
+    this.syncPhotoTool();
     this.wedgeDirty = true;
     this.render();
   }
@@ -328,6 +330,7 @@ export class CompressEditor {
     this.photoY = 0;
     this.photoScale = 1;
     this.photoCtx.clearRect(0, 0, PAINT_SIZE, PAINT_SIZE);
+    this.syncPhotoTool();
     this.wedgeDirty = true;
     this.render();
   }
@@ -456,6 +459,19 @@ export class CompressEditor {
     ctx.lineTo(x1, y1);
     ctx.stroke();
     ctx.restore();
+  }
+
+  /**
+   * 線・円のドラッグ中に、今の形を描いて見せる。
+   * onDown で撮ったスナップショット（＝ドラッグ開始前）へ戻してから描き直すので、
+   * 何度呼んでも重ね塗りにならない。既存の描画経路をそのまま通るため、
+   * 右（繰り返しパターン）ではプレビューも K 回コピーされて見える。
+   */
+  private previewShape(): void {
+    const top = this.undoStack[this.undoStack.length - 1];
+    if (!top || top.ctx !== this.activeCtx) return;
+    top.ctx.putImageData(top.data, 0, 0);
+    this.commitShape();
   }
 
   private commitShape(): void {
@@ -674,6 +690,7 @@ export class CompressEditor {
     this.photoY = 0;
     this.photoScale = 1;
     this.photoCtx.clearRect(0, 0, PAINT_SIZE, PAINT_SIZE);
+    this.syncPhotoTool();
 
     this.divisions = next;
     this.divInput.value = String(this.divisions);
@@ -774,6 +791,7 @@ export class CompressEditor {
     } else {
       this.previewX = x;
       this.previewY = y;
+      this.previewShape(); // ドラッグ中も形が見えるようにする
     }
     if (this.activeIsWedge) this.wedgeDirty = true;
     else this.fullDirty = true;
@@ -783,7 +801,9 @@ export class CompressEditor {
   private onUp(): void {
     if (!this.drawing) return;
     if (this.tool === "line" || this.tool === "circle") {
-      this.commitShape();
+      // プレビューで既に描かれているが、動かさずに離した場合はまだ何も無いので、
+      // ここでも「戻して描く」を通して確定させる（重ね塗りにはならない）
+      this.previewShape();
       if (this.activeIsWedge) this.wedgeDirty = true;
       else this.fullDirty = true;
     }
@@ -796,6 +816,20 @@ export class CompressEditor {
   private setTool(t: Tool): void {
     this.tool = t;
     this.toolButtons.forEach((btn, key) => btn.classList.toggle("on", key === t));
+  }
+
+  /**
+   * 「写真を移動」は右に写真を置いているときだけ意味があるので、
+   * 写真が無い間は押せなくする（選択中に写真が消えたらブラシへ戻す）。
+   * 写真の有無が変わる箇所（読み込み・消去・分割数変更・リセット）から呼ぶこと。
+   */
+  private syncPhotoTool(): void {
+    const btn = this.toolButtons.get("photo");
+    if (!btn) return;
+    const has = !!this.photoBitmap;
+    btn.disabled = !has;
+    btn.title = has ? "写真を移動（右）" : "写真を移動（右）：先に写真を読み込んでください";
+    if (!has && this.tool === "photo") this.setTool("brush");
   }
 
   // =========================================================
