@@ -12,6 +12,7 @@ import {
 import { fullToWedge, wedgeToFull } from "../engine/wedge";
 import { saveDrawing, type Drawing } from "../gallery";
 import { loadFromFiles, pictureFromURL, type Picture } from "../images";
+import { setIconLabel, type IconName } from "./icons";
 import { ImagePicker } from "./ImagePicker";
 import { showToast } from "./toast";
 
@@ -879,7 +880,7 @@ export class CompressEditor {
     this.loadHint.textContent =
       this.loadTarget === "left"
         ? "あらかじめ歪ませた360°原盤を、左にそのまま読み込みます。"
-        : "自分で描いた絵や撮影した写真を、右の扇形の中に配置します（はみ出た部分は自動的に除外。あとで✋ツールと＋／－で位置・大きさを調整できます）。";
+        : "自分で描いた絵や撮影した写真を、右の扇形の中に配置します（はみ出た部分は自動的に除外。あとで「写真を移動」ツールと＋／－で位置・大きさを調整できます）。";
   }
 
   private buildLoadModal(): void {
@@ -905,7 +906,7 @@ export class CompressEditor {
 
     const actionsRow = document.createElement("div");
     actionsRow.className = "export-row";
-    const pickBtn = pbtn("🖼 画像一覧から選ぶ", () => {
+    const pickBtn = pbtn("画像一覧から選ぶ", () => {
       this.closeLoadModal();
       this.picker.show();
     });
@@ -1314,7 +1315,8 @@ export class CompressEditor {
     // 画像読み込み（単一ボタン→モーダルで「原盤（左へ）／写真配置（右へ）」を選ぶ）
     const loadGroup = document.createElement("div");
     loadGroup.className = "paint-group";
-    const loadBtn = pbtn("🖼 画像を読み込む", () => this.openLoadModal());
+    const loadBtn = pbtn("", () => this.openLoadModal());
+    setIconLabel(loadBtn, "image", "画像を読み込む");
     loadBtn.classList.add("wide");
     this.fileInput = document.createElement("input");
     this.fileInput.type = "file";
@@ -1329,7 +1331,7 @@ export class CompressEditor {
     };
     loadGroup.append(loadBtn, this.fileInput);
 
-    // 写真の調整（右に配置した写真の拡大縮小・削除。移動は✋ツール）
+    // 写真の調整（右に配置した写真の拡大縮小・削除。移動は「写真を移動」ツール）
     const wedgePhotoGroup = document.createElement("div");
     wedgePhotoGroup.className = "paint-group";
     const wedgePhotoZoomOut = pbtn("－", () => this.zoomWedgePhoto(1 / PHOTO_ZOOM_STEP));
@@ -1366,16 +1368,17 @@ export class CompressEditor {
     // ペイントツール
     const toolGroup = document.createElement("div");
     toolGroup.className = "paint-group";
-    const tools: [Tool, string, string][] = [
-      ["brush", "ブラシ", "🖌"],
-      ["eraser", "消しゴム", "◧"],
-      ["line", "直線", "／"],
-      ["circle", "円", "◯"],
-      ["fill", "塗り", "塗"],
-      ["photo", "写真を移動（右）", "✋"],
+    const tools: [Tool, string, IconName][] = [
+      ["brush", "ブラシ", "brush"],
+      ["eraser", "消しゴム", "eraser"],
+      ["line", "直線", "line"],
+      ["circle", "円", "circle"],
+      ["fill", "塗り", "fill"],
+      ["photo", "写真を移動（右）", "move"],
     ];
-    for (const [t, title, icon] of tools) {
-      const b = pbtn(icon, () => this.setTool(t));
+    for (const [t, title, iconName] of tools) {
+      const b = pbtn("", () => this.setTool(t));
+      setIconLabel(b, iconName);
       b.title = title;
       this.toolButtons.set(t, b);
       toolGroup.append(b);
@@ -1476,7 +1479,7 @@ export class CompressEditor {
     const hint = document.createElement("div");
     hint.className = "paint-hint";
     hint.textContent =
-      "左右どちらの円にも描けます。左（360°画像）に描くと右に圧縮、右（繰り返しパターン）に描くと全ピースへ K 回対称でコピーされます。「画像を読み込む」で原盤（左へ）／写真配置（右へ）を選べます（写真は✋ツールで移動、＋／－で拡大縮小、はみ出た部分は自動的に除外）。保存されるのは左の360°画像です。";
+      "左右どちらの円にも描けます。左（360°画像）に描くと右に圧縮、右（繰り返しパターン）に描くと全ピースへ K 回対称でコピーされます。「画像を読み込む」で原盤（左へ）／写真配置（右へ）を選べます（写真は「写真を移動」ツールで移動、＋／－で拡大縮小、はみ出た部分は自動的に除外）。保存されるのは左の360°画像です。";
 
     this.buildLoadModal();
     this.buildExportModal();

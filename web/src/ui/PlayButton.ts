@@ -1,3 +1,5 @@
+import { setIconLabel } from "./icons";
+
 export interface PlayHooks {
   toggle(): void;
   isPaused(): boolean;
@@ -19,9 +21,9 @@ export class PlayButton {
     this.update(hooks.isPaused());
   }
 
-  /** 一時停止状態に合わせてアイコンを更新（停止中は▶＝押せば動く） */
+  /** 一時停止状態に合わせてアイコンを更新（停止中は再生マーク＝押せば動く） */
   update(paused: boolean): void {
-    this.el.textContent = paused ? "▶" : "⏸";
+    setIconLabel(this.el, paused ? "play" : "pause");
     this.el.classList.toggle("is-paused", paused);
     this.el.title = paused ? "再生" : "停止";
     this.el.setAttribute("aria-label", paused ? "再生" : "停止");

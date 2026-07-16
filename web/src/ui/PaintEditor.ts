@@ -12,6 +12,7 @@ import {
 import { saveDrawing, type Drawing } from "../gallery";
 import { fullToWedge, wedgeToFull } from "../engine/wedge";
 import { pictureFromURL, type Picture } from "../images";
+import { setIconLabel, type IconName } from "./icons";
 import { showToast } from "./toast";
 
 type Tool = "brush" | "eraser" | "line" | "circle" | "fill" | "photo";
@@ -856,16 +857,17 @@ export class PaintEditor {
     // ツール
     const toolGroup = document.createElement("div");
     toolGroup.className = "paint-group";
-    const tools: [Tool, string, string][] = [
-      ["brush", "ブラシ", "🖌"],
-      ["eraser", "消しゴム", "◧"],
-      ["line", "直線", "／"],
-      ["circle", "円", "◯"],
-      ["fill", "塗り", "塗"],
-      ["photo", "写真を移動", "✋"],
+    const tools: [Tool, string, IconName][] = [
+      ["brush", "ブラシ", "brush"],
+      ["eraser", "消しゴム", "eraser"],
+      ["line", "直線", "line"],
+      ["circle", "円", "circle"],
+      ["fill", "塗り", "fill"],
+      ["photo", "写真を移動", "move"],
     ];
-    for (const [t, title, icon] of tools) {
-      const b = pbtn(icon, () => this.setTool(t), title);
+    for (const [t, title, iconName] of tools) {
+      const b = pbtn("", () => this.setTool(t), title);
+      setIconLabel(b, iconName);
       this.toolButtons.set(t, b);
       toolGroup.append(b);
     }
@@ -955,7 +957,7 @@ export class PaintEditor {
     const hint = document.createElement("div");
     hint.className = "paint-hint";
     hint.textContent =
-      "黄色枠の扇形の中だけ描けます。＋ファイルから写真を読み込み、✋ツールで移動、－／＋で拡大縮小できます。保存時、その絵が角度方向に引き伸ばされ、歪んだ1枚の画像になります。";
+      "黄色枠の扇形の中だけ描けます。＋ファイルから写真を読み込み、「写真を移動」ツールで移動、－／＋で拡大縮小できます。保存時、その絵が角度方向に引き伸ばされ、歪んだ1枚の画像になります。";
 
     this.buildExportModal();
     this.root.append(bar, stage, hint, this.exportModal);

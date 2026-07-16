@@ -11,6 +11,7 @@ import {
   type Params,
 } from "../config";
 import type { Picture } from "../images";
+import { setIconLabel, type IconName } from "./icons";
 
 /** main.ts が提供する操作フック */
 export interface AppHooks {
@@ -52,11 +53,21 @@ export class ControlBar {
     this.root.textContent = "";
 
     // --- 画像を選ぶ（一覧から選択。前後移動もここから） ---
-    const picker = this.button("🖼 画像を選ぶ", () => this.hooks.openImagePicker(), "画像一覧から選ぶ");
+    const picker = this.iconButton(
+      "image",
+      "画像を選ぶ",
+      () => this.hooks.openImagePicker(),
+      "画像一覧から選ぶ",
+    );
     picker.classList.add("wide");
 
     // --- スリット形状を選ぶ ---
-    const slitPicker = this.button("🎯 スリット形状", () => this.hooks.openSlitPicker(), "スリット形状を選ぶ");
+    const slitPicker = this.iconButton(
+      "slit",
+      "スリット形状",
+      () => this.hooks.openSlitPicker(),
+      "スリット形状を選ぶ",
+    );
     slitPicker.classList.add("wide");
 
     // 再生 / 停止はステージ右上の大きな円形ボタン（PlayButton）に移動した
@@ -95,15 +106,21 @@ export class ControlBar {
     // --- アクション ---
     this.lineBtn = this.button("Line", () => this.toggleLine(), "赤ガイドライン表示");
     this.plateBtn = this.button("スリット板", () => this.togglePlate(), "スリット板モード");
-    const compress = this.button(
-      "🎨 作画",
+    const compress = this.iconButton(
+      "palette",
+      "作画",
       () => this.hooks.openCompress(),
       "作画モード：左右どちらの円にも描ける（右は繰り返しパターン）",
     );
     compress.classList.add("wide");
-    const gallery = this.button("🖼 ギャラリー", () => this.hooks.openGallery(), "保存した絵");
+    const gallery = this.iconButton(
+      "gallery",
+      "ギャラリー",
+      () => this.hooks.openGallery(),
+      "保存した絵",
+    );
     gallery.classList.add("wide");
-    const full = this.button("⛶", () => this.hooks.toggleFullscreen(), "フルスクリーン");
+    const full = this.iconButton("fullscreen", "", () => this.hooks.toggleFullscreen(), "フルスクリーン");
     full.classList.add("icon");
     const help = this.button("?", () => this.hooks.openGuide(), "操作ガイド");
     const actions = group(
@@ -122,6 +139,20 @@ export class ControlBar {
   private button(label: string, onClick: () => void, title = ""): HTMLButtonElement {
     const b = el("button", "btn");
     b.textContent = label;
+    if (title) b.title = title;
+    b.onclick = onClick;
+    return b;
+  }
+
+  /** アイコン付きボタン（label が空ならアイコンのみ。title は必ず付けること） */
+  private iconButton(
+    name: IconName,
+    label: string,
+    onClick: () => void,
+    title = "",
+  ): HTMLButtonElement {
+    const b = el("button", "btn");
+    setIconLabel(b, name, label || undefined);
     if (title) b.title = title;
     b.onclick = onClick;
     return b;
