@@ -161,12 +161,15 @@ export class CompressEditor {
   private activeCtx: CanvasRenderingContext2D | null = null;
   private activeCanvas: HTMLCanvasElement | null = null;
   private activeIsWedge = false;
-  private startX = 0;
-  private startY = 0;
   private lastX = 0;
   private lastY = 0;
-  private previewX = 0;
-  private previewY = 0;
+  // 直線・円は「始点と終点を結ぶ形」なので、畳み込む前の生の座標で覚えておく。
+  // 折り畳んだ座標で結ぶと、境界を越えた瞬間に終点だけが基準扇形の反対側へ
+  // 飛び、描いていない向きの線が現れてしまう。
+  private rawStartX = 0;
+  private rawStartY = 0;
+  private rawPrevX = 0;
+  private rawPrevY = 0;
   private lastFoldK = 0; // 直前に描いた点のピース番号（境界またぎ検出用）
   private undoStack: { ctx: CanvasRenderingContext2D; data: ImageData }[] = [];
 
@@ -474,6 +477,28 @@ export class CompressEditor {
     this.commitShape();
   }
 
+  /** 実際に見えている軌跡（畳み込む前）を、細かく刻んだ点列で返す */
+  private shapePoints(): [number, number][] {
+    const STEP = 1.5; // px。細かいほど境界での切れ目が目立たない
+    const pts: [number, number][] = [];
+    if (this.tool === "line") {
+      const dx = this.rawPrevX - this.rawStartX;
+      const dy = this.rawPrevY - this.rawStartY;
+      const n = Math.max(2, Math.ceil(Math.hypot(dx, dy) / STEP));
+      for (let i = 0; i <= n; i++) {
+        pts.push([this.rawStartX + (dx * i) / n, this.rawStartY + (dy * i) / n]);
+      }
+    } else {
+      const r = Math.hypot(this.rawPrevX - this.rawStartX, this.rawPrevY - this.rawStartY);
+      const n = Math.max(12, Math.ceil((2 * Math.PI * r) / STEP));
+      for (let i = 0; i <= n; i++) {
+        const a = (i / n) * Math.PI * 2;
+        pts.push([this.rawStartX + Math.cos(a) * r, this.rawStartY + Math.sin(a) * r]);
+      }
+    }
+    return pts;
+  }
+
   private commitShape(): void {
     const ctx = this.activeCtx!;
     ctx.save();
@@ -481,14 +506,25 @@ export class CompressEditor {
     ctx.globalCompositeOperation = "source-over";
     this.strokeStyle(ctx);
     ctx.beginPath();
-    if (this.tool === "line") {
-      ctx.moveTo(this.startX, this.startY);
-      ctx.lineTo(this.previewX, this.previewY);
+    if (this.activeIsWedge) {
+      // 右（繰り返しパターン）：軌跡を刻んで1点ずつ基準扇形へ畳み込み、
+      // 畳み込み先のピースが変わったところで線を切る（＝ブラシと同じ扱い）。
+      // 刻みが細かいので、タイル表示では境界を越えても繋がって見える。
+      let prevK: number | null = null;
+      for (const [rx, ry] of this.shapePoints()) {
+        const [fx, fy, k] = this.foldToWedge(rx, ry);
+        if (k !== prevK) ctx.moveTo(fx, fy);
+        else ctx.lineTo(fx, fy);
+        prevK = k;
+      }
+    } else if (this.tool === "line") {
+      ctx.moveTo(this.rawStartX, this.rawStartY);
+      ctx.lineTo(this.rawPrevX, this.rawPrevY);
     } else {
       ctx.arc(
-        this.startX,
-        this.startY,
-        Math.hypot(this.previewX - this.startX, this.previewY - this.startY),
+        this.rawStartX,
+        this.rawStartY,
+        Math.hypot(this.rawPrevX - this.rawStartX, this.rawPrevY - this.rawStartY),
         0,
         Math.PI * 2,
       );
@@ -712,6 +748,7 @@ export class CompressEditor {
   private onDown(e: PointerEvent, isWedge: boolean): void {
     const canvas = isWedge ? this.rightCanvas : this.leftCanvas;
     let [x, y] = this.toCanvas(e, canvas);
+    const [rawX, rawY] = [x, y]; // 畳み込む前（直線・円が実際に見える位置）
     if (isWedge) {
       const f = this.foldToWedge(x, y);
       x = f[0];
@@ -725,8 +762,8 @@ export class CompressEditor {
       this.activeIsWedge = true;
       this.activeCanvas = canvas;
       this.activeCtx = null;
-      this.startX = this.lastX = x;
-      this.startY = this.lastY = y;
+      this.lastX = x;
+      this.lastY = y;
       return;
     }
 
@@ -748,8 +785,10 @@ export class CompressEditor {
     this.activeCanvas = canvas;
     this.activeCtx = ctx;
     this.snapshot(ctx);
-    this.startX = this.lastX = this.previewX = x;
-    this.startY = this.lastY = this.previewY = y;
+    this.lastX = x;
+    this.lastY = y;
+    this.rawStartX = this.rawPrevX = rawX;
+    this.rawStartY = this.rawPrevY = rawY;
     if (this.tool === "brush" || this.tool === "eraser") {
       this.drawSegment(x, y, x, y);
       if (isWedge) this.wedgeDirty = true;
@@ -761,6 +800,7 @@ export class CompressEditor {
   private onMove(e: PointerEvent): void {
     if (!this.drawing || !this.activeCanvas) return;
     let [x, y] = this.toCanvas(e, this.activeCanvas);
+    const [rawX, rawY] = [x, y]; // 畳み込む前（直線・円が実際に見える位置）
     // 右（繰り返しパターン）でピース境界をまたいだら、畳み込み先が扇形の反対側へ
     // 飛ぶ。そのまま直線で結ぶと「描いていない直線」が現れるので、境界またぎ時は
     // 線を繋がず途切れさせる（＝実際に描いた形だけが残る）。
@@ -789,8 +829,8 @@ export class CompressEditor {
       this.lastX = x;
       this.lastY = y;
     } else {
-      this.previewX = x;
-      this.previewY = y;
+      this.rawPrevX = rawX;
+      this.rawPrevY = rawY;
       this.previewShape(); // ドラッグ中も形が見えるようにする
     }
     if (this.activeIsWedge) this.wedgeDirty = true;
