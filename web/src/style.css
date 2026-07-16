@@ -290,6 +290,30 @@ body {
   stroke: none;
 }
 
+/* 3択の切替（スリットの見え方）。地を1枚の帯にして「どれか1つ」であることを示す */
+.seg {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px;
+  gap: 2px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: #0e0f15;
+  flex: 0 0 auto;
+}
+.seg-btn {
+  border-color: transparent;
+  background: transparent;
+}
+.seg-btn:hover {
+  background: var(--panel-hi);
+  border-color: transparent;
+}
+.seg-btn.on {
+  background: var(--panel);
+  border-color: var(--accent);
+}
+
 /* コントロール群 */
 .group {
   display: flex;
@@ -330,9 +354,6 @@ body {
 .btn.on {
   border-color: var(--accent);
   color: var(--accent);
-}
-.btn.dimmed {
-  opacity: 0.4;
 }
 .btn.wide {
   padding: 0 12px;

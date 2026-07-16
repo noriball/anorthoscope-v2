@@ -30,13 +30,21 @@ export interface AppHooks {
   getIndex(): number;
 }
 
+/** スリットをどう見せるか。showGuideLines / slitPlate の組み合わせを 1 つの選択にまとめたもの */
+type OverlayMode = "none" | "line" | "plate";
+
+const OVERLAY_MODES: [OverlayMode, IconName, string, string][] = [
+  ["line", "overlayLine", "スリット位置", "スリットの形と位置を赤い線で左右の円に重ねる"],
+  ["plate", "overlayPlate", "スリット板", "左の円に実際のスリット板（黒い円盤＋透明な窓）を重ねる"],
+  ["none", "overlayNone", "なし", "スリットを重ねずに絵だけを見る"],
+];
+
 /** 全操作をボタンと数値入力に集約した下部コントロールバー */
 export class ControlBar {
   private readonly root: HTMLElement;
   private readonly hooks: AppHooks;
 
-  private lineBtn!: HTMLButtonElement;
-  private plateBtn!: HTMLButtonElement;
+  private readonly overlayBtns = new Map<OverlayMode, HTMLButtonElement>();
 
   private speedInput!: HTMLInputElement;
   private speedValueLabel!: HTMLSpanElement;
@@ -103,9 +111,18 @@ export class ControlBar {
       field("背景", this.bgInput),
     );
 
-    // --- アクション ---
-    this.lineBtn = this.button("Line", () => this.toggleLine(), "赤ガイドライン表示");
-    this.plateBtn = this.button("スリット板", () => this.togglePlate(), "スリット板モード");
+    // --- スリットの見え方（なし / スリット位置 / スリット板）---
+    // 「位置（赤線）」と「板」は元々クロスフェードで排他なので、2つの ON/OFF ではなく
+    // 3択の切替にする（板を出すと赤線が消える、という関係が見た目で分かる）。
+    const overlay = el("div", "seg");
+    overlay.setAttribute("role", "group");
+    overlay.title = "スリットの見え方";
+    for (const [mode, name, label, title] of OVERLAY_MODES) {
+      const b = this.iconButton(name, label, () => this.setOverlay(mode), title);
+      b.classList.add("seg-btn");
+      this.overlayBtns.set(mode, b);
+      overlay.append(b);
+    }
     const compress = this.iconButton(
       "palette",
       "作画",
@@ -124,8 +141,7 @@ export class ControlBar {
     full.classList.add("icon");
     const help = this.button("?", () => this.hooks.openGuide(), "操作ガイド");
     const actions = group(
-      this.lineBtn,
-      this.plateBtn,
+      overlay,
       compress,
       gallery,
       full,
@@ -158,15 +174,11 @@ export class ControlBar {
     return b;
   }
 
-  private toggleLine(): void {
-    const p = this.hooks.getParams();
-    this.hooks.setParams({ showGuideLines: !p.showGuideLines });
-    this.update();
-  }
-
-  private togglePlate(): void {
-    const p = this.hooks.getParams();
-    this.hooks.setParams({ slitPlate: !p.slitPlate });
+  private setOverlay(mode: OverlayMode): void {
+    this.hooks.setParams({
+      showGuideLines: mode === "line",
+      slitPlate: mode === "plate",
+    });
     this.update();
   }
 
@@ -174,11 +186,8 @@ export class ControlBar {
   update(): void {
     const p = this.hooks.getParams();
 
-    this.lineBtn.classList.toggle("on", p.showGuideLines);
-    // スリット板モードが完全に表示されている間は赤ガイドラインが出ないため、
-    // Line の切替が無効であることをグレーアウトで示す
-    this.lineBtn.classList.toggle("dimmed", p.slitPlate);
-    this.plateBtn.classList.toggle("on", p.slitPlate);
+    const mode: OverlayMode = p.slitPlate ? "plate" : p.showGuideLines ? "line" : "none";
+    for (const [m, b] of this.overlayBtns) b.classList.toggle("on", m === mode);
 
     // 入力欄はフォーカス中なら上書きしない（打鍵・ドラッグの邪魔をしない）
     setInputUnlessFocused(this.speedInput, String(p.speed));

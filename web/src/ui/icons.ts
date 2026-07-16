@@ -10,6 +10,9 @@ export type IconName =
   | "image" // 画像を選ぶ／読み込む
   | "gallery" // 保存した絵の一覧
   | "slit" // スリット形状（円盤＋放射状の穴）
+  | "overlayNone" // スリットの見え方：なし
+  | "overlayLine" // スリットの見え方：位置を線で重ねる
+  | "overlayPlate" // スリットの見え方：スリット板
   | "palette" // 作画モード
   | "fullscreen"
   | "play"
@@ -34,6 +37,11 @@ const PATHS: Record<IconName, string> = {
   slit: `<circle cx="8" cy="8" r="5.8"/>
     <path d="M8 7V2.4"/>
     <circle cx="8" cy="8" r="1" class="solid"/>`,
+  // 「スリットの見え方」3択。同じ円盤に何を重ねるかで描き分ける
+  overlayNone: `<circle cx="8" cy="8" r="5.8"/>`,
+  overlayLine: `<circle cx="8" cy="8" r="5.8"/>
+    <path d="M8 2.2v11.6M2.2 8h11.6"/>`,
+  overlayPlate: `<path class="solid" fill-rule="evenodd" d="M8 1.9a6.1 6.1 0 1 0 0 12.2 6.1 6.1 0 0 0 0-12.2ZM7.1 4.3h1.8v7.4H7.1Z"/>`,
   palette: `<path d="M8 14A6 6 0 1 1 14 8c0 1.7-1.5 2.2-2.6 2.2h-1.1c-1 0-1.8.8-1.8 1.8 0 .5.2.8.4 1.1.2.3.1.9-.9.9Z"/>
     <circle cx="5.1" cy="6.9" r=".95" class="solid"/>
     <circle cx="8" cy="4.9" r=".95" class="solid"/>
