@@ -84,10 +84,6 @@ body {
   align-items: end;
   justify-items: center;
 }
-.rr-playwrap {
-  display: flex;
-  justify-content: center;
-}
 .rr-cell {
   display: flex;
   flex-direction: column;
@@ -258,6 +254,30 @@ body {
 .num:focus {
   outline: none;
   border-color: var(--accent);
+}
+/* バー内のコンパクトなステッパー（− 値 ＋）。スリット数に使用 */
+.bar-stepper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.bar-stepper-label {
+  font-size: 10px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  margin-right: 2px;
+}
+.bar-stepper-num {
+  width: 42px;
+  height: 28px;
+  text-align: center;
+  font-weight: 700;
+  color: var(--accent);
+}
+.bar-stepper-num::-webkit-outer-spin-button,
+.bar-stepper-num::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 .slider {
   width: 90px;
@@ -932,6 +952,11 @@ body {
   .btn.play { width: 68px; }
   .sep { display: none; }
   .spacer { display: none; }
+  /* 再生／停止は幅いっぱいの独立行にして、折返しレイアウトでも中央に置く */
+  .play-group {
+    flex: 1 0 100%;
+    justify-content: center;
+  }
 
   .paint-stage {
     gap: 10px;

@@ -2,8 +2,6 @@ import {
   ROT_FACTOR_MAX,
   ROT_FACTOR_MIN,
   ROT_FACTOR_STEP,
-  SLITS_MAX,
-  SLITS_MIN,
   type Params,
 } from "../config";
 
@@ -57,10 +55,9 @@ export class RotationRatio {
   private readonly refreshers: Array<() => void> = [];
   private root!: HTMLDivElement;
 
-  /** row2Extra を渡すと「スリット数」の右隣に差し込む（再生／停止ボタン用） */
-  constructor(parent: HTMLElement, hooks: RatioHooks, row2Extra?: HTMLElement) {
+  constructor(parent: HTMLElement, hooks: RatioHooks) {
     this.hooks = hooks;
-    this.build(parent, row2Extra);
+    this.build(parent);
     this.update();
   }
 
@@ -82,7 +79,7 @@ export class RotationRatio {
     }
   }
 
-  private build(parent: HTMLElement, row2Extra?: HTMLElement): void {
+  private build(parent: HTMLElement): void {
     const root = document.createElement("div");
     this.root = root;
     root.id = "rot-ratio";
@@ -108,24 +105,10 @@ export class RotationRatio {
       rotRange,
     );
 
-    const slitCount = this.cell(
-      "スリット数",
-      () => this.hooks.getParams().numSlits,
-      (v) => this.hooks.setParams({ numSlits: v }),
-      { min: SLITS_MIN, max: SLITS_MAX, step: 1 },
-    );
-
-    // 上下段を同じ3列グリッドに乗せて縦のラインを揃える。
-    //   1列目: スリット / スリット数   2列目: ：   3列目: 絵 / 再生ボタン
-    // 列幅は中身の最大で自動決定されるので、スリット数はスリットの真下、
-    // 再生ボタンは絵（＝「-4」）の真下に中央揃えで並ぶ（モバイルでも自動整合）。
+    // スリット / ： / 絵 の 3 セルを横並びに（スリット数は下部バーへ移設した）
     const grid = document.createElement("div");
     grid.className = "rr-grid";
-    const gapCell = document.createElement("div"); // 2列目・下段の空き
-    const playWrap = document.createElement("div");
-    playWrap.className = "rr-playwrap";
-    if (row2Extra) playWrap.append(row2Extra); // 3列目・下段＝再生／停止ボタン
-    grid.append(slit, colon, image, slitCount, gapCell, playWrap);
+    grid.append(slit, colon, image);
 
     root.append(title, grid);
     parent.append(root);

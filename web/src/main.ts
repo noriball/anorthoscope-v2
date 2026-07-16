@@ -113,22 +113,19 @@ const hooks: AppHooks = {
   getIndex: () => state.index,
 };
 
-const bar = new ControlBar(controlsRoot, hooks);
-// 再生／停止は回転比パネルの「スリット数」の右隣に差し込む
+// 再生／停止は下部バーの中央に置く（バーは常に出ているので、単一パネルへ
+// フォーカスして回転比パネルが隠れている間も操作できる）
 const playButton = new PlayButton({
   toggle: () => hooks.togglePause(),
   isPaused: () => state.paused,
 });
-const rotationRatio = new RotationRatio(
-  stage,
-  {
-    getParams: () => state.params,
-    setParams: (patch) => {
-      state.params = { ...state.params, ...patch };
-    },
+const bar = new ControlBar(controlsRoot, hooks, playButton.el);
+const rotationRatio = new RotationRatio(stage, {
+  getParams: () => state.params,
+  setParams: (patch) => {
+    state.params = { ...state.params, ...patch };
   },
-  playButton.el,
-);
+});
 const zoomControls = new ZoomControls(stage, {
   zoomIn: () => sim.zoomBy(ZOOM_STEP_FACTOR),
   zoomOut: () => sim.zoomBy(1 / ZOOM_STEP_FACTOR),

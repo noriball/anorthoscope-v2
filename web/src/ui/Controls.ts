@@ -8,6 +8,8 @@ import {
   BG_MIN,
   BG_MAX,
   BG_STEP,
+  SLITS_MIN,
+  SLITS_MAX,
   type Params,
 } from "../config";
 import type { Picture } from "../images";
@@ -41,6 +43,8 @@ const OVERLAY_MODES: [OverlayMode, IconName, string, string][] = [
 export class ControlBar {
   private readonly root: HTMLElement;
   private readonly hooks: AppHooks;
+  /** 再生／停止ボタン（PlayButton の要素をバーの中央へ差し込む） */
+  private readonly playEl?: HTMLElement;
 
   private readonly overlayBtns = new Map<OverlayMode, HTMLButtonElement>();
 
@@ -48,10 +52,12 @@ export class ControlBar {
   private speedValueLabel!: HTMLSpanElement;
   private fadeInput!: HTMLInputElement;
   private bgInput!: HTMLInputElement;
+  private slitCountInput!: HTMLInputElement;
 
-  constructor(root: HTMLElement, hooks: AppHooks) {
+  constructor(root: HTMLElement, hooks: AppHooks, playEl?: HTMLElement) {
     this.root = root;
     this.hooks = hooks;
+    this.playEl = playEl;
     this.build();
   }
 
@@ -121,12 +127,32 @@ export class ControlBar {
       this.overlayBtns.set(mode, b);
       overlay.append(b);
     }
+    // --- スリット数（回転比パネルから移設。スリット関連としてこのブロックに置く）---
+    const slitCount = this.stepperField("スリット数", SLITS_MIN, SLITS_MAX, {
+      get: () => this.hooks.getParams().numSlits,
+      set: (v) => this.hooks.setParams({ numSlits: v }),
+    });
+
     const full = this.iconButton("fullscreen", "", () => this.hooks.toggleFullscreen(), "フルスクリーン");
     full.classList.add("icon");
     const help = this.button("?", () => this.hooks.openGuide(), "操作ガイド");
-    const actions = group(overlay, full, help);
 
-    this.root.append(picker, slitPicker, sep(), params, spacer(), actions);
+    // 左から「画像」「スリット」「再生（中央）」「各種スライダー」「全画面・ガイド」。
+    // 再生は両側の spacer で中央へ寄せる。モバイルは spacer が消えて折返すので、
+    // 代わりに play-group を独立した行にして中央に置く（CSS 側）。
+    const playGroup = group(this.playEl ?? el("span"));
+    playGroup.classList.add("play-group");
+    this.root.append(
+      group(picker),
+      sep(),
+      group(slitPicker, overlay, slitCount),
+      spacer(),
+      playGroup,
+      spacer(),
+      params,
+      sep(),
+      group(full, help),
+    );
     this.update();
   }
 
@@ -152,6 +178,50 @@ export class ControlBar {
     return b;
   }
 
+  /** バー用のコンパクトな整数ステッパー（− 値 ＋）。1刻み固定 */
+  private stepperField(
+    labelText: string,
+    min: number,
+    max: number,
+    bind: { get: () => number; set: (v: number) => void },
+  ): HTMLElement {
+    const clamp = (v: number) => Math.min(max, Math.max(min, v));
+    const wrap = el("div", "bar-stepper");
+    const lbl = el("span", "bar-stepper-label");
+    lbl.textContent = labelText;
+
+    const input = el("input", "num bar-stepper-num");
+    input.type = "number";
+    input.min = String(min);
+    input.max = String(max);
+    input.step = "1";
+    input.inputMode = "numeric";
+    input.oninput = () => {
+      if (input.value === "") return;
+      const v = Number(input.value);
+      if (!Number.isNaN(v)) bind.set(clamp(Math.round(v)));
+    };
+    input.onblur = () => this.update();
+    input.onkeydown = (e) => {
+      if (e.key === "Enter") input.blur();
+    };
+
+    const minus = this.button("−", () => {
+      bind.set(clamp(Math.round(bind.get()) - 1));
+      this.update();
+    });
+    const plus = this.button("+", () => {
+      bind.set(clamp(Math.round(bind.get()) + 1));
+      this.update();
+    });
+    minus.classList.add("icon");
+    plus.classList.add("icon");
+
+    this.slitCountInput = input;
+    wrap.append(lbl, minus, input, plus);
+    return wrap;
+  }
+
   private setOverlay(mode: OverlayMode): void {
     this.hooks.setParams({
       showGuideLines: mode === "line",
@@ -171,6 +241,7 @@ export class ControlBar {
     setInputUnlessFocused(this.speedInput, String(p.speed));
     this.speedValueLabel.textContent = `${p.speed.toFixed(1)}×`;
     setInputUnlessFocused(this.fadeInput, String(p.fadeAlpha));
+    setInputUnlessFocused(this.slitCountInput, String(p.numSlits));
   }
 }
 
