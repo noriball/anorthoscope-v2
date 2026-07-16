@@ -215,6 +215,7 @@ export class CompressEditor {
         if (this.loadTarget === "left") this.loadPicture(pic);
         else this.loadWedgePhoto(pic);
       },
+      {}, // 読み込む画像を選ぶだけ（ここから新規作成・編集・削除はしない）
       "画像を選ぶ",
       "compress-picker",
     );

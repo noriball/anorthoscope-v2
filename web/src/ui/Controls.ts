@@ -22,8 +22,6 @@ export interface AppHooks {
   togglePause(): void;
   toggleFullscreen(): void;
   openGuide(): void;
-  openCompress(): void;
-  openGallery(): void;
   openImagePicker(): void;
   openSlitPicker(): void;
   getImages(): Picture[];
@@ -60,12 +58,12 @@ export class ControlBar {
   private build(): void {
     this.root.textContent = "";
 
-    // --- 画像を選ぶ（一覧から選択。前後移動もここから） ---
+    // --- 画像（見本・自作の絵の一覧。編集・削除・新規作成もこの中） ---
     const picker = this.iconButton(
       "image",
-      "画像を選ぶ",
+      "画像",
       () => this.hooks.openImagePicker(),
-      "画像一覧から選ぶ",
+      "画像を選ぶ・描く",
     );
     picker.classList.add("wide");
 
@@ -123,30 +121,10 @@ export class ControlBar {
       this.overlayBtns.set(mode, b);
       overlay.append(b);
     }
-    const compress = this.iconButton(
-      "palette",
-      "作画",
-      () => this.hooks.openCompress(),
-      "作画モード：左右どちらの円にも描ける（右は繰り返しパターン）",
-    );
-    compress.classList.add("wide");
-    const gallery = this.iconButton(
-      "gallery",
-      "ギャラリー",
-      () => this.hooks.openGallery(),
-      "保存した絵",
-    );
-    gallery.classList.add("wide");
     const full = this.iconButton("fullscreen", "", () => this.hooks.toggleFullscreen(), "フルスクリーン");
     full.classList.add("icon");
     const help = this.button("?", () => this.hooks.openGuide(), "操作ガイド");
-    const actions = group(
-      overlay,
-      compress,
-      gallery,
-      full,
-      help,
-    );
+    const actions = group(overlay, full, help);
 
     this.root.append(picker, slitPicker, sep(), params, spacer(), actions);
     this.update();

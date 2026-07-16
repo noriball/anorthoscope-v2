@@ -1,7 +1,7 @@
 import "./style.css";
 import { DEFAULT_PARAMS, ZOOM_STEP_FACTOR, type Params } from "./config";
 import { loadInitialImages, pictureFromURL, type Picture } from "./images";
-import { listDrawings, type Drawing } from "./gallery";
+import { deleteDrawing, listDrawings, type Drawing } from "./gallery";
 import {
   loadSlitShapes,
   getSelectedSlitId,
@@ -16,7 +16,6 @@ import { ZoomControls } from "./ui/ZoomControls";
 import { PlayButton } from "./ui/PlayButton";
 import { Guide } from "./ui/Guide";
 import { CompressEditor } from "./ui/CompressEditor";
-import { Gallery } from "./ui/Gallery";
 import { ImagePicker } from "./ui/ImagePicker";
 import { SlitPicker, type SlitShape } from "./ui/SlitPicker";
 
@@ -108,8 +107,6 @@ const hooks: AppHooks = {
   },
   toggleFullscreen,
   openGuide: () => guide.show(),
-  openCompress: () => compress.open(),
-  openGallery: () => gallery.show(),
   openImagePicker: () => imagePicker.show(),
   openSlitPicker: () => slitPicker.show(),
   getImages: () => state.images,
@@ -152,11 +149,15 @@ function syncFocusUI(): void {
 const compress = new CompressEditor(onDrawingSaved, useWithoutSaving, onSlitMaskChanged, () => {});
 compress.bind(() => state.images);
 compress.bindNumSlits(() => state.params.numSlits);
-const gallery = new Gallery(useDrawing, editDrawing, onDrawingDeleted);
-const imagePicker = new ImagePicker((i) => setIndex(i));
+const imagePicker = new ImagePicker((i) => setIndex(i), {
+  onCreate: () => compress.open(),
+  onEdit: (d) => compress.open(d),
+  onDelete: (d) => deleteDrawingAt(d),
+});
 imagePicker.bind(
   () => state.images,
   () => state.index,
+  (i) => drawingAt(i),
 );
 const slitPicker = new SlitPicker(
   (i) => setSlitShape(i),
@@ -183,11 +184,19 @@ async function onDrawingSaved(d: Drawing): Promise<void> {
   }
 }
 
-/** ギャラリーの「使う」：その作品をシミュレータに表示 */
-function useDrawing(d: Drawing): void {
-  const idx = drawingIndex.get(d.id);
-  if (idx !== undefined) setIndex(idx);
-  else onDrawingSaved(d); // 未読み込みなら取り込む
+/** 画像一覧のその位置が自作の絵なら、その Drawing を返す（見本画像なら undefined） */
+function drawingAt(index: number): Drawing | undefined {
+  for (const [id, idx] of drawingIndex) {
+    if (idx === index) return listDrawings().find((d) => d.id === id);
+  }
+  return undefined;
+}
+
+/** 画像一覧からの削除：保存を消し、画像リストからも外して一覧を更新 */
+function deleteDrawingAt(d: Drawing): void {
+  deleteDrawing(d.id);
+  onDrawingDeleted(d.id);
+  if (imagePicker.visible) imagePicker.refresh();
 }
 
 /** 作画の「保存せず使う」：ギャラリーには残さず、一時的にシミュレータへ反映する */
@@ -217,12 +226,7 @@ async function deleteSlit(id: string): Promise<void> {
   if (slitPicker.visible) slitPicker.refresh();
 }
 
-/** ギャラリーの「編集」/「新規作成」：作画エディタで開く */
-function editDrawing(d: Drawing | null): void {
-  compress.open(d ?? undefined);
-}
-
-/** ギャラリー削除時：画像リストからも外す */
+/** 自作の絵を消したとき：画像リストからも外す */
 function onDrawingDeleted(id: string): void {
   const idx = drawingIndex.get(id);
   if (idx === undefined) return;
@@ -413,7 +417,6 @@ document.addEventListener("fullscreenchange", scheduleResize);
 window.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
     guide.hide();
-    gallery.hide();
     imagePicker.hide();
     if (sim.getFocus() !== "both") {
       sim.setFocus("both");
