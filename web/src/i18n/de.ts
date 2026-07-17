@@ -1,0 +1,156 @@
+import type { TranslationKey } from "./ja";
+export const de: Record<TranslationKey, string> = {
+  // ---- allgemein ----
+  "common.close": "Schließen",
+  "common.save": "Speichern",
+  "common.undo": "Rückgängig",
+  "common.clear": "Löschen",
+  "common.cancel": "Abbrechen",
+  "common.createLabel": "Neu",
+  "common.black": "Schwarz",
+  "common.white": "Weiß",
+  "common.background": "Hintergrund",
+  "common.deleteConfirm": "„{name}“ löschen?",
+  "common.yes": "An",
+  "common.no": "Aus",
+
+  // ---- Bedienungsanleitung ----
+  "guide.subtitle": "Anorthoscope – Bedienungsanleitung",
+  "guide.footer": "Klicken Sie irgendwohin oder drücken Sie Esc zum Schließen",
+  "guide.rows.playPause.action": "Abspielen / Pause",
+  "guide.rows.playPause.location": "Abspielen-Button in der Mitte der unteren Leiste",
+  "guide.rows.selectImage.action": "Ein Bild aus der Liste auswählen",
+  "guide.rows.selectImage.location": "Bild: Auswählen / Erstellen",
+  "guide.rows.hideImage.action": "Das Bild ausblenden, um nur die Bewegung des Schlitzes zu sehen",
+  "guide.rows.hideImage.location": "Bild: Anzeigen (an = sichtbar, aus = ausgeblendet)",
+  "guide.rows.speedFade.action": "Drehgeschwindigkeit / Ausblenden",
+  "guide.rows.speedFade.location": "Schieberegler",
+  "guide.rows.rotationRatio.action": "Drehzahlverhältnis",
+  "guide.rows.rotationRatio.location": "− + / Wert im unteren mittleren Panel",
+  "guide.rows.selectSlit.action": "Die Form der Schlitzöffnung auswählen oder erstellen",
+  "guide.rows.selectSlit.location": "Schlitz: Auswählen / Erstellen",
+  "guide.rows.slitLine.action": "Die Position des Schlitzes als rote Linie einblenden",
+  "guide.rows.slitLine.location": "Schlitz: Position (an/aus)",
+  "guide.rows.slitPlate.action": "Die tatsächliche Schlitzscheibe einblenden (schwarze Scheibe + transparentes Fenster)",
+  "guide.rows.slitPlate.location": "Schlitz: Anzeigen (an/aus)",
+  "guide.rows.slitCount.action": "Die Anzahl der Schlitze ändern",
+  "guide.rows.slitCount.location": "Schlitz: Anzahl − +",
+  "guide.rows.draw.action": "Ein eigenes Bild zeichnen (auf einem der beiden Kreise)",
+  "guide.rows.draw.location": "Bild: Auswählen / Erstellen → + Neu",
+  "guide.rows.gallery.action": "Ein gespeichertes Bild aufrufen, bearbeiten oder löschen",
+  "guide.rows.gallery.location": "Aus der Bilderliste",
+  "guide.rows.fullscreen.action": "Vollbild",
+  "guide.rows.fullscreen.location": "Vollbild-Button unten rechts",
+  "guide.rows.paintAxes.action": "Zeichnen: links = 360°-Bild, rechts = 1/K-Wiederholmuster",
+  "guide.rows.paintAxes.location": "Auf beiden Kreisen kann gezeichnet werden",
+  "guide.rows.paintSymmetry.action": "Zeichnen Sie auf ein beliebiges Segment rechts – es wird K-fach symmetrisch kopiert",
+  "guide.rows.paintSymmetry.location": "Gleiche Geometrie wie beim Anorthoskop",
+  "guide.rows.focusClick.action": "Auf einen Kreis klicken zum Vergrößern / erneut klicken zum Zurückkehren",
+  "guide.rows.focusClick.location": "Klick auf das Bild",
+  "guide.rows.focusZoom.action": "Bei Vergrößerung mit Ziehen schwenken, mit −/+ zoomen oder zurücksetzen",
+  "guide.rows.focusZoom.location": "Zieh-/Zoom-Buttons",
+
+  // ---- untere Steuerleiste ----
+  "controls.imagePick": "Auswählen / Erstellen",
+  "controls.imagePickTitle": "Ein Beispiel oder ein eigenes Bild wählen, oder ein neues zeichnen",
+  "controls.imageToggle": "Anzeigen",
+  "controls.imageToggleTitle": "Bildanzeige umschalten (ausblenden, um nur die Schlitzbewegung zu sehen)",
+  "controls.slitSelect": "Auswählen / Erstellen",
+  "controls.slitSelectTitle": "Die Form der Schlitzöffnung auswählen oder erstellen",
+  "controls.speed": "Geschwindigkeit",
+  "controls.fade": "Ausblenden",
+  "controls.slitLine": "Position",
+  "controls.slitLineTitle": "Form und Position des Schlitzes als rote Linie auf beiden Kreisen einblenden",
+  "controls.slitPlate": "Anzeigen",
+  "controls.slitPlateTitle": "Die tatsächliche Schlitzscheibe (schwarze Scheibe + transparentes Fenster) auf dem linken Kreis einblenden",
+  "controls.slitCount": "Anzahl",
+  "controls.fullscreenTitle": "Vollbild",
+  "controls.helpTitle": "Bedienungsanleitung",
+  "controls.imageGroupLabel": "Bild",
+  "controls.slitGroupLabel": "Schlitz",
+
+  // ---- Drehzahlverhältnis-Panel ----
+  "rotationRatio.title": "Drehzahlverhältnis",
+  "rotationRatio.slit": "Schlitz",
+  "rotationRatio.image": "Bild",
+
+  // ---- Abspielen-Button ----
+  "playButton.play": "Abspielen",
+  "playButton.pause": "Pause",
+
+  // ---- Zoom-Steuerung ----
+  "zoomControls.zoomOut": "Verkleinern",
+  "zoomControls.reset": "Ansicht zurücksetzen",
+  "zoomControls.zoomIn": "Vergrößern",
+
+  // ---- Bildauswahl ----
+  "imagePicker.title": "Bilder",
+  "imagePicker.editTitle": "Dieses Bild im Zeichenmodus bearbeiten",
+  "imagePicker.deleteTitle": "Dieses Bild löschen",
+
+  // ---- Schlitzform-Auswahl ----
+  "slitPicker.title": "Eine Schlitzform auswählen",
+  "slitPicker.deleteTitle": "Diesen eigenen Schlitz löschen",
+
+  // ---- Schlitzform-Daten ----
+  "slitMask.presetBasic": "Standard",
+  "slitMask.customPrefix": "Eigene ",
+
+  // ---- Zeicheneditor (CompressEditor) ----
+  "compress.pickerTitle": "Ein Bild auswählen",
+  "compress.photoMoveTitle": "Foto verschieben (rechts)",
+  "compress.photoMoveTitleDisabled": "Foto verschieben (rechts): zuerst ein Foto laden",
+  "compress.savedToast": "Gespeichert",
+  "compress.loadHintLeft": "Lädt ein bereits verzerrtes 360°-Master-Bild direkt in den linken Kreis.",
+  "compress.loadHintRight":
+    "Platziert Ihre eigene Zeichnung oder ein Foto im rechten Segment (überstehende Teile werden automatisch abgeschnitten; Position und Größe lassen sich später mit dem Werkzeug „Foto verschieben“ und +/− anpassen).",
+  "compress.loadModalTitle": "Ein Bild laden",
+  "compress.loadTabLeft": "Master (nach links)",
+  "compress.loadTabRight": "Fotoplatzierung (nach rechts)",
+  "compress.pickFromList": "Aus der Bilderliste wählen",
+  "compress.pickFromFile": "+ Aus einer Datei",
+  "compress.outlineLabel": "Umrisslinie",
+  "compress.centerMarkLabel": "Mittelpunktmarkierung",
+  "compress.diameterLabel": "Durchmesser",
+  "compress.dotShape": "Punkt",
+  "compress.crossShape": "Kreuz",
+  "compress.download": "Herunterladen",
+  "compress.exportModalTitle": "PNG-Downloadeinstellungen",
+  "compress.slitShapeSavedToast": "Schlitzform gespeichert",
+  "compress.slitShapeModalTitle": "Schlitzform",
+  "compress.slitShapeDesc":
+    "Zeichnen Sie die Form der Schlitzöffnung von Hand innerhalb des gelben Segments (1/n). Nicht nur gerade Linien – auch Diagonalen, Zickzack und Wellen sind möglich (Weiß = offener Bereich). Die Spitze ist der Kreismittelpunkt, der äußere Bogen ist der Kreisumfang.",
+  "compress.eraser": "Radierer",
+  "compress.resetToDefault": "Auf Standardlinie zurücksetzen",
+  "compress.genTitle":
+    "Aus Parametern erzeugen (wird bei jeder Reglerbewegung neu gezeichnet – als Grundlage oder Ausgangspunkt für die Handzeichnung)",
+  "compress.period": "Periode",
+  "compress.amplitude": "Amplitude",
+  "compress.sharpness": "Schärfe",
+  "compress.generateBtn": "Diese Form erzeugen",
+  "compress.loadImageBtn": "Ein Bild laden",
+  "compress.photoZoomOutTitle": "Foto verkleinern",
+  "compress.photoZoomInTitle": "Foto vergrößern",
+  "compress.photoRemove": "Foto entfernen",
+  "compress.portraitToggle": "⇄ Ansicht wechseln",
+  "compress.portraitToggleTitle":
+    "Welcher Kreis im Hochformat angezeigt wird umschalten (rechts = Wiederholmuster / links = volle 360°)",
+  "compress.toolBrush": "Pinsel",
+  "compress.toolLine": "Linie",
+  "compress.toolCircle": "Kreis",
+  "compress.toolFill": "Füllen",
+  "compress.colorLabel": "Farbe",
+  "compress.thicknessLabel": "Stärke",
+  "compress.bgColorTitle": "Hintergrundfarbe",
+  "compress.pngExport": "PNG exportieren",
+  "compress.useWithoutSaving": "Ohne Speichern verwenden",
+  "compress.useWithoutSavingTitle":
+    "Wendet das aktuelle Bild vorübergehend auf den Simulator an, ohne es in der Galerie zu speichern (geht beim Neuladen verloren)",
+  "compress.leftPaneLabel": "360°-Bild (hier zeichnen)",
+  "compress.rightPaneLabel": "Wiederholmuster (zeichnet auf jedes Segment)",
+  "compress.hint":
+    "Sie können auf beide Kreise zeichnen. Zeichnen auf dem linken (360°-Bild) wird auf den rechten komprimiert; Zeichnen auf dem rechten (Wiederholmuster) wird K-fach symmetrisch auf jedes Segment kopiert. Mit „Ein Bild laden“ wählen Sie ein Master-Bild (nach links) oder platzieren ein Foto (nach rechts) – ein Foto lässt sich mit dem Werkzeug „Foto verschieben“ bewegen, mit +/− skalieren, überstehende Teile werden automatisch abgeschnitten. Gespeichert wird nur das linke 360°-Bild.",
+
+  // ---- main.ts ----
+  "main.untitled": "Ohne Titel",
+} as const;

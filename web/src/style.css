@@ -234,7 +234,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  font-size: 10px;
+  font-size: 12px;
   color: var(--text-dim);
 }
 .field > span {
@@ -255,17 +255,17 @@ body {
   outline: none;
   border-color: var(--accent);
 }
-/* バー内のコンパクトなステッパー（− 値 ＋）。スリット数に使用 */
+/* バー内のコンパクトなステッパー（− 値 ＋）。スリットの本数に使用。
+   「速度」等と同じく、上にキャプション（.group-label 共用）、下にボタン行。 */
 .bar-stepper {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.bar-stepper-row {
   display: flex;
   align-items: center;
   gap: 4px;
-}
-.bar-stepper-label {
-  font-size: 10px;
-  color: var(--text-dim);
-  white-space: nowrap;
-  margin-right: 2px;
 }
 .bar-stepper-num {
   width: 42px;
@@ -283,6 +283,39 @@ body {
   width: 90px;
   height: 28px;
 }
+/* 地の色（市松＝透明、白→黒）を見せるスライダー。ネイティブの青トラックを消し、
+   input の background をそのまま見せ、つまみだけ描く。 */
+.slider-swatch {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 20px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background-clip: padding-box;
+  cursor: pointer;
+}
+.slider-swatch::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 10px;
+  height: 24px;
+  border-radius: 3px;
+  background: var(--accent);
+  border: 1px solid #000;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+}
+.slider-swatch::-moz-range-thumb {
+  width: 10px;
+  height: 24px;
+  border-radius: 3px;
+  background: var(--accent);
+  border: 1px solid #000;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+}
+.slider-swatch::-moz-range-track {
+  background: transparent;
+}
 .field-inline {
   display: flex;
   align-items: center;
@@ -292,6 +325,10 @@ body {
   font-size: 13px;
   color: var(--text-dim);
   font-variant-numeric: tabular-nums;
+  /* 桁数の変化（例: "1.0×" → "-2.0×"）で幅が変わり、隣のスライダーごと
+     位置がずれて見えないよう幅を固定する */
+  display: inline-block;
+  width: 40px;
 }
 
 /* アイコン（インライン SVG。線色は文字色に追従するので .on / hover にそのまま乗る） */
@@ -334,11 +371,37 @@ body {
   border-color: var(--accent);
 }
 
-/* コントロール群 */
+/* コントロール群。flex-end で下端を揃える：本数ステッパーのように「上に
+   キャプション＋下にボタン行」で背が高い要素と、素の1行ボタンが混在しても、
+   ボタン自体の高さが常に同じ基準線に揃う（center だと背が高い要素が全体を
+   押し下げて、その場だけボタンが下にずれて見えてしまう）。 */
 .group {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 4px;
+  flex: 0 0 auto;
+}
+/* 「画像」「スリット」など、テキスト見出しで囲ったまとまり。
+   「速度」「フェード」「背景」の field() と同じく、上に枠なしの小さいキャプション、
+   下にボタン列を置く（チップや枠を付けるとボタンに見えてしまうため使わない）。 */
+.labeled-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 0 0 auto;
+}
+.group-label {
+  font-size: 12px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+/* 「画像・スリット」「スライダー類＋全画面・ガイド」をまとめる行。デスクトップでは
+   #controls 直下に横並びに置かれるだけ（見た目は個別に並べていたときと同じ）。
+   モバイルでは、この行単位で CSS order を使って並び替える。 */
+.bar-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   flex: 0 0 auto;
 }
 .sep {
@@ -372,8 +435,13 @@ body {
   transform: translateY(1px);
 }
 .btn.on {
+  background: var(--accent);
   border-color: var(--accent);
-  color: var(--accent);
+  color: #14161d;
+}
+.btn.on:hover {
+  background: var(--accent);
+  border-color: var(--accent);
 }
 .btn.wide {
   padding: 0 12px;
@@ -550,9 +618,9 @@ body {
   border-color: var(--border-hi);
 }
 .paint-btn.on {
+  background: var(--accent);
   border-color: var(--accent);
-  color: var(--accent);
-  background: #23210f;
+  color: #14161d;
 }
 .paint-btn:disabled {
   opacity: 0.35;
@@ -686,6 +754,24 @@ body {
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
+}
+/* スリット形状「パラメータで生成」のスライダー行の集まり */
+.slit-shape-gen {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+.slit-shape-gen .export-row {
+  flex-wrap: nowrap;
+}
+.slit-shape-gen .export-row .paint-label:first-child {
+  width: 48px;
+  flex: 0 0 auto;
+}
+.slit-shape-gen .export-row input[type="range"] {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 .export-color-group {
   display: flex;
@@ -945,17 +1031,61 @@ body {
     justify-content: center;
     row-gap: 6px;
   }
+  /* labeled-group（画像・スリット）自体も同じく画面幅を超えたら折返す。
+     中の .group はこの折返しの範囲内で自身のボタンをさらに折返す。 */
+  .labeled-group {
+    flex: 1 1 auto;
+    max-width: 100%;
+    align-items: center;
+  }
   .slider { width: 64px; }
-  .field { font-size: 9px; }
+  .field { font-size: 11px; }
+  .group-label { font-size: 11px; }
   .btn { font-size: 12px; padding: 0 7px; height: 28px; }
   .btn.wide { padding: 0 8px; }
   .btn.play { width: 68px; }
   .sep { display: none; }
   .spacer { display: none; }
-  /* 再生／停止は幅いっぱいの独立行にして、折返しレイアウトでも中央に置く */
-  .play-group {
+
+  /* モバイルでの並び順：①再生 ②画像・スリット ③スライダー類＋全画面・ガイド。
+     各行を幅いっぱいの独立行にし、order で見た目の順序だけ入れ替える
+     （DOM 順・デスクトップの見た目は変えない）。 */
+  .play-group,
+  .bar-row {
     flex: 1 0 100%;
+  }
+  .play-group {
     justify-content: center;
+    order: -3;
+  }
+  .bar-row-groups {
+    order: -2;
+    justify-content: center;
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+  .bar-row-sliders {
+    order: -1;
+  }
+  /* スライダー3つ（速度・フェード・背景）で残り幅を均等配分し、
+     全画面・ガイドは固定サイズのまま右端に留める。 */
+  .bar-row-sliders .field {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .bar-row-sliders .slider-swatch {
+    width: 100%;
+  }
+  .bar-row-sliders .field-inline {
+    width: 100%;
+  }
+  .bar-row-sliders .field-inline .slider {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+  }
+  .bar-row-sliders .bar-actions {
+    flex: 0 0 auto;
   }
 
   .paint-stage {

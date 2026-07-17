@@ -1,0 +1,156 @@
+import type { TranslationKey } from "./ja";
+export const en: Record<TranslationKey, string> = {
+  // ---- common ----
+  "common.close": "Close",
+  "common.save": "Save",
+  "common.undo": "Undo",
+  "common.clear": "Clear",
+  "common.cancel": "Cancel",
+  "common.createLabel": "New",
+  "common.black": "Black",
+  "common.white": "White",
+  "common.background": "Background",
+  "common.deleteConfirm": "Delete “{name}”?",
+  "common.yes": "On",
+  "common.no": "Off",
+
+  // ---- controls guide ----
+  "guide.subtitle": "Anorthoscope Controls Guide",
+  "guide.footer": "Click anywhere or press Esc to close",
+  "guide.rows.playPause.action": "Play / Pause",
+  "guide.rows.playPause.location": "Play button, center of the bottom bar",
+  "guide.rows.selectImage.action": "Choose an image from the list",
+  "guide.rows.selectImage.location": "Image: Select / Create",
+  "guide.rows.hideImage.action": "Hide the picture to see only the slit motion",
+  "guide.rows.hideImage.location": "Image: Show (on to show, off to hide)",
+  "guide.rows.speedFade.action": "Rotation speed / fade",
+  "guide.rows.speedFade.location": "Sliders",
+  "guide.rows.rotationRatio.action": "Rotation ratio",
+  "guide.rows.rotationRatio.location": "− + / value in the bottom-center panel",
+  "guide.rows.selectSlit.action": "Choose or create the slit's hole shape",
+  "guide.rows.selectSlit.location": "Slit: Select / Create",
+  "guide.rows.slitLine.action": "Overlay the slit position as a red line",
+  "guide.rows.slitLine.location": "Slit: Position (on/off)",
+  "guide.rows.slitPlate.action": "Overlay the actual slit plate (black disc + transparent window)",
+  "guide.rows.slitPlate.location": "Slit: Show (on/off)",
+  "guide.rows.slitCount.action": "Change the number of slits",
+  "guide.rows.slitCount.location": "Slit: Count − +",
+  "guide.rows.draw.action": "Draw your own picture (on either circle)",
+  "guide.rows.draw.location": "Image: Select / Create → + New",
+  "guide.rows.gallery.action": "Recall, edit, or delete a saved picture",
+  "guide.rows.gallery.location": "From the image list",
+  "guide.rows.fullscreen.action": "Fullscreen",
+  "guide.rows.fullscreen.location": "Fullscreen button, bottom right",
+  "guide.rows.paintAxes.action": "Drawing: left = 360° image, right = 1/K repeating pattern",
+  "guide.rows.paintAxes.location": "You can draw on either circle",
+  "guide.rows.paintSymmetry.action": "Draw on any piece on the right and it copies with K-fold symmetry",
+  "guide.rows.paintSymmetry.location": "Same geometry as the anorthoscope",
+  "guide.rows.focusClick.action": "Click a circle to zoom in, click again to go back",
+  "guide.rows.focusClick.location": "Click on the image",
+  "guide.rows.focusZoom.action": "While zoomed, drag to pan, use −/+ to zoom or reset",
+  "guide.rows.focusZoom.location": "Drag / zoom buttons",
+
+  // ---- bottom control bar ----
+  "controls.imagePick": "Select / Create",
+  "controls.imagePickTitle": "Choose a sample or your own picture, or draw a new one",
+  "controls.imageToggle": "Show",
+  "controls.imageToggleTitle": "Toggle the picture (hide it to see only the slit motion)",
+  "controls.slitSelect": "Select / Create",
+  "controls.slitSelectTitle": "Choose or create the slit's hole shape",
+  "controls.speed": "Speed",
+  "controls.fade": "Fade",
+  "controls.slitLine": "Position",
+  "controls.slitLineTitle": "Overlay the slit's shape and position as a red line on both circles",
+  "controls.slitPlate": "Show",
+  "controls.slitPlateTitle": "Overlay the actual slit plate (black disc + transparent window) on the left circle",
+  "controls.slitCount": "Count",
+  "controls.fullscreenTitle": "Fullscreen",
+  "controls.helpTitle": "Controls guide",
+  "controls.imageGroupLabel": "Image",
+  "controls.slitGroupLabel": "Slit",
+
+  // ---- rotation ratio panel ----
+  "rotationRatio.title": "Rotation ratio",
+  "rotationRatio.slit": "Slit",
+  "rotationRatio.image": "Picture",
+
+  // ---- play button ----
+  "playButton.play": "Play",
+  "playButton.pause": "Pause",
+
+  // ---- zoom controls ----
+  "zoomControls.zoomOut": "Zoom out",
+  "zoomControls.reset": "Reset view",
+  "zoomControls.zoomIn": "Zoom in",
+
+  // ---- image picker ----
+  "imagePicker.title": "Images",
+  "imagePicker.editTitle": "Edit this picture in drawing mode",
+  "imagePicker.deleteTitle": "Delete this picture",
+
+  // ---- slit shape picker ----
+  "slitPicker.title": "Choose a slit shape",
+  "slitPicker.deleteTitle": "Delete this custom slit",
+
+  // ---- slit shape data ----
+  "slitMask.presetBasic": "Basic",
+  "slitMask.customPrefix": "Custom ",
+
+  // ---- drawing editor (CompressEditor) ----
+  "compress.pickerTitle": "Choose an image",
+  "compress.photoMoveTitle": "Move photo (right)",
+  "compress.photoMoveTitleDisabled": "Move photo (right): load a photo first",
+  "compress.savedToast": "Saved",
+  "compress.loadHintLeft": "Loads a pre-warped 360° master image directly into the left circle.",
+  "compress.loadHintRight":
+    "Places your own drawing or a photo inside the wedge on the right (anything that overflows is cropped automatically; you can adjust its position and size afterward with the “Move photo” tool and +/−).",
+  "compress.loadModalTitle": "Load an image",
+  "compress.loadTabLeft": "Master (to left)",
+  "compress.loadTabRight": "Photo placement (to right)",
+  "compress.pickFromList": "Choose from image list",
+  "compress.pickFromFile": "+ From a file",
+  "compress.outlineLabel": "Outline",
+  "compress.centerMarkLabel": "Center mark",
+  "compress.diameterLabel": "Diameter",
+  "compress.dotShape": "Dot",
+  "compress.crossShape": "Cross",
+  "compress.download": "Download",
+  "compress.exportModalTitle": "PNG download settings",
+  "compress.slitShapeSavedToast": "Slit shape saved",
+  "compress.slitShapeModalTitle": "Slit shape",
+  "compress.slitShapeDesc":
+    "Draw the shape of the slit plate's opening by hand inside the yellow wedge (1/n). Not just straight lines — diagonals, zigzags, and waves all work (white = open area). The apex is the circle's center, the outer arc is its circumference.",
+  "compress.eraser": "Eraser",
+  "compress.resetToDefault": "Reset to default line",
+  "compress.genTitle":
+    "Generate from parameters (redraws every time you move a slider — a base or starting point for hand-drawing)",
+  "compress.period": "Period",
+  "compress.amplitude": "Amplitude",
+  "compress.sharpness": "Sharpness",
+  "compress.generateBtn": "Generate this shape",
+  "compress.loadImageBtn": "Load an image",
+  "compress.photoZoomOutTitle": "Shrink photo",
+  "compress.photoZoomInTitle": "Enlarge photo",
+  "compress.photoRemove": "Remove photo",
+  "compress.portraitToggle": "⇄ Switch view",
+  "compress.portraitToggleTitle":
+    "Switch which circle is shown in portrait mode (right = repeating pattern / left = full 360°)",
+  "compress.toolBrush": "Brush",
+  "compress.toolLine": "Line",
+  "compress.toolCircle": "Circle",
+  "compress.toolFill": "Fill",
+  "compress.colorLabel": "Color",
+  "compress.thicknessLabel": "Thickness",
+  "compress.bgColorTitle": "Background color",
+  "compress.pngExport": "Export PNG",
+  "compress.useWithoutSaving": "Use without saving",
+  "compress.useWithoutSavingTitle":
+    "Apply the current picture to the simulator temporarily, without saving it to the gallery (lost on reload)",
+  "compress.leftPaneLabel": "360° image (draw here)",
+  "compress.rightPaneLabel": "Repeating pattern (draws onto every piece)",
+  "compress.hint":
+    "You can draw on either circle. Drawing on the left (360° image) compresses onto the right; drawing on the right (repeating pattern) copies with K-fold symmetry onto every piece. Use “Load an image” to choose a master image (to the left) or place a photo (to the right) — move a photo with the “Move photo” tool, resize with +/−, and anything that overflows is cropped automatically. Only the left 360° image is saved.",
+
+  // ---- main.ts ----
+  "main.untitled": "Untitled",
+} as const;

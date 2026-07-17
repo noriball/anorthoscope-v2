@@ -25,9 +25,9 @@ export const FADE_STEP = 0.0005;
 /** 基本角速度[rad/sec]。回転比係数と速度スケールに掛かる */
 export const BASE_OMEGA = 0.6;
 
-// パラメータの可動域
-export const SPEED_MIN = -3.0;
-export const SPEED_MAX = 3.0;
+// パラメータの可動域（速度は既定値 1.0 が中央に来る範囲。負の値は逆回転）
+export const SPEED_MIN = -2.0;
+export const SPEED_MAX = 4.0;
 export const SPEED_STEP = 0.1;
 
 export const ROT_FACTOR_MIN = -360;
@@ -88,6 +88,8 @@ export interface Params {
   slitRotFactor: number;
   /** スリット数 */
   numSlits: number;
+  /** 絵（読み込んだ画像）の表示。false でスリットの動き・ガイドだけを見せる */
+  showImage: boolean;
   /** 右パネルの赤ガイドライン表示 */
   showGuideLines: boolean;
   /** スリット板モード：左パネルの回転画像に黒い円盤＋透明スリット窓を重ねる（赤は非表示） */
@@ -101,6 +103,7 @@ export const DEFAULT_PARAMS: Params = {
   imageRotFactor: -4, // 絵
   slitRotFactor: 1, // スリット
   numSlits: 4,
+  showImage: true,
   showGuideLines: true,
   slitPlate: false,
   fadeAlpha: FADE_ALPHA,

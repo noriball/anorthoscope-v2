@@ -13,6 +13,7 @@ import {
   type Params,
 } from "../config";
 import type { Picture } from "../images";
+import { t } from "../i18n";
 import { setIconLabel, type IconName } from "./icons";
 
 /** main.ts が提供する操作フック */
@@ -20,6 +21,8 @@ export interface AppHooks {
   getParams(): Params;
   setParams(patch: Partial<Params>): void;
   setBgColor(hex: string): void;
+  /** 停止中でも 1 フレームだけ描画し直す（絵の表示/非表示の即時反映などに使う） */
+  redraw(): void;
   isPaused(): boolean;
   togglePause(): void;
   toggleFullscreen(): void;
@@ -30,15 +33,6 @@ export interface AppHooks {
   getIndex(): number;
 }
 
-/** スリットをどう見せるか。showGuideLines / slitPlate の組み合わせを 1 つの選択にまとめたもの */
-type OverlayMode = "none" | "line" | "plate";
-
-const OVERLAY_MODES: [OverlayMode, IconName, string, string][] = [
-  ["line", "overlayLine", "スリット位置", "スリットの形と位置を赤い線で左右の円に重ねる"],
-  ["plate", "overlayPlate", "スリット板", "左の円に実際のスリット板（黒い円盤＋透明な窓）を重ねる"],
-  ["none", "overlayNone", "なし", "スリットを重ねずに絵だけを見る"],
-];
-
 /** 全操作をボタンと数値入力に集約した下部コントロールバー */
 export class ControlBar {
   private readonly root: HTMLElement;
@@ -46,7 +40,9 @@ export class ControlBar {
   /** 再生／停止ボタン（PlayButton の要素をバーの中央へ差し込む） */
   private readonly playEl?: HTMLElement;
 
-  private readonly overlayBtns = new Map<OverlayMode, HTMLButtonElement>();
+  private imageToggleBtn!: HTMLButtonElement;
+  private slitLineToggleBtn!: HTMLButtonElement;
+  private slitPlateToggleBtn!: HTMLButtonElement;
 
   private speedInput!: HTMLInputElement;
   private speedValueLabel!: HTMLSpanElement;
@@ -64,25 +60,24 @@ export class ControlBar {
   private build(): void {
     this.root.textContent = "";
 
-    // --- 画像（見本・自作の絵の一覧。編集・削除・新規作成もこの中） ---
-    const picker = this.iconButton(
-      "image",
-      "画像",
+    // --- 画像ブロック（選択/作成・表示切替）---
+    const imgPick = this.button(
+      t("controls.imagePick"),
       () => this.hooks.openImagePicker(),
-      "画像を選ぶ・描く",
+      t("controls.imagePickTitle"),
     );
-    picker.classList.add("wide");
+    this.imageToggleBtn = this.button(
+      t("controls.imageToggle"),
+      () => this.toggleImage(),
+      t("controls.imageToggleTitle"),
+    );
 
-    // --- スリット形状を選ぶ ---
-    const slitPicker = this.iconButton(
-      "slit",
-      "スリット形状",
+    // --- スリットブロック（形状・見え方・本数）---
+    const slitShape = this.button(
+      t("controls.slitSelect"),
       () => this.hooks.openSlitPicker(),
-      "スリット形状を選ぶ",
+      t("controls.slitSelectTitle"),
     );
-    slitPicker.classList.add("wide");
-
-    // 再生 / 停止はステージ右上の大きな円形ボタン（PlayButton）に移動した
 
     // --- 数値パラメータ（回転比・スリット数は中央上の大きな表示で操作） ---
     // 速度はスライダー＋数値表示（フェードと異なり、値を目視で把握したい操作のため）
@@ -94,66 +89,108 @@ export class ControlBar {
       this.speedValueLabel.textContent = `${v.toFixed(1)}×`;
     };
 
-    // フェードは数値表記なしのスライダー（左右にドラッグするだけ）
+    // フェードは数値表記なしのスライダー。左＝残像が長い（不透明＝背景色で覆う）／
+    // 右＝すぐ消える（透明＝市松模様で下地が見える）。市松模様は「背景色に溶ける」
+    // ことの比喩なので、背景スライダーで選んだ実際の色を左端の不透明色に反映する。
     this.fadeInput = sliderInput(FADE_MIN, FADE_MAX, FADE_STEP);
+    this.fadeInput.classList.add("slider-swatch");
     this.fadeInput.oninput = () =>
       this.hooks.setParams({ fadeAlpha: Number(this.fadeInput.value) });
 
-    // --- シミュレータ背景色（グレースケールスライダー：0=黒 ～ 255=白） ---
+    // --- シミュレータ背景色。スライダーは白（左）→黒（右）で表示し、値もそれに合わせる ---
     this.bgInput = sliderInput(BG_MIN, BG_MAX, BG_STEP);
-    this.bgInput.value = "0"; // 初期値は黒（DEFAULT_BG_COLOR と一致）
-    this.bgInput.style.background = "linear-gradient(to right, #000, #fff)";
+    this.bgInput.classList.add("slider-swatch");
+    this.bgInput.value = String(BG_MAX); // 既定は黒＝右端
+    this.bgInput.style.background = "linear-gradient(to right, #fff, #000)";
     this.bgInput.oninput = () => {
-      const v = Number(this.bgInput.value);
-      const hex = grayToHex(v);
+      // 左端（小さい値）ほど白。BG_MAX - v で反転して明るさに変換する
+      const hex = grayToHex(BG_MAX - Number(this.bgInput.value) + BG_MIN);
       this.hooks.setBgColor(hex);
+      this.updateFadeGradient(hex);
     };
+    this.updateFadeGradient(grayToHex(BG_MAX - Number(this.bgInput.value) + BG_MIN)); // 初期表示
 
     const params = group(
-      field("速度", this.speedInput, this.speedValueLabel),
-      field("フェード", this.fadeInput),
-      field("背景", this.bgInput),
+      field(t("controls.speed"), this.speedInput, this.speedValueLabel),
+      field(t("controls.fade"), this.fadeInput),
+      field(t("common.background"), this.bgInput),
     );
 
-    // --- スリットの見え方（なし / スリット位置 / スリット板）---
-    // 「位置（赤線）」と「板」は元々クロスフェードで排他なので、2つの ON/OFF ではなく
-    // 3択の切替にする（板を出すと赤線が消える、という関係が見た目で分かる）。
-    const overlay = el("div", "seg");
-    overlay.setAttribute("role", "group");
-    overlay.title = "スリットの見え方";
-    for (const [mode, name, label, title] of OVERLAY_MODES) {
-      const b = this.iconButton(name, label, () => this.setOverlay(mode), title);
-      b.classList.add("seg-btn");
-      this.overlayBtns.set(mode, b);
-      overlay.append(b);
-    }
-    // --- スリット数（回転比パネルから移設。スリット関連としてこのブロックに置く）---
-    const slitCount = this.stepperField("スリット数", SLITS_MIN, SLITS_MAX, {
-      get: () => this.hooks.getParams().numSlits,
-      set: (v) => this.hooks.setParams({ numSlits: v }),
-    });
+    // スリットの見え方：位置（赤線）と板表示はそれぞれ独立した表示/非表示トグル。
+    // 内部ではクロスフェードで排他になる（板を出すと赤線は自動的に消える）ので、
+    // 両方オンにしても見た目が壊れることはない。
+    this.slitLineToggleBtn = this.button(
+      t("controls.slitLine"),
+      () => this.toggleSlitLine(),
+      t("controls.slitLineTitle"),
+    );
+    this.slitPlateToggleBtn = this.button(
+      t("controls.slitPlate"),
+      () => this.toggleSlitPlate(),
+      t("controls.slitPlateTitle"),
+    );
+    // スリット数（回転比パネルから移設）。「画像」「スリット」と同列の
+    // 見出し付きグループにする（スリットの中に入れ子にすると見出しが2つ
+    // 並んでしまうため、独立させる）。
+    const slitCount = labeledGroup(
+      t("controls.slitCount"),
+      ...this.stepperControls(SLITS_MIN, SLITS_MAX, {
+        get: () => this.hooks.getParams().numSlits,
+        set: (v) => this.hooks.setParams({ numSlits: v }),
+      }),
+    );
 
-    const full = this.iconButton("fullscreen", "", () => this.hooks.toggleFullscreen(), "フルスクリーン");
+    const full = this.iconButton(
+      "fullscreen",
+      "",
+      () => this.hooks.toggleFullscreen(),
+      t("controls.fullscreenTitle"),
+    );
     full.classList.add("icon");
-    const help = this.button("?", () => this.hooks.openGuide(), "操作ガイド");
+    const help = this.button("?", () => this.hooks.openGuide(), t("controls.helpTitle"));
+    const actions = group(full, help);
+    actions.classList.add("bar-actions"); // モバイルで固定サイズのまま右端に留めるための目印
 
-    // 左から「画像」「スリット」「再生（中央）」「各種スライダー」「全画面・ガイド」。
+    // 「画像」「スリット」を1行、「スライダー類＋全画面・ガイド」を1行にまとめておく。
+    // デスクトップでは #controls 直下に横並びで置くだけ（見た目は従来通り）。
+    // モバイルではこの3つの行（再生／画像・スリット／スライダー類）を CSS の order で
+    // 独立した行として並べ替える（再生が一番上、その下に画像・スリット、その下に
+    // スライダー類＋全画面・ガイド）。
+    const row2 = el("div", "bar-row bar-row-groups");
+    row2.append(
+      labeledGroup(t("controls.imageGroupLabel"), imgPick, this.imageToggleBtn),
+      sep(),
+      labeledGroup(
+        t("controls.slitGroupLabel"),
+        slitShape,
+        this.slitLineToggleBtn,
+        this.slitPlateToggleBtn,
+      ),
+      slitCount,
+    );
+    const row3 = el("div", "bar-row bar-row-sliders");
+    row3.append(params, sep(), actions);
+
     // 再生は両側の spacer で中央へ寄せる。モバイルは spacer が消えて折返すので、
     // 代わりに play-group を独立した行にして中央に置く（CSS 側）。
     const playGroup = group(this.playEl ?? el("span"));
     playGroup.classList.add("play-group");
-    this.root.append(
-      group(picker),
-      sep(),
-      group(slitPicker, overlay, slitCount),
-      spacer(),
-      playGroup,
-      spacer(),
-      params,
-      sep(),
-      group(full, help),
-    );
+    this.root.append(row2, spacer(), playGroup, spacer(), row3);
     this.update();
+  }
+
+  private toggleImage(): void {
+    this.hooks.setParams({ showImage: !this.hooks.getParams().showImage });
+    this.hooks.redraw(); // 停止中でも即座に反映
+    this.update();
+  }
+
+  /** フェードスライダーの見た目を更新：左＝不透明（実際の背景色）、右＝透明（市松模様）。
+   *  背景色スライダーが変わるたびに呼び、フェードの「背景色に溶ける」比喩を実色で示す。 */
+  private updateFadeGradient(bgHex: string): void {
+    this.fadeInput.style.background =
+      `linear-gradient(to right, ${bgHex}, rgba(0,0,0,0)), ` +
+      "repeating-conic-gradient(#4a4a58 0% 25%, #2a2a34 0% 50%) 0 0 / 10px 10px";
   }
 
   private button(label: string, onClick: () => void, title = ""): HTMLButtonElement {
@@ -178,17 +215,14 @@ export class ControlBar {
     return b;
   }
 
-  /** バー用のコンパクトな整数ステッパー（− 値 ＋）。1刻み固定 */
-  private stepperField(
-    labelText: string,
+  /** バー用のコンパクトな整数ステッパー（− 値 ＋）のボタン列だけを返す。1刻み固定。
+   *  見出しは付けない（呼び出し側で labeledGroup() に渡し、他の見出しと同列に揃える）。 */
+  private stepperControls(
     min: number,
     max: number,
     bind: { get: () => number; set: (v: number) => void },
-  ): HTMLElement {
+  ): HTMLElement[] {
     const clamp = (v: number) => Math.min(max, Math.max(min, v));
-    const wrap = el("div", "bar-stepper");
-    const lbl = el("span", "bar-stepper-label");
-    lbl.textContent = labelText;
 
     const input = el("input", "num bar-stepper-num");
     input.type = "number";
@@ -218,15 +252,16 @@ export class ControlBar {
     plus.classList.add("icon");
 
     this.slitCountInput = input;
-    wrap.append(lbl, minus, input, plus);
-    return wrap;
+    return [minus, input, plus];
   }
 
-  private setOverlay(mode: OverlayMode): void {
-    this.hooks.setParams({
-      showGuideLines: mode === "line",
-      slitPlate: mode === "plate",
-    });
+  private toggleSlitLine(): void {
+    this.hooks.setParams({ showGuideLines: !this.hooks.getParams().showGuideLines });
+    this.update();
+  }
+
+  private toggleSlitPlate(): void {
+    this.hooks.setParams({ slitPlate: !this.hooks.getParams().slitPlate });
     this.update();
   }
 
@@ -234,8 +269,11 @@ export class ControlBar {
   update(): void {
     const p = this.hooks.getParams();
 
-    const mode: OverlayMode = p.slitPlate ? "plate" : p.showGuideLines ? "line" : "none";
-    for (const [m, b] of this.overlayBtns) b.classList.toggle("on", m === mode);
+    this.slitLineToggleBtn.classList.toggle("on", p.showGuideLines);
+    this.slitPlateToggleBtn.classList.toggle("on", p.slitPlate);
+
+    // 絵を隠しているときはトグルを点灯（＝この操作が効いている合図）
+    this.imageToggleBtn.classList.toggle("on", !p.showImage);
 
     // 入力欄はフォーカス中なら上書きしない（打鍵・ドラッグの邪魔をしない）
     setInputUnlessFocused(this.speedInput, String(p.speed));
@@ -258,6 +296,18 @@ function group(...children: Node[]): HTMLElement {
   const g = el("div", "group");
   g.append(...children);
   return g;
+}
+/** 先頭にテキストの見出しを付けたまとまり（例: 「画像」「スリット」） */
+/** 「速度」「フェード」等の field() と同じ形式：上に枠なしの小さいキャプション、
+ *  下にボタン列。ボタンと見分けがつくよう、チップや枠は使わない。 */
+function labeledGroup(labelText: string, ...children: Node[]): HTMLElement {
+  const wrap = el("div", "labeled-group");
+  const l = el("span", "group-label");
+  l.textContent = labelText;
+  const row = el("div", "group");
+  row.append(...children);
+  wrap.append(l, row);
+  return wrap;
 }
 function sep(): HTMLElement {
   return el("div", "sep");

@@ -4,6 +4,7 @@ import {
   ROT_FACTOR_STEP,
   type Params,
 } from "../config";
+import { t } from "../i18n";
 
 export interface RatioHooks {
   getParams(): Params;
@@ -86,11 +87,11 @@ export class RotationRatio {
 
     const title = document.createElement("div");
     title.className = "rr-title";
-    title.textContent = "回転比";
+    title.textContent = t("rotationRatio.title");
 
     const rotRange: CellRange = { min: ROT_FACTOR_MIN, max: ROT_FACTOR_MAX, step: ROT_FACTOR_STEP };
     const slit = this.cell(
-      "スリット",
+      t("rotationRatio.slit"),
       () => this.hooks.getParams().slitRotFactor,
       (v) => this.hooks.setParams({ slitRotFactor: v }),
       rotRange,
@@ -99,7 +100,7 @@ export class RotationRatio {
     colon.className = "rr-colon";
     colon.textContent = ":";
     const image = this.cell(
-      "絵",
+      t("rotationRatio.image"),
       () => this.hooks.getParams().imageRotFactor,
       (v) => this.hooks.setParams({ imageRotFactor: v }),
       rotRange,

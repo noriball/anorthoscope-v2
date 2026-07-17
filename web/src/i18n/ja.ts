@@ -1,0 +1,156 @@
+/** 原文（日本語）辞書。他言語はこのキー集合と完全一致させる（Record<keyof typeof ja, string>）。 */
+export const ja = {
+  // ---- 共通 ----
+  "common.close": "閉じる",
+  "common.save": "保存",
+  "common.undo": "元に戻す",
+  "common.clear": "消去",
+  "common.cancel": "キャンセル",
+  "common.createLabel": "新規作成",
+  "common.black": "黒",
+  "common.white": "白",
+  "common.background": "背景",
+  "common.deleteConfirm": "「{name}」を削除しますか？",
+  "common.yes": "あり",
+  "common.no": "なし",
+
+  // ---- 操作ガイド ----
+  "guide.subtitle": "アノルソスコープ 操作ガイド",
+  "guide.footer": "どこかクリック / ESC で閉じる",
+  "guide.rows.playPause.action": "再生 / 停止",
+  "guide.rows.playPause.location": "下部バー中央の 再生 ボタン",
+  "guide.rows.selectImage.action": "画像を一覧から選ぶ",
+  "guide.rows.selectImage.location": "画像：選択 / 作成",
+  "guide.rows.hideImage.action": "絵を隠してスリットの動きだけ見る",
+  "guide.rows.hideImage.location": "画像：表示（オンで表示、オフで非表示）",
+  "guide.rows.speedFade.action": "回転速度・フェード",
+  "guide.rows.speedFade.location": "スライダー",
+  "guide.rows.rotationRatio.action": "回転比",
+  "guide.rows.rotationRatio.location": "中央下パネルの − + / 数値",
+  "guide.rows.selectSlit.action": "スリットの穴の形を選ぶ・作る",
+  "guide.rows.selectSlit.location": "スリット：選択 / 作成",
+  "guide.rows.slitLine.action": "スリットの位置を赤い線で重ねる",
+  "guide.rows.slitLine.location": "スリット：位置（オン/オフ）",
+  "guide.rows.slitPlate.action": "実際のスリット板を重ねる（黒円盤＋透明窓）",
+  "guide.rows.slitPlate.location": "スリット：表示（オン/オフ）",
+  "guide.rows.slitCount.action": "スリットの本数を変える",
+  "guide.rows.slitCount.location": "スリット：本数 − +",
+  "guide.rows.draw.action": "自分で絵を描く（左右の円に作画）",
+  "guide.rows.draw.location": "画像：選択/作成 → ＋新規作成",
+  "guide.rows.gallery.action": "保存した絵を呼び出す・編集・削除",
+  "guide.rows.gallery.location": "画像の一覧から",
+  "guide.rows.fullscreen.action": "フルスクリーン",
+  "guide.rows.fullscreen.location": "右下の 全画面 ボタン",
+  "guide.rows.paintAxes.action": "作画: 左＝360°画像、右＝1/K繰り返しパターン",
+  "guide.rows.paintAxes.location": "どちらの円にも描ける",
+  "guide.rows.paintSymmetry.action": "右のどのピースに描いてもK回対称でコピー",
+  "guide.rows.paintSymmetry.location": "アノルソスコープと同じ幾何",
+  "guide.rows.focusClick.action": "円をクリックして拡大 / もう一度クリックで戻る",
+  "guide.rows.focusClick.location": "画像上でクリック",
+  "guide.rows.focusZoom.action": "拡大表示中はドラッグでパン、－/＋でズーム・リセット",
+  "guide.rows.focusZoom.location": "ドラッグ / ズームボタン",
+
+  // ---- 下部コントロールバー ----
+  "controls.imagePick": "選択 / 作成",
+  "controls.imagePickTitle": "見本や自作の絵を選ぶ・新しく描く",
+  "controls.imageToggle": "表示",
+  "controls.imageToggleTitle": "絵の表示を切り替え（隠すとスリットの動きだけ見える）",
+  "controls.slitSelect": "選択 / 作成",
+  "controls.slitSelectTitle": "スリットの穴の形を選ぶ・作る",
+  "controls.speed": "速度",
+  "controls.fade": "フェード",
+  "controls.slitLine": "位置",
+  "controls.slitLineTitle": "スリットの形と位置を赤い線で左右の円に重ねる",
+  "controls.slitPlate": "表示",
+  "controls.slitPlateTitle": "左の円に実際のスリット板（黒い円盤＋透明な窓）を重ねる",
+  "controls.slitCount": "本数",
+  "controls.fullscreenTitle": "フルスクリーン",
+  "controls.helpTitle": "操作ガイド",
+  "controls.imageGroupLabel": "画像",
+  "controls.slitGroupLabel": "スリット",
+
+  // ---- 回転比パネル ----
+  "rotationRatio.title": "回転比",
+  "rotationRatio.slit": "スリット",
+  "rotationRatio.image": "絵",
+
+  // ---- 再生ボタン ----
+  "playButton.play": "再生",
+  "playButton.pause": "停止",
+
+  // ---- ズームコントロール ----
+  "zoomControls.zoomOut": "縮小",
+  "zoomControls.reset": "表示をリセット",
+  "zoomControls.zoomIn": "拡大",
+
+  // ---- 画像ピッカー ----
+  "imagePicker.title": "画像",
+  "imagePicker.editTitle": "この絵を作画モードで編集",
+  "imagePicker.deleteTitle": "この絵を削除",
+
+  // ---- スリット形状ピッカー ----
+  "slitPicker.title": "スリット形状を選ぶ",
+  "slitPicker.deleteTitle": "この自作スリットを削除",
+
+  // ---- スリット形状データ ----
+  "slitMask.presetBasic": "基本",
+  "slitMask.customPrefix": "自作",
+
+  // ---- 作画エディタ（CompressEditor） ----
+  "compress.pickerTitle": "画像を選ぶ",
+  "compress.photoMoveTitle": "写真を移動（右）",
+  "compress.photoMoveTitleDisabled": "写真を移動（右）：先に写真を読み込んでください",
+  "compress.savedToast": "保存しました",
+  "compress.loadHintLeft": "あらかじめ歪ませた360°原盤を、左にそのまま読み込みます。",
+  "compress.loadHintRight":
+    "自分で描いた絵や撮影した写真を、右の扇形の中に配置します（はみ出た部分は自動的に除外。あとで「写真を移動」ツールと＋／－で位置・大きさを調整できます）。",
+  "compress.loadModalTitle": "画像を読み込む",
+  "compress.loadTabLeft": "原盤（左へ）",
+  "compress.loadTabRight": "写真配置（右へ）",
+  "compress.pickFromList": "画像一覧から選ぶ",
+  "compress.pickFromFile": "＋ファイルから",
+  "compress.outlineLabel": "円周ライン",
+  "compress.centerMarkLabel": "中心マーク",
+  "compress.diameterLabel": "直径",
+  "compress.dotShape": "ドット",
+  "compress.crossShape": "十字",
+  "compress.download": "ダウンロード",
+  "compress.exportModalTitle": "PNGダウンロード設定",
+  "compress.slitShapeSavedToast": "スリット形状を保存しました",
+  "compress.slitShapeModalTitle": "スリット形状",
+  "compress.slitShapeDesc":
+    "黄色の扇形（1/n）の中に、スリット板の穴の形を手描きで変えられます。直線だけでなく、斜め・ギザギザ・波形なども描けます（白＝開いている部分）。頂点が円の中心、外側の弧が円周です。",
+  "compress.eraser": "消しゴム",
+  "compress.resetToDefault": "既定の直線に戻す",
+  "compress.genTitle": "パラメータで生成（動かすたびに描き直します。手描きの下地・出発点として）",
+  "compress.period": "周期",
+  "compress.amplitude": "振幅",
+  "compress.sharpness": "とがり",
+  "compress.generateBtn": "この形で生成",
+  "compress.loadImageBtn": "画像を読み込む",
+  "compress.photoZoomOutTitle": "写真を縮小",
+  "compress.photoZoomInTitle": "写真を拡大",
+  "compress.photoRemove": "写真を消す",
+  "compress.portraitToggle": "⇄ 表示切替",
+  "compress.portraitToggleTitle": "縦画面で表示する円を切り替え（右＝繰り返しパターン／左＝360°全円）",
+  "compress.toolBrush": "ブラシ",
+  "compress.toolLine": "直線",
+  "compress.toolCircle": "円",
+  "compress.toolFill": "塗り",
+  "compress.colorLabel": "色",
+  "compress.thicknessLabel": "太さ",
+  "compress.bgColorTitle": "背景色",
+  "compress.pngExport": "PNG書き出し",
+  "compress.useWithoutSaving": "保存せず使う",
+  "compress.useWithoutSavingTitle":
+    "ギャラリーには保存せず、今の絵を一時的にシミュレータへ反映する（リロードで消えます）",
+  "compress.leftPaneLabel": "360°画像（ここに描けます）",
+  "compress.rightPaneLabel": "繰り返しパターン（全ピースに描けます）",
+  "compress.hint":
+    "左右どちらの円にも描けます。左（360°画像）に描くと右に圧縮、右（繰り返しパターン）に描くと全ピースへ K 回対称でコピーされます。「画像を読み込む」で原盤（左へ）／写真配置（右へ）を選べます（写真は「写真を移動」ツールで移動、＋／－で拡大縮小、はみ出た部分は自動的に除外）。保存されるのは左の360°画像です。",
+
+  // ---- main.ts ----
+  "main.untitled": "無題",
+} as const;
+
+export type TranslationKey = keyof typeof ja;

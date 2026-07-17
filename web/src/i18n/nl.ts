@@ -1,0 +1,156 @@
+import type { TranslationKey } from "./ja";
+export const nl: Record<TranslationKey, string> = {
+  // ---- algemeen ----
+  "common.close": "Sluiten",
+  "common.save": "Opslaan",
+  "common.undo": "Ongedaan maken",
+  "common.clear": "Wissen",
+  "common.cancel": "Annuleren",
+  "common.createLabel": "Nieuw",
+  "common.black": "Zwart",
+  "common.white": "Wit",
+  "common.background": "Achtergrond",
+  "common.deleteConfirm": "“{name}” verwijderen?",
+  "common.yes": "Aan",
+  "common.no": "Uit",
+
+  // ---- bedieningsgids ----
+  "guide.subtitle": "Anorthoscope – bedieningsgids",
+  "guide.footer": "Klik ergens of druk op Esc om te sluiten",
+  "guide.rows.playPause.action": "Afspelen / Pauzeren",
+  "guide.rows.playPause.location": "Afspeelknop, midden op de onderste balk",
+  "guide.rows.selectImage.action": "Kies een afbeelding uit de lijst",
+  "guide.rows.selectImage.location": "Afbeelding: Kiezen / Maken",
+  "guide.rows.hideImage.action": "Verberg de afbeelding om alleen de beweging van de spleet te zien",
+  "guide.rows.hideImage.location": "Afbeelding: Tonen (aan = zichtbaar, uit = verborgen)",
+  "guide.rows.speedFade.action": "Draaisnelheid / vervaging",
+  "guide.rows.speedFade.location": "Schuifregelaars",
+  "guide.rows.rotationRatio.action": "Rotatieverhouding",
+  "guide.rows.rotationRatio.location": "− + / waarde in het paneel onderin het midden",
+  "guide.rows.selectSlit.action": "Kies of maak de vorm van de spleetopening",
+  "guide.rows.selectSlit.location": "Spleet: Kiezen / Maken",
+  "guide.rows.slitLine.action": "Toon de positie van de spleet als rode lijn",
+  "guide.rows.slitLine.location": "Spleet: Positie (aan/uit)",
+  "guide.rows.slitPlate.action": "Toon de werkelijke spleetplaat (zwarte schijf + transparant venster)",
+  "guide.rows.slitPlate.location": "Spleet: Tonen (aan/uit)",
+  "guide.rows.slitCount.action": "Wijzig het aantal spleten",
+  "guide.rows.slitCount.location": "Spleet: Aantal − +",
+  "guide.rows.draw.action": "Teken je eigen afbeelding (op beide cirkels)",
+  "guide.rows.draw.location": "Afbeelding: Kiezen / Maken → + Nieuw",
+  "guide.rows.gallery.action": "Een opgeslagen tekening oproepen, bewerken of verwijderen",
+  "guide.rows.gallery.location": "Vanuit de afbeeldingenlijst",
+  "guide.rows.fullscreen.action": "Volledig scherm",
+  "guide.rows.fullscreen.location": "Knop volledig scherm, rechtsonder",
+  "guide.rows.paintAxes.action": "Tekenen: links = 360°-afbeelding, rechts = 1/K-herhalingspatroon",
+  "guide.rows.paintAxes.location": "Je kunt op beide cirkels tekenen",
+  "guide.rows.paintSymmetry.action": "Teken op een willekeurig stuk rechts en het wordt K-voudig symmetrisch gekopieerd",
+  "guide.rows.paintSymmetry.location": "Zelfde geometrie als de anorthoscoop",
+  "guide.rows.focusClick.action": "Klik op een cirkel om in te zoomen / klik nogmaals om terug te gaan",
+  "guide.rows.focusClick.location": "Klik op de afbeelding",
+  "guide.rows.focusZoom.action": "Sleep om te pannen terwijl ingezoomd, gebruik −/+ om te zoomen of te resetten",
+  "guide.rows.focusZoom.location": "Sleep-/zoomknoppen",
+
+  // ---- onderste bedieningsbalk ----
+  "controls.imagePick": "Kiezen / Maken",
+  "controls.imagePickTitle": "Kies een voorbeeld of je eigen tekening, of teken een nieuwe",
+  "controls.imageToggle": "Tonen",
+  "controls.imageToggleTitle": "Schakel de afbeelding (verberg om alleen de spleetbeweging te zien)",
+  "controls.slitSelect": "Kiezen / Maken",
+  "controls.slitSelectTitle": "Kies of maak de vorm van de spleetopening",
+  "controls.speed": "Snelheid",
+  "controls.fade": "Vervaging",
+  "controls.slitLine": "Positie",
+  "controls.slitLineTitle": "Toon de vorm en positie van de spleet als rode lijn op beide cirkels",
+  "controls.slitPlate": "Tonen",
+  "controls.slitPlateTitle": "Toon de werkelijke spleetplaat (zwarte schijf + transparant venster) op de linkercirkel",
+  "controls.slitCount": "Aantal",
+  "controls.fullscreenTitle": "Volledig scherm",
+  "controls.helpTitle": "Bedieningsgids",
+  "controls.imageGroupLabel": "Afbeelding",
+  "controls.slitGroupLabel": "Spleet",
+
+  // ---- rotatieverhouding-paneel ----
+  "rotationRatio.title": "Rotatieverhouding",
+  "rotationRatio.slit": "Spleet",
+  "rotationRatio.image": "Tekening",
+
+  // ---- afspeelknop ----
+  "playButton.play": "Afspelen",
+  "playButton.pause": "Pauzeren",
+
+  // ---- zoombediening ----
+  "zoomControls.zoomOut": "Uitzoomen",
+  "zoomControls.reset": "Weergave resetten",
+  "zoomControls.zoomIn": "Inzoomen",
+
+  // ---- afbeeldingenkiezer ----
+  "imagePicker.title": "Afbeeldingen",
+  "imagePicker.editTitle": "Bewerk deze tekening in tekenmodus",
+  "imagePicker.deleteTitle": "Verwijder deze tekening",
+
+  // ---- spleetvormkiezer ----
+  "slitPicker.title": "Kies een spleetvorm",
+  "slitPicker.deleteTitle": "Verwijder deze eigen spleet",
+
+  // ---- spleetvormgegevens ----
+  "slitMask.presetBasic": "Standaard",
+  "slitMask.customPrefix": "Eigen ",
+
+  // ---- tekeneditor (CompressEditor) ----
+  "compress.pickerTitle": "Kies een afbeelding",
+  "compress.photoMoveTitle": "Foto verplaatsen (rechts)",
+  "compress.photoMoveTitleDisabled": "Foto verplaatsen (rechts): laad eerst een foto",
+  "compress.savedToast": "Opgeslagen",
+  "compress.loadHintLeft": "Laadt een vooraf vervormde 360°-basisafbeelding direct in de linkercirkel.",
+  "compress.loadHintRight":
+    "Plaatst je eigen tekening of een foto binnen het rechter taartpuntsegment (wat eruit steekt wordt automatisch bijgesneden; positie en grootte zijn later aan te passen met het gereedschap “Foto verplaatsen” en +/−).",
+  "compress.loadModalTitle": "Een afbeelding laden",
+  "compress.loadTabLeft": "Basisafbeelding (naar links)",
+  "compress.loadTabRight": "Fotoplaatsing (naar rechts)",
+  "compress.pickFromList": "Kiezen uit afbeeldingenlijst",
+  "compress.pickFromFile": "+ Uit een bestand",
+  "compress.outlineLabel": "Omtreklijn",
+  "compress.centerMarkLabel": "Middelpuntmarkering",
+  "compress.diameterLabel": "Diameter",
+  "compress.dotShape": "Stip",
+  "compress.crossShape": "Kruis",
+  "compress.download": "Downloaden",
+  "compress.exportModalTitle": "PNG-downloadinstellingen",
+  "compress.slitShapeSavedToast": "Spleetvorm opgeslagen",
+  "compress.slitShapeModalTitle": "Spleetvorm",
+  "compress.slitShapeDesc":
+    "Teken de vorm van de opening in de spleetplaat met de hand binnen het gele taartpuntsegment (1/n). Niet alleen rechte lijnen — ook diagonalen, zigzags en golven zijn mogelijk (wit = open gedeelte). De punt is het middelpunt van de cirkel, de buitenste boog is de omtrek.",
+  "compress.eraser": "Gum",
+  "compress.resetToDefault": "Terug naar standaardlijn",
+  "compress.genTitle":
+    "Genereren op basis van parameters (wordt telkens opnieuw getekend zodra je een schuifregelaar beweegt — een basis of startpunt voor handmatig tekenen)",
+  "compress.period": "Periode",
+  "compress.amplitude": "Amplitude",
+  "compress.sharpness": "Scherpte",
+  "compress.generateBtn": "Deze vorm genereren",
+  "compress.loadImageBtn": "Een afbeelding laden",
+  "compress.photoZoomOutTitle": "Foto verkleinen",
+  "compress.photoZoomInTitle": "Foto vergroten",
+  "compress.photoRemove": "Foto verwijderen",
+  "compress.portraitToggle": "⇄ Weergave wisselen",
+  "compress.portraitToggleTitle":
+    "Wissel welke cirkel wordt getoond in staande modus (rechts = herhalingspatroon / links = volledige 360°)",
+  "compress.toolBrush": "Penseel",
+  "compress.toolLine": "Lijn",
+  "compress.toolCircle": "Cirkel",
+  "compress.toolFill": "Vullen",
+  "compress.colorLabel": "Kleur",
+  "compress.thicknessLabel": "Dikte",
+  "compress.bgColorTitle": "Achtergrondkleur",
+  "compress.pngExport": "PNG exporteren",
+  "compress.useWithoutSaving": "Gebruiken zonder op te slaan",
+  "compress.useWithoutSavingTitle":
+    "Past de huidige tekening tijdelijk toe op de simulator zonder deze in de galerij op te slaan (gaat verloren bij herladen)",
+  "compress.leftPaneLabel": "360°-afbeelding (hier tekenen)",
+  "compress.rightPaneLabel": "Herhalingspatroon (tekent op elk segment)",
+  "compress.hint":
+    "Je kunt op beide cirkels tekenen. Tekenen op de linker (360°-afbeelding) wordt gecomprimeerd naar rechts; tekenen op de rechter (herhalingspatroon) wordt K-voudig symmetrisch gekopieerd naar elk segment. Gebruik “Een afbeelding laden” om een basisafbeelding te kiezen (naar links) of een foto te plaatsen (naar rechts) — verplaats een foto met het gereedschap “Foto verplaatsen”, schaal met +/−, en wat eruit steekt wordt automatisch bijgesneden. Alleen de linker 360°-afbeelding wordt opgeslagen.",
+
+  // ---- main.ts ----
+  "main.untitled": "Naamloos",
+} as const;

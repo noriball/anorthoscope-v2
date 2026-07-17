@@ -1,3 +1,5 @@
+import { t } from "../i18n";
+
 /** スリット形状1つ */
 export interface SlitShape {
   id: string;
@@ -20,7 +22,7 @@ export class SlitPicker {
     onSelect: (index: number) => void,
     onCreate: () => void,
     onDelete: (id: string) => void,
-    title = "スリット形状を選ぶ",
+    title = t("slitPicker.title"),
     rootId = "slit-picker",
   ) {
     this.onSelect = onSelect;
@@ -40,7 +42,7 @@ export class SlitPicker {
     titleEl.textContent = title;
     const close = document.createElement("button");
     close.className = "paint-btn";
-    close.textContent = "閉じる";
+    close.textContent = t("common.close");
     close.onclick = () => this.hide();
     head.append(titleEl, close);
 
@@ -118,10 +120,10 @@ export class SlitPicker {
         const del = document.createElement("span");
         del.className = "picker-del";
         del.textContent = "×";
-        del.title = "この自作スリットを削除";
+        del.title = t("slitPicker.deleteTitle");
         del.onclick = (e) => {
           e.stopPropagation(); // セル選択と分離
-          if (confirm(`「${shape.name}」を削除しますか？`)) {
+          if (confirm(t("common.deleteConfirm", { name: shape.name }))) {
             this.onDelete(shape.id);
           }
         };
@@ -143,7 +145,7 @@ export class SlitPicker {
     plus.textContent = "＋";
     const createLabel = document.createElement("span");
     createLabel.className = "picker-num";
-    createLabel.textContent = "新規作成";
+    createLabel.textContent = t("common.createLabel");
     createLabel.style.fontSize = "12px";
     createLabel.style.padding = "4px";
     createLabel.style.textAlign = "center";

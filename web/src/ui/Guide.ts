@@ -1,18 +1,24 @@
-const ROWS: [string, string][] = [
-  ["再生 / 停止", "中央下の 再生 ボタン"],
-  ["画像を一覧から選ぶ", "「画像」ボタン"],
-  ["回転速度・フェード", "スライダー"],
-  ["回転比・スリット数", "中央下の − + / 数値"],
-  ["スリットの位置を赤い線で重ねる", "スリットの見え方：スリット位置"],
-  ["実際のスリット板を重ねる（黒円盤＋透明窓）", "スリットの見え方：スリット板"],
-  ["自分で絵を描く（左右の円に作画）", "「画像」→ ＋新規作成"],
-  ["保存した絵を呼び出す・編集・削除", "「画像」の一覧から"],
-  ["フルスクリーン", "右下の 全画面 ボタン"],
-  ["作画: 左＝360°画像、右＝1/K繰り返しパターン", "どちらの円にも描ける"],
-  ["右のどのピースに描いてもK回対称でコピー", "アノルソスコープと同じ幾何"],
-  ["円をクリックして拡大 / もう一度クリックで戻る", "画像上でクリック"],
-  ["拡大表示中はドラッグでパン、－/＋でズーム・リセット", "ドラッグ / ズームボタン"],
+import { t, type TranslationKey } from "../i18n";
+
+const ROW_KEYS: [TranslationKey, TranslationKey][] = [
+  ["guide.rows.playPause.action", "guide.rows.playPause.location"],
+  ["guide.rows.selectImage.action", "guide.rows.selectImage.location"],
+  ["guide.rows.hideImage.action", "guide.rows.hideImage.location"],
+  ["guide.rows.speedFade.action", "guide.rows.speedFade.location"],
+  ["guide.rows.rotationRatio.action", "guide.rows.rotationRatio.location"],
+  ["guide.rows.selectSlit.action", "guide.rows.selectSlit.location"],
+  ["guide.rows.slitLine.action", "guide.rows.slitLine.location"],
+  ["guide.rows.slitPlate.action", "guide.rows.slitPlate.location"],
+  ["guide.rows.slitCount.action", "guide.rows.slitCount.location"],
+  ["guide.rows.draw.action", "guide.rows.draw.location"],
+  ["guide.rows.gallery.action", "guide.rows.gallery.location"],
+  ["guide.rows.fullscreen.action", "guide.rows.fullscreen.location"],
+  ["guide.rows.paintAxes.action", "guide.rows.paintAxes.location"],
+  ["guide.rows.paintSymmetry.action", "guide.rows.paintSymmetry.location"],
+  ["guide.rows.focusClick.action", "guide.rows.focusClick.location"],
+  ["guide.rows.focusZoom.action", "guide.rows.focusZoom.location"],
 ];
+const ROWS: [string, string][] = ROW_KEYS.map(([a, b]) => [t(a), t(b)]);
 
 /** 操作ガイドのオーバーレイ */
 export class Guide {
@@ -25,11 +31,11 @@ export class Guide {
     this.root.innerHTML = `
       <div class="guide-panel">
         <h1>Anorthoscope Simulator</h1>
-        <div class="sub">アノルソスコープ 操作ガイド</div>
+        <div class="sub">${t("guide.subtitle")}</div>
         <table>${ROWS.map(
           ([k, v]) => `<tr><td>${k}</td><td class="key">${v}</td></tr>`,
         ).join("")}</table>
-        <div class="foot">どこかクリック / ESC で閉じる</div>
+        <div class="foot">${t("guide.footer")}</div>
       </div>`;
     // パネル以外クリックで閉じる
     this.root.addEventListener("click", () => this.hide());

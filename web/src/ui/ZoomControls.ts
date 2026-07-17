@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { setIconLabel } from "./icons";
 
 export interface ZoomHooks {
@@ -18,10 +19,10 @@ export class ZoomControls {
     this.root.id = "zoom-controls";
     this.root.classList.add("hidden");
 
-    const minus = zoomBtn("−", hooks.zoomOut, "縮小");
-    const reset = zoomBtn("", hooks.reset, "表示をリセット");
+    const minus = zoomBtn("−", hooks.zoomOut, t("zoomControls.zoomOut"));
+    const reset = zoomBtn("", hooks.reset, t("zoomControls.reset"));
     setIconLabel(reset, "reset");
-    const plus = zoomBtn("+", hooks.zoomIn, "拡大");
+    const plus = zoomBtn("+", hooks.zoomIn, t("zoomControls.zoomIn"));
     this.root.append(minus, reset, plus);
 
     parent.append(this.root);

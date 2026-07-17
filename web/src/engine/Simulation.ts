@@ -1,5 +1,7 @@
 import {
   BASE_OMEGA,
+  FADE_MAX,
+  FADE_MIN,
   STAGE_MAX_HEIGHT,
   TRIM_HEIGHT,
   TRIM_OFFSET,
@@ -27,7 +29,7 @@ const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v
  * フォーカスモード：どちらかの円をクリックすると、その円だけをステージ全体に
  * 表示する（`setFocus`）。フォーカス中はその円のバッファをステージ全体解像度
  * （stageW x stageH）で再構築し、ドラッグでパン・ボタンでズームができる。
- * 非表示側のパネルは描画自体をスキップする（stampRightPanel は this.left に
+ * 非表示側のパネルは描画自体をスキップする（stampRightPanelOnce は this.left に
  * 依存しないため、focus='right' のとき drawLeftPanel を丸ごと省略できる）。
  */
 export class Simulation {
@@ -51,7 +53,7 @@ export class Simulation {
   private readonly maskScaled = document.createElement("canvas"); // plateR に合わせて頂点中心でスケール済み（一辺 2*plateR の正方形）
   private maskScaledCtx!: CanvasRenderingContext2D;
   private maskScaledForPlateR = -1; // キャッシュ済み plateR（変われば再構築）
-  private readonly maskScratch = document.createElement("canvas"); // stampRightPanel の作業用
+  private readonly maskScratch = document.createElement("canvas"); // stampRightPanelOnce の作業用
   private maskScratchCtx!: CanvasRenderingContext2D;
   private readonly maskTint = document.createElement("canvas"); // 赤ガイド表示用（形状を赤く着色）
   private maskTintCtx!: CanvasRenderingContext2D;
@@ -61,6 +63,7 @@ export class Simulation {
   private stageH = 0;
 
   private picture: Picture | null = null;
+  private showImage = true; // 絵を隠して（false）スリットの動きだけ見せられる
   private scale = 1; // 画像表示スケール
   private trimWidth = 0; // スリット長
   private sampleSize = 0; // sample バッファ一辺
@@ -78,6 +81,21 @@ export class Simulation {
   // スリット板の表示/非表示クロスフェード（0=非表示, 1=表示）
   private slitPlateOpacity = 0;
   private static readonly SLIT_PLATE_FADE_SEC = 0.3;
+
+  // 高速回転時、1フレームの回転角が大きすぎると軌跡（右パネル）に隙間＝縞が
+  // 出るため、蓄積のスタンプだけ細かく分割して複数回行う（フェードは1回のみ）。
+  private static readonly MAX_ANGLE_STEP = 0.025; // rad。この角度以下に刻む
+  private static readonly MAX_SUBSTEPS = 24; // 上限（極端な設定でも重くなりすぎないように）
+
+  // 一時停止中フェードの残り係数（1→0で bgColor に到達）。フェード合成は8bit丸め
+  // 誤差により厳密には収束しきらないため、十分小さくなったら塗り潰して完了させる。
+  // 消える速さは fadeAlpha の強さを反映しつつ、最大でも PAUSED_FADE_SECONDS_MAX 秒で
+  // 完了するようにする（fadeAlpha は最大でも0.01と非常に遅いため、そのまま使うと
+  // いつまでも・一周分近く待たされてしまう）。フェードが強い設定ほど短時間で消える。
+  private pausedFadeFactor = 1;
+  private static readonly PAUSED_FADE_DONE = 0.004; // 約 1/255。これ未満なら塗り潰す
+  private static readonly PAUSED_FADE_SECONDS_MAX = 10.0; // フェードが最弱(0に近い)ときの所要時間
+  private static readonly PAUSED_FADE_SECONDS_MIN = 2.0; // フェードが最強(FADE_MAX)のときの所要時間
 
   // 蓄積される回転角
   private imageAngle = 0;
@@ -195,6 +213,36 @@ export class Simulation {
   /** 内部ステージ高さ[px]。main.ts が CSS px ↔ ステージ px の換算に使う */
   getStageHeight(): number {
     return this.stageH;
+  }
+
+  /** 内部ステージ幅[px] */
+  getStageWidth(): number {
+    return this.stageW;
+  }
+
+  /** 左（絵）円盤の中心（ステージpx）と半径。停止中のドラッグ回転で当たり判定に使う。
+   *  右（軌跡）はドラッグ操作の対象外なので、左パネルが見えている場合だけ返す。 */
+  getDiscLayout(): { discs: { x: number; y: number }[]; r: number } {
+    if (this.focus === "right") {
+      return { discs: [], r: 0 }; // 右にフォーカス中は左が非表示＝回転できない
+    }
+    if (this.focus === "left") {
+      return { discs: [{ x: this.stageW / 2, y: this.stageH / 2 }], r: this.plateR * this.zoomScale };
+    }
+    if (this.stackAxis === "vertical") {
+      return { discs: [{ x: this.leftCx, y: this.leftCy }], r: this.plateR };
+    }
+    return { discs: [{ x: this.leftCx, y: this.leftCy }], r: this.plateR };
+  }
+
+  /** 停止中に絵ディスクを手で回す：画像角度を delta 進め、左パネルを残像なしで描き直す */
+  rotateImageBy(delta: number, showGuideLines: boolean): void {
+    this.imageAngle += delta;
+    if (this.picture && this.focus !== "right") {
+      fillSolid(this.lctx, this.left, this.bgColor);
+      this.drawLeftPanel(this.slitPlateOpacity >= 1, 1, this.bgColor);
+    }
+    this.composite(showGuideLines);
   }
 
   /** 現在のズーム倍率。main.ts がスワイプ/パン/ピンチの判別に使う */
@@ -372,6 +420,14 @@ export class Simulation {
     }
   }
 
+  /** 左右の蓄積バッファを背景色で塗り潰して描き直す（角度は保持）。
+   *  「絵を隠す」を停止中でも即座に反映させるために使う。 */
+  blankBuffers(showGuideLines: boolean): void {
+    fillSolid(this.lctx, this.left, this.bgColor);
+    fillSolid(this.rctx, this.right, this.bgColor);
+    this.composite(showGuideLines);
+  }
+
   /** バッファを現在の背景色でクリアし角度を初期化 */
   reset(): void {
     this.imageAngle = 0;
@@ -389,14 +445,57 @@ export class Simulation {
    */
   render(dt: number, params: Params, paused: boolean): void {
     this.currentNumSlits = params.numSlits;
+    this.showImage = params.showImage;
     this.advanceSlitPlateFade(dt, params.slitPlate);
-    if (this.picture && !paused) {
-      this.advance(dt, params);
+    if (this.picture) {
       // 完全にフェードインし終わるまでは残像ありの通常描画のまま
       // （円盤オーバーレイがまだ薄いうちに、下の絵だけ先にクリップ・残像消去されるのを防ぐ）
       const useSlitClip = this.slitPlateOpacity >= 1;
-      if (this.focus !== "right") this.drawLeftPanel(useSlitClip, params.fadeAlpha, this.bgColor);
-      if (this.focus !== "left") this.stampRightPanel(params);
+      if (!paused) {
+        // 1フレームぶんの回転角が大きい（高速再生）ほど、蓄積スタンプの間隔が空いて
+        // 軌跡に隙間＝縞が出る。フェードは1回だけ行い、スタンプ（角度の更新込み）は
+        // 一定角度以下になるよう分割して複数回行うことで隙間を埋める。
+        const omega = BASE_OMEGA * params.speed * dt;
+        const maxFactor = Math.max(Math.abs(params.imageRotFactor), Math.abs(params.slitRotFactor));
+        const totalAngle = Math.abs(omega * maxFactor);
+        const steps = Math.min(
+          Simulation.MAX_SUBSTEPS,
+          Math.max(1, Math.ceil(totalAngle / Simulation.MAX_ANGLE_STEP)),
+        );
+        const showRight = this.focus !== "left";
+        if (showRight) this.fadeRightPanel(params.fadeAlpha);
+        const subDt = dt / steps;
+        for (let i = 0; i < steps; i++) {
+          this.advance(subDt, params);
+          if (showRight) this.stampRightPanelOnce(params);
+        }
+        if (this.focus !== "right") this.drawLeftPanel(useSlitClip, params.fadeAlpha, this.bgColor);
+        this.pausedFadeFactor = 1; // 再生中はリセット（次に停止したときまた最初から数える）
+      } else if (params.fadeAlpha > 0) {
+        // 一時停止中も、フェードが有効（0でない）なら時間経過で軌跡（右＝蓄積
+        // パネル）を消していく。回転・新規スタンプは行わず、蓄積済みの内容を
+        // bgColor へ溶かし込むだけ。左（絵そのもの）はフェードと無関係で、
+        // 一時停止中は消えずにそのまま表示され続ける。
+        if (this.focus !== "left") {
+          // fadeAlpha の強さ（0=最弱～FADE_MAX=最強）を、所要時間
+          // PAUSED_FADE_SECONDS_MAX～MIN 秒に線形マッピングする
+          // （フェードが強い設定ほど短時間で消える。ただし最大でも MAX 秒で完了）。
+          const t = clamp((params.fadeAlpha - FADE_MIN) / (FADE_MAX - FADE_MIN), 0, 1);
+          const seconds =
+            Simulation.PAUSED_FADE_SECONDS_MAX -
+            t * (Simulation.PAUSED_FADE_SECONDS_MAX - Simulation.PAUSED_FADE_SECONDS_MIN);
+          const perFrameFactor = Math.pow(Simulation.PAUSED_FADE_DONE, dt / seconds);
+          this.pausedFadeFactor *= perFrameFactor;
+          if (this.pausedFadeFactor < Simulation.PAUSED_FADE_DONE) {
+            // 8bit丸め誤差でこれ以上は収束しないため、bgColor で完全に塗り切る
+            fillSolid(this.rctx, this.right, this.bgColor);
+          } else {
+            this.fadeRightPanel(1 - perFrameFactor);
+          }
+        }
+      } else {
+        this.pausedFadeFactor = 1; // フェード無効(0)なら次回のためリセット
+      }
     }
     this.composite(params.showGuideLines);
   }
@@ -433,25 +532,69 @@ export class Simulation {
       this.drawPictureRotated(ctx, cx, cy, this.imageAngle);
       ctx.restore();
     } else {
-      // 通常モード：bgColor へフェード（このバッファがそのまま composite で描画されるため）
+      // 通常モード。軌跡（絵）は plateR の円の内側にしか描かれないため、円の外側は
+      // 毎フレーム真の背景色で即座に塗り直す（背景色を変えた直後もすぐ反映される）。
+      // 円の内側だけ従来通りゆっくりフェードして軌跡を残す。
+      this.fillOutsideCircle(ctx, cx, cy, this.left.width, this.left.height, bgColor);
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, this.plateR, 0, Math.PI * 2);
+      ctx.clip();
       ctx.globalAlpha = fadeAlpha;
       ctx.fillStyle = bgColor;
       ctx.fillRect(0, 0, this.left.width, this.left.height);
       ctx.globalAlpha = 1;
+      ctx.restore();
+
       this.drawPictureRotated(ctx, cx, cy, this.imageAngle);
     }
   }
 
-  /** 右パネル：各スリットのストリップを抽出し、蓄積バッファへ配置 */
-  private stampRightPanel(p: Params): void {
+  /** 右パネルの蓄積フェード（bgColor へフェード）。1フレームにつき1回だけ呼ぶこと
+   *  （高速時のサブステップぶん重複させると、狙った残像の長さより早く消えてしまう）。
+   *  軌跡（絵）は plateR の円の内側にしか描かれないため、円の外側は毎フレーム真の
+   *  背景色で即座に塗り直す。こうすると背景色を変えた直後も、円の外はすぐに新しい
+   *  色になり（軌跡自体は消えない）、円の内側だけ従来通りゆっくりフェードする。 */
+  private fadeRightPanel(fadeAlpha: number): void {
     const ctx = this.rctx;
-    // 蓄積フェード（bgColor へフェード。このバッファがそのまま composite で描画されるため）
-    ctx.globalAlpha = p.fadeAlpha;
+    this.fillOutsideCircle(ctx, this.rightCx, this.rightCy, this.right.width, this.right.height, this.bgColor);
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(this.rightCx, this.rightCy, this.plateR, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.globalAlpha = fadeAlpha;
     ctx.fillStyle = this.bgColor;
     ctx.fillRect(0, 0, this.right.width, this.right.height);
     ctx.globalAlpha = 1;
+    ctx.restore();
+  }
 
+  /** cx,cy 中心・plateR 半径の円の「外側」だけを bgColor で塗る（内側は触らない）。
+   *  絵・軌跡は円の内側にしか無いため、外側は毎フレーム塗り直しても失うものがなく、
+   *  背景色を変えた直後もすぐに新しい色になる。 */
+  private fillOutsideCircle(
+    ctx: CanvasRenderingContext2D,
+    cx: number,
+    cy: number,
+    w: number,
+    h: number,
+    bgColor: string,
+  ): void {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, 0, w, h);
+    ctx.arc(cx, cy, this.plateR, 0, Math.PI * 2);
+    ctx.fillStyle = bgColor;
+    ctx.fill("evenodd");
+    ctx.restore();
+  }
+
+  /** 右パネル：現在の角度で各スリットのストリップを抽出し、蓄積バッファへ重ねる（フェードなし） */
+  private stampRightPanelOnce(p: Params): void {
     if (!this.picture) return;
+    const ctx = this.rctx;
 
     const cx = this.rightCx;
     const cy = this.rightCy;
@@ -511,7 +654,7 @@ export class Simulation {
     cy: number,
     angle: number,
   ): void {
-    if (!this.picture) return;
+    if (!this.picture || !this.showImage) return;
     const dw = this.picture.width * this.scale;
     const dh = this.picture.height * this.scale;
     ctx.save();
@@ -668,10 +811,9 @@ export class Simulation {
 
   setBgColor(hex: string): void {
     this.bgColor = hex;
-    // フェード合成は8bit丸め誤差により厳密に収束しきらないため、
-    // 色変更時はバッファを新しい背景色で即座に塗りつぶし、体感の遅延・誤差を無くす。
-    fillSolid(this.lctx, this.left, hex);
-    fillSolid(this.rctx, this.right, hex);
+    // バッファは即座に塗り潰さない：軌跡（残像）を消さず残すため、以降のフレームの
+    // 通常の残像フェード（drawLeftPanel/fadeRightPanel の alpha=fadeAlpha 合成）に
+    // 任せて、新しい背景色へ自然に馴染ませる。
   }
 }
 

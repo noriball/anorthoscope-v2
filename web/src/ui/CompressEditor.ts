@@ -12,6 +12,7 @@ import {
 import { fullToWedge, wedgeToFull } from "../engine/wedge";
 import { saveDrawing, type Drawing } from "../gallery";
 import { loadFromFiles, pictureFromURL, type Picture } from "../images";
+import { t } from "../i18n";
 import { setIconLabel, type IconName } from "./icons";
 import { ImagePicker } from "./ImagePicker";
 import { showToast } from "./toast";
@@ -93,6 +94,12 @@ export class CompressEditor {
   private slitShapeSize = 14;
   private slitShapeLastX = 0;
   private slitShapeLastY = 0;
+  // パラメータ生成（自由描画とは別に、サインカーブ状の形をスライダーで作る）。
+  // 太さは今後の課題（ボケ再現の絡みで一旦見送り）としてパラメータ化せず、
+  // 手描きの既定と同じ固定太さ（slitShapeSize の既定値）を使う。
+  private slitShapePeriod = 2; // 中心から外周までの周期数
+  private slitShapeAmplitude = 0.6; // 振れ幅（0=直線、1で扇形の縁ギリギリまで）
+  private slitShapeSharpness = 0; // 先端のとがり具合（0=滑らかな正弦波、1=尖った三角波）
 
   // 読み込んだ画像（PAINT_SIZE 四方に letterbox 済み、写真レイヤー）
   private readonly src = document.createElement("canvas");
@@ -219,7 +226,7 @@ export class CompressEditor {
         else this.loadWedgePhoto(pic);
       },
       {}, // 読み込む画像を選ぶだけ（ここから新規作成・編集・削除はしない）
-      "画像を選ぶ",
+      t("compress.pickerTitle"),
       "compress-picker",
     );
     this.buildDOM();
@@ -868,7 +875,7 @@ export class CompressEditor {
     if (!btn) return;
     const has = !!this.photoBitmap;
     btn.disabled = !has;
-    btn.title = has ? "写真を移動（右）" : "写真を移動（右）：先に写真を読み込んでください";
+    btn.title = has ? t("compress.photoMoveTitle") : t("compress.photoMoveTitleDisabled");
     if (!has && this.tool === "photo") this.setTool("brush");
   }
 
@@ -921,7 +928,7 @@ export class CompressEditor {
       divisions: this.divisions,
     });
     this.onSaved(d);
-    showToast("保存しました");
+    showToast(t("compress.savedToast"));
     this.close();
   }
 
@@ -954,8 +961,8 @@ export class CompressEditor {
     this.loadTabRightBtn.classList.toggle("on", this.loadTarget === "right");
     this.loadHint.textContent =
       this.loadTarget === "left"
-        ? "あらかじめ歪ませた360°原盤を、左にそのまま読み込みます。"
-        : "自分で描いた絵や撮影した写真を、右の扇形の中に配置します（はみ出た部分は自動的に除外。あとで「写真を移動」ツールと＋／－で位置・大きさを調整できます）。";
+        ? t("compress.loadHintLeft")
+        : t("compress.loadHintRight");
   }
 
   private buildLoadModal(): void {
@@ -968,12 +975,12 @@ export class CompressEditor {
     panel.onclick = (e) => e.stopPropagation();
 
     const title = document.createElement("h2");
-    title.textContent = "画像を読み込む";
+    title.textContent = t("compress.loadModalTitle");
 
     const tabRow = document.createElement("div");
     tabRow.className = "export-row";
-    this.loadTabLeftBtn = pbtn("原盤（左へ）", () => this.setLoadTarget("left"));
-    this.loadTabRightBtn = pbtn("写真配置（右へ）", () => this.setLoadTarget("right"));
+    this.loadTabLeftBtn = pbtn(t("compress.loadTabLeft"), () => this.setLoadTarget("left"));
+    this.loadTabRightBtn = pbtn(t("compress.loadTabRight"), () => this.setLoadTarget("right"));
     tabRow.append(this.loadTabLeftBtn, this.loadTabRightBtn);
 
     this.loadHint = document.createElement("div");
@@ -981,11 +988,11 @@ export class CompressEditor {
 
     const actionsRow = document.createElement("div");
     actionsRow.className = "export-row";
-    const pickBtn = pbtn("画像一覧から選ぶ", () => {
+    const pickBtn = pbtn(t("compress.pickFromList"), () => {
       this.closeLoadModal();
       this.picker.show();
     });
-    const fileBtn = pbtn("＋ファイルから", () => {
+    const fileBtn = pbtn(t("compress.pickFromFile"), () => {
       this.closeLoadModal();
       this.fileInput.click();
     });
@@ -993,7 +1000,7 @@ export class CompressEditor {
 
     const closeRow = document.createElement("div");
     closeRow.className = "export-actions";
-    closeRow.append(pbtn("閉じる", () => this.closeLoadModal()));
+    closeRow.append(pbtn(t("common.close"), () => this.closeLoadModal()));
 
     panel.append(title, tabRow, this.loadHint, actionsRow, closeRow);
     modal.append(panel);
@@ -1015,9 +1022,9 @@ export class CompressEditor {
 
   private updateExportModalUI(): void {
     this.exportOutlineBtn.classList.toggle("on", this.exportOutline);
-    this.exportOutlineBtn.textContent = `円周ライン：${this.exportOutline ? "あり" : "なし"}`;
+    this.exportOutlineBtn.textContent = `${t("compress.outlineLabel")}：${this.exportOutline ? t("common.yes") : t("common.no")}`;
     this.exportCenterBtn.classList.toggle("on", this.exportCenterMark);
-    this.exportCenterBtn.textContent = `中心マーク：${this.exportCenterMark ? "あり" : "なし"}`;
+    this.exportCenterBtn.textContent = `${t("compress.centerMarkLabel")}：${this.exportCenterMark ? t("common.yes") : t("common.no")}`;
     this.exportOutlineColorBtns.forEach((btn, color) =>
       btn.classList.toggle("on", color === this.exportOutlineColor),
     );
@@ -1039,7 +1046,7 @@ export class CompressEditor {
     panel.onclick = (e) => e.stopPropagation();
 
     const title = document.createElement("h2");
-    title.textContent = "PNGダウンロード設定";
+    title.textContent = t("compress.exportModalTitle");
 
     this.exportDiameterInput = document.createElement("input");
     this.exportDiameterInput.type = "number";
@@ -1053,17 +1060,17 @@ export class CompressEditor {
     };
     const diameterRow = document.createElement("div");
     diameterRow.className = "export-row";
-    diameterRow.append(label("直径"), this.exportDiameterInput, label("mm"));
+    diameterRow.append(label(t("compress.diameterLabel")), this.exportDiameterInput, label("mm"));
 
-    this.exportOutlineBtn = pbtn("円周ライン", () => {
+    this.exportOutlineBtn = pbtn(t("compress.outlineLabel"), () => {
       this.exportOutline = !this.exportOutline;
       this.updateExportModalUI();
     });
     const outlineColorGroup = document.createElement("div");
     outlineColorGroup.className = "export-color-group";
     for (const [name, hex] of [
-      ["黒", "#000000"],
-      ["白", "#ffffff"],
+      [t("common.black"), "#000000"],
+      [t("common.white"), "#ffffff"],
     ] as const) {
       const b = pbtn(name, () => {
         this.exportOutlineColor = hex;
@@ -1076,15 +1083,15 @@ export class CompressEditor {
     outlineRow.className = "export-row";
     outlineRow.append(this.exportOutlineBtn, outlineColorGroup);
 
-    this.exportCenterBtn = pbtn("中心マーク", () => {
+    this.exportCenterBtn = pbtn(t("compress.centerMarkLabel"), () => {
       this.exportCenterMark = !this.exportCenterMark;
       this.updateExportModalUI();
     });
     const centerShapeGroup = document.createElement("div");
     centerShapeGroup.className = "export-color-group";
     for (const [name, shape] of [
-      ["ドット", "dot"],
-      ["十字", "cross"],
+      [t("compress.dotShape"), "dot"],
+      [t("compress.crossShape"), "cross"],
     ] as const) {
       const b = pbtn(name, () => {
         this.exportCenterShape = shape;
@@ -1096,8 +1103,8 @@ export class CompressEditor {
     const centerColorGroup = document.createElement("div");
     centerColorGroup.className = "export-color-group";
     for (const [name, hex] of [
-      ["黒", "#000000"],
-      ["白", "#ffffff"],
+      [t("common.black"), "#000000"],
+      [t("common.white"), "#ffffff"],
     ] as const) {
       const b = pbtn(name, () => {
         this.exportCenterColor = hex;
@@ -1112,9 +1119,9 @@ export class CompressEditor {
 
     const actionsRow = document.createElement("div");
     actionsRow.className = "export-actions";
-    const downloadBtn = pbtn("ダウンロード", () => this.downloadDisc());
+    const downloadBtn = pbtn(t("compress.download"), () => this.downloadDisc());
     downloadBtn.classList.add("primary");
-    actionsRow.append(downloadBtn, pbtn("キャンセル", () => this.closeExportModal()));
+    actionsRow.append(downloadBtn, pbtn(t("common.cancel"), () => this.closeExportModal()));
 
     panel.append(title, diameterRow, outlineRow, centerRow, actionsRow);
     modal.append(panel);
@@ -1204,6 +1211,41 @@ export class CompressEditor {
     ctx.moveTo(CX, CY);
     ctx.lineTo(CX + Math.cos(CENTER_ANGLE) * R, CY + Math.sin(CENTER_ANGLE) * R);
     ctx.stroke();
+  }
+
+  /** パラメータ（周期・振幅・とがり具合）からサインカーブ状のスリット形状を
+   *  生成してキャンバスに描く（自由描画を上書き。手描きの下地・出発点として使う）。
+   *  太さは今後の課題としてパラメータ化せず、手描きの既定と同じ固定太さを使う。 */
+  private generateSlitShape(): void {
+    const ctx = this.slitShapeCtx;
+    ctx.clearRect(0, 0, PAINT_SIZE, PAINT_SIZE);
+    const half = this.slitShapeHalfAngle;
+    const maxOffset = half * 0.85; // 扇形の縁ギリギリまで振れないよう少し余裕を持たせる
+
+    ctx.save();
+    this.slitShapeWedgePath(ctx);
+    ctx.clip();
+    ctx.strokeStyle = "#fff";
+    ctx.lineWidth = this.slitShapeSize;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.beginPath();
+    const N = 160;
+    for (let i = 0; i <= N; i++) {
+      const t = i / N;
+      const r = t * R;
+      const angleOffset =
+        this.slitShapeAmplitude *
+        maxOffset *
+        waveform(t * this.slitShapePeriod * Math.PI * 2, this.slitShapeSharpness);
+      const angle = CENTER_ANGLE + angleOffset;
+      const x = CX + Math.cos(angle) * r;
+      const y = CY + Math.sin(angle) * r;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    ctx.restore();
   }
 
   /** 扇形の輪郭・円周をガイドとして描く（保存対象には含まれない別レイヤー） */
@@ -1309,8 +1351,46 @@ export class CompressEditor {
     const dataURL = this.slitShapeCanvas.toDataURL("image/png");
     // 永続化（一覧への追加）は main 側の onSlitMaskChanged が担う
     this.onSlitMaskChanged(dataURL);
-    showToast("スリット形状を保存しました");
+    showToast(t("compress.slitShapeSavedToast"));
     this.closeSlitShapeModal();
+  }
+
+  /** パラメータ生成用のスライダー1行（ラベル・スライダー・現在値）。
+   *  ドラッグ開始時に1回だけ undo スナップショットを取り、動かすたびに即再生成する。 */
+  private paramSliderRow(
+    labelText: string,
+    min: number,
+    max: number,
+    step: number,
+    get: () => number,
+    set: (v: number) => void,
+    fmt: (v: number) => string = (v) => String(v),
+  ): HTMLElement {
+    const row = document.createElement("div");
+    row.className = "export-row";
+
+    const valueLabel = document.createElement("span");
+    valueLabel.className = "paint-label";
+    valueLabel.style.minWidth = "34px";
+    valueLabel.style.textAlign = "right";
+    valueLabel.textContent = fmt(get());
+
+    const input = document.createElement("input");
+    input.type = "range";
+    input.min = String(min);
+    input.max = String(max);
+    input.step = String(step);
+    input.value = String(get());
+    input.className = "paint-size";
+    input.addEventListener("pointerdown", () => this.snapshotSlitShape());
+    input.oninput = () => {
+      set(Number(input.value));
+      valueLabel.textContent = fmt(get());
+      this.generateSlitShape();
+    };
+
+    row.append(label(labelText), input, valueLabel);
+    return row;
   }
 
   private buildSlitShapeModal(): void {
@@ -1323,12 +1403,11 @@ export class CompressEditor {
     panel.onclick = (e) => e.stopPropagation();
 
     const title = document.createElement("h2");
-    title.textContent = "スリット形状";
+    title.textContent = t("compress.slitShapeModalTitle");
 
     const desc = document.createElement("div");
     desc.className = "paint-hint";
-    desc.textContent =
-      "黄色の扇形（1/n）の中に、スリット板の穴の形を手描きで変えられます。直線だけでなく、斜め・ギザギザ・波形なども描けます（白＝開いている部分）。頂点が円の中心、外側の弧が円周です。";
+    desc.textContent = t("compress.slitShapeDesc");
 
     const stageWrap = document.createElement("div");
     stageWrap.className = "slit-shape-stage";
@@ -1346,7 +1425,7 @@ export class CompressEditor {
 
     const toolRow = document.createElement("div");
     toolRow.className = "export-row";
-    this.slitShapeEraseBtn = pbtn("消しゴム", () => {
+    this.slitShapeEraseBtn = pbtn(t("compress.eraser"), () => {
       this.slitShapeErase = !this.slitShapeErase;
       this.slitShapeEraseBtn.classList.toggle("on", this.slitShapeErase);
     });
@@ -1355,18 +1434,58 @@ export class CompressEditor {
     const actRow = document.createElement("div");
     actRow.className = "export-row";
     actRow.append(
-      pbtn("元に戻す", () => this.undoSlitShape()),
-      pbtn("消去", () => this.clearSlitShapeToBlank()),
-      pbtn("既定の直線に戻す", () => this.resetSlitShapeToDefault()),
+      pbtn(t("common.undo"), () => this.undoSlitShape()),
+      pbtn(t("common.clear"), () => this.clearSlitShapeToBlank()),
+      pbtn(t("compress.resetToDefault"), () => this.resetSlitShapeToDefault()),
     );
+
+    // パラメータで生成（自由描画とは別に、サインカーブ状の形をスライダーで作る）
+    const genTitle = document.createElement("div");
+    genTitle.className = "paint-hint";
+    genTitle.textContent = t("compress.genTitle");
+    const genRows = document.createElement("div");
+    genRows.className = "slit-shape-gen";
+    genRows.append(
+      this.paramSliderRow(
+        t("compress.period"),
+        0.5,
+        8,
+        0.5,
+        () => this.slitShapePeriod,
+        (v) => (this.slitShapePeriod = v),
+        (v) => v.toFixed(1),
+      ),
+      this.paramSliderRow(
+        t("compress.amplitude"),
+        0,
+        1,
+        0.05,
+        () => this.slitShapeAmplitude,
+        (v) => (this.slitShapeAmplitude = v),
+        (v) => v.toFixed(2),
+      ),
+      this.paramSliderRow(
+        t("compress.sharpness"),
+        0,
+        1,
+        0.05,
+        () => this.slitShapeSharpness,
+        (v) => (this.slitShapeSharpness = v),
+        (v) => v.toFixed(2),
+      ),
+    );
+    const genBtn = pbtn(t("compress.generateBtn"), () => {
+      this.snapshotSlitShape();
+      this.generateSlitShape();
+    });
 
     const actionsRow = document.createElement("div");
     actionsRow.className = "export-actions";
-    const saveBtn = pbtn("保存", () => this.saveSlitShape());
+    const saveBtn = pbtn(t("common.save"), () => this.saveSlitShape());
     saveBtn.classList.add("primary");
-    actionsRow.append(saveBtn, pbtn("閉じる", () => this.closeSlitShapeModal()));
+    actionsRow.append(saveBtn, pbtn(t("common.close"), () => this.closeSlitShapeModal()));
 
-    panel.append(title, desc, stageWrap, toolRow, actRow, actionsRow);
+    panel.append(title, desc, stageWrap, toolRow, actRow, genTitle, genRows, genBtn, actionsRow);
     modal.append(panel);
     modal.onclick = () => this.closeSlitShapeModal(); // 背景クリックで閉じる
 
@@ -1391,7 +1510,7 @@ export class CompressEditor {
     const loadGroup = document.createElement("div");
     loadGroup.className = "paint-group";
     const loadBtn = pbtn("", () => this.openLoadModal());
-    setIconLabel(loadBtn, "image", "画像を読み込む");
+    setIconLabel(loadBtn, "image", t("compress.loadImageBtn"));
     loadBtn.classList.add("wide");
     this.fileInput = document.createElement("input");
     this.fileInput.type = "file";
@@ -1410,17 +1529,17 @@ export class CompressEditor {
     const wedgePhotoGroup = document.createElement("div");
     wedgePhotoGroup.className = "paint-group";
     const wedgePhotoZoomOut = pbtn("－", () => this.zoomWedgePhoto(1 / PHOTO_ZOOM_STEP));
-    wedgePhotoZoomOut.title = "写真を縮小";
+    wedgePhotoZoomOut.title = t("compress.photoZoomOutTitle");
     const wedgePhotoZoomIn = pbtn("＋", () => this.zoomWedgePhoto(PHOTO_ZOOM_STEP));
-    wedgePhotoZoomIn.title = "写真を拡大";
-    const wedgePhotoRemove = pbtn("写真を消す", () => this.clearWedgePhoto());
+    wedgePhotoZoomIn.title = t("compress.photoZoomInTitle");
+    const wedgePhotoRemove = pbtn(t("compress.photoRemove"), () => this.clearWedgePhoto());
     wedgePhotoGroup.append(wedgePhotoZoomOut, wedgePhotoZoomIn, wedgePhotoRemove);
 
     // 表示切替（スマホ縦画面専用。既定は右＝繰り返しパターンを表示、押すと左＝360°全円に切替）
     const portraitToggleGroup = document.createElement("div");
     portraitToggleGroup.className = "paint-group portrait-only";
-    const portraitToggleBtn = pbtn("⇄ 表示切替", () => this.togglePortraitPane());
-    portraitToggleBtn.title = "縦画面で表示する円を切り替え（右＝繰り返しパターン／左＝360°全円）";
+    const portraitToggleBtn = pbtn(t("compress.portraitToggle"), () => this.togglePortraitPane());
+    portraitToggleBtn.title = t("compress.portraitToggleTitle");
     portraitToggleGroup.append(portraitToggleBtn);
 
     // 分割数（1/K）
@@ -1444,18 +1563,18 @@ export class CompressEditor {
     const toolGroup = document.createElement("div");
     toolGroup.className = "paint-group";
     const tools: [Tool, string, IconName][] = [
-      ["brush", "ブラシ", "brush"],
-      ["eraser", "消しゴム", "eraser"],
-      ["line", "直線", "line"],
-      ["circle", "円", "circle"],
-      ["fill", "塗り", "fill"],
-      ["photo", "写真を移動（右）", "move"],
+      ["brush", t("compress.toolBrush"), "brush"],
+      ["eraser", t("compress.eraser"), "eraser"],
+      ["line", t("compress.toolLine"), "line"],
+      ["circle", t("compress.toolCircle"), "circle"],
+      ["fill", t("compress.toolFill"), "fill"],
+      ["photo", t("compress.photoMoveTitle"), "move"],
     ];
-    for (const [t, title, iconName] of tools) {
-      const b = pbtn("", () => this.setTool(t));
+    for (const [tool, title, iconName] of tools) {
+      const b = pbtn("", () => this.setTool(tool));
       setIconLabel(b, iconName);
       b.title = title;
-      this.toolButtons.set(t, b);
+      this.toolButtons.set(tool, b);
       toolGroup.append(b);
     }
 
@@ -1479,18 +1598,18 @@ export class CompressEditor {
     this.bgInput.type = "color";
     this.bgInput.value = this.bgColor;
     this.bgInput.className = "paint-color";
-    this.bgInput.title = "背景色";
+    this.bgInput.title = t("compress.bgColorTitle");
     this.bgInput.oninput = () => {
       this.bgColor = this.bgInput.value;
       this.render();
     };
 
     styleGroup.append(
-      label("色"),
+      label(t("compress.colorLabel")),
       colorIn,
-      label("太さ"),
+      label(t("compress.thicknessLabel")),
       sizeIn,
-      label("背景"),
+      label(t("common.background")),
       this.bgInput,
     );
 
@@ -1498,25 +1617,25 @@ export class CompressEditor {
     const actGroup = document.createElement("div");
     actGroup.className = "paint-group";
     actGroup.append(
-      pbtn("元に戻す", () => this.undo()),
-      pbtn("消去", () => this.clearArt()),
+      pbtn(t("common.undo"), () => this.undo()),
+      pbtn(t("common.clear"), () => this.clearArt()),
     );
 
     // 印刷用PNG書き出し
     const exportGroup = document.createElement("div");
     exportGroup.className = "paint-group";
     exportGroup.append(
-      pbtn("PNG書き出し", () => this.openExportModal()),
+      pbtn(t("compress.pngExport"), () => this.openExportModal()),
     );
 
     // 保存・閉じる
     const endGroup = document.createElement("div");
     endGroup.className = "paint-group paint-end";
-    const useBtn = pbtn("保存せず使う", () => this.useWithoutSaving());
-    useBtn.title = "ギャラリーには保存せず、今の絵を一時的にシミュレータへ反映する（リロードで消えます）";
-    this.saveBtn = pbtn("保存", () => this.save());
+    const useBtn = pbtn(t("compress.useWithoutSaving"), () => this.useWithoutSaving());
+    useBtn.title = t("compress.useWithoutSavingTitle");
+    this.saveBtn = pbtn(t("common.save"), () => this.save());
     this.saveBtn.classList.add("primary");
-    endGroup.append(useBtn, this.saveBtn, pbtn("閉じる", () => this.close()));
+    endGroup.append(useBtn, this.saveBtn, pbtn(t("common.close"), () => this.close()));
 
     bar.append(
       loadGroup,
@@ -1535,14 +1654,14 @@ export class CompressEditor {
     this.stageEl = stage;
     stage.className = "paint-stage";
 
-    this.leftPane = paintPane("360°画像（ここに描けます）");
+    this.leftPane = paintPane(t("compress.leftPaneLabel"));
     this.leftCanvas = document.createElement("canvas");
     this.leftCanvas.width = this.leftCanvas.height = PAINT_SIZE;
     this.leftCanvas.className = "paint-canvas";
     this.leftCtx = this.leftCanvas.getContext("2d")!;
     this.leftPane.append(this.leftCanvas);
 
-    this.rightPane = paintPane("繰り返しパターン（全ピースに描けます）");
+    this.rightPane = paintPane(t("compress.rightPaneLabel"));
     this.rightCanvas = document.createElement("canvas");
     this.rightCanvas.width = this.rightCanvas.height = PAINT_SIZE;
     this.rightCanvas.className = "paint-canvas";
@@ -1553,8 +1672,7 @@ export class CompressEditor {
 
     const hint = document.createElement("div");
     hint.className = "paint-hint";
-    hint.textContent =
-      "左右どちらの円にも描けます。左（360°画像）に描くと右に圧縮、右（繰り返しパターン）に描くと全ピースへ K 回対称でコピーされます。「画像を読み込む」で原盤（左へ）／写真配置（右へ）を選べます（写真は「写真を移動」ツールで移動、＋／－で拡大縮小、はみ出た部分は自動的に除外）。保存されるのは左の360°画像です。";
+    hint.textContent = t("compress.hint");
 
     this.buildLoadModal();
     this.buildExportModal();
@@ -1611,6 +1729,13 @@ function norm(a: number): number {
   while (a > Math.PI) a -= Math.PI * 2;
   while (a < -Math.PI) a += Math.PI * 2;
   return a;
+}
+/** 正弦波(sharpness=0、滑らか)～三角波(sharpness=1、先端が尖る)の間を補間した波形。
+ *  t はラジアン。どちらも -1..1 の同じ振幅・周期なので自然に混ざる。 */
+function waveform(t: number, sharpness: number): number {
+  const sine = Math.sin(t);
+  const triangle = (2 / Math.PI) * Math.asin(Math.sin(t));
+  return sine * (1 - sharpness) + triangle * sharpness;
 }
 function paintPane(labelText: string): HTMLDivElement {
   const pane = document.createElement("div");

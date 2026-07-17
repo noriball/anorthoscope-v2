@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { setIconLabel } from "./icons";
 
 export interface PlayHooks {
@@ -25,7 +26,8 @@ export class PlayButton {
   update(paused: boolean): void {
     setIconLabel(this.el, paused ? "play" : "pause");
     this.el.classList.toggle("is-paused", paused);
-    this.el.title = paused ? "再生" : "停止";
-    this.el.setAttribute("aria-label", paused ? "再生" : "停止");
+    const label = paused ? t("playButton.play") : t("playButton.pause");
+    this.el.title = label;
+    this.el.setAttribute("aria-label", label);
   }
 }

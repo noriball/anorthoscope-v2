@@ -1,5 +1,6 @@
 import type { Drawing } from "../gallery";
 import type { Picture } from "../images";
+import { t } from "../i18n";
 import { icon } from "./icons";
 
 /**
@@ -31,7 +32,7 @@ export class ImagePicker {
   constructor(
     onSelect: (index: number) => void,
     actions: PickerActions = {},
-    title = "画像",
+    title = t("imagePicker.title"),
     rootId = "picker",
   ) {
     this.onSelect = onSelect;
@@ -50,7 +51,7 @@ export class ImagePicker {
     titleEl.textContent = title;
     const close = document.createElement("button");
     close.className = "paint-btn";
-    close.textContent = "閉じる";
+    close.textContent = t("common.close");
     close.onclick = () => this.hide();
     head.append(titleEl, close);
 
@@ -119,7 +120,7 @@ export class ImagePicker {
       if (drawing && onEdit) {
         const edit = document.createElement("span");
         edit.className = "picker-edit";
-        edit.title = "この絵を作画モードで編集";
+        edit.title = t("imagePicker.editTitle");
         edit.append(icon("brush"));
         edit.onclick = (e) => {
           e.stopPropagation(); // セル選択と分離
@@ -132,10 +133,10 @@ export class ImagePicker {
         const del = document.createElement("span");
         del.className = "picker-del";
         del.textContent = "×";
-        del.title = "この絵を削除";
+        del.title = t("imagePicker.deleteTitle");
         del.onclick = (e) => {
           e.stopPropagation();
-          if (confirm(`「${drawing.name}」を削除しますか？`)) {
+          if (confirm(t("common.deleteConfirm", { name: drawing.name }))) {
             onDelete(drawing);
           }
         };
@@ -159,7 +160,7 @@ export class ImagePicker {
     plus.textContent = "＋";
     const createLabel = document.createElement("span");
     createLabel.className = "picker-num";
-    createLabel.textContent = "新規作成";
+    createLabel.textContent = t("common.createLabel");
     createLabel.style.fontSize = "12px";
     createLabel.style.padding = "4px";
     createLabel.style.textAlign = "center";

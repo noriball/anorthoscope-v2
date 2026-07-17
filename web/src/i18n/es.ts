@@ -1,0 +1,156 @@
+import type { TranslationKey } from "./ja";
+export const es: Record<TranslationKey, string> = {
+  // ---- común ----
+  "common.close": "Cerrar",
+  "common.save": "Guardar",
+  "common.undo": "Deshacer",
+  "common.clear": "Borrar",
+  "common.cancel": "Cancelar",
+  "common.createLabel": "Nuevo",
+  "common.black": "Negro",
+  "common.white": "Blanco",
+  "common.background": "Fondo",
+  "common.deleteConfirm": "¿Eliminar “{name}”?",
+  "common.yes": "Activado",
+  "common.no": "Desactivado",
+
+  // ---- guía de uso ----
+  "guide.subtitle": "Anorthoscope: guía de uso",
+  "guide.footer": "Haz clic en cualquier lugar o pulsa Esc para cerrar",
+  "guide.rows.playPause.action": "Reproducir / Pausar",
+  "guide.rows.playPause.location": "Botón de reproducción, en el centro de la barra inferior",
+  "guide.rows.selectImage.action": "Elegir una imagen de la lista",
+  "guide.rows.selectImage.location": "Imagen: Elegir / Crear",
+  "guide.rows.hideImage.action": "Ocultar el dibujo para ver solo el movimiento de la rendija",
+  "guide.rows.hideImage.location": "Imagen: Mostrar (activado la muestra, desactivado la oculta)",
+  "guide.rows.speedFade.action": "Velocidad de rotación / desvanecimiento",
+  "guide.rows.speedFade.location": "Deslizadores",
+  "guide.rows.rotationRatio.action": "Relación de rotación",
+  "guide.rows.rotationRatio.location": "− + / valor en el panel central inferior",
+  "guide.rows.selectSlit.action": "Elegir o crear la forma de la abertura de la rendija",
+  "guide.rows.selectSlit.location": "Rendija: Elegir / Crear",
+  "guide.rows.slitLine.action": "Superponer la posición de la rendija con una línea roja",
+  "guide.rows.slitLine.location": "Rendija: Posición (activado/desactivado)",
+  "guide.rows.slitPlate.action": "Superponer la placa de rendija real (disco negro + ventana transparente)",
+  "guide.rows.slitPlate.location": "Rendija: Mostrar (activado/desactivado)",
+  "guide.rows.slitCount.action": "Cambiar el número de rendijas",
+  "guide.rows.slitCount.location": "Rendija: Cantidad − +",
+  "guide.rows.draw.action": "Dibuja tu propia imagen (en cualquiera de los dos círculos)",
+  "guide.rows.draw.location": "Imagen: Elegir / Crear → + Nuevo",
+  "guide.rows.gallery.action": "Recuperar, editar o eliminar un dibujo guardado",
+  "guide.rows.gallery.location": "Desde la lista de imágenes",
+  "guide.rows.fullscreen.action": "Pantalla completa",
+  "guide.rows.fullscreen.location": "Botón de pantalla completa, abajo a la derecha",
+  "guide.rows.paintAxes.action": "Dibujo: izquierda = imagen de 360°, derecha = patrón repetido 1/K",
+  "guide.rows.paintAxes.location": "Puedes dibujar en cualquiera de los dos círculos",
+  "guide.rows.paintSymmetry.action": "Dibuja en cualquier sección de la derecha y se copiará con simetría K",
+  "guide.rows.paintSymmetry.location": "Misma geometría que el anortoscopio",
+  "guide.rows.focusClick.action": "Haz clic en un círculo para ampliar / vuelve a hacer clic para volver",
+  "guide.rows.focusClick.location": "Clic sobre la imagen",
+  "guide.rows.focusZoom.action": "Con el zoom activado, arrastra para desplazarte, usa −/+ para acercar, alejar o restablecer",
+  "guide.rows.focusZoom.location": "Botones de arrastre / zoom",
+
+  // ---- barra de controles inferior ----
+  "controls.imagePick": "Elegir / Crear",
+  "controls.imagePickTitle": "Elige una muestra o tu propio dibujo, o dibuja uno nuevo",
+  "controls.imageToggle": "Mostrar",
+  "controls.imageToggleTitle": "Alternar el dibujo (ocúltalo para ver solo el movimiento de la rendija)",
+  "controls.slitSelect": "Elegir / Crear",
+  "controls.slitSelectTitle": "Elegir o crear la forma de la abertura de la rendija",
+  "controls.speed": "Velocidad",
+  "controls.fade": "Desvanecimiento",
+  "controls.slitLine": "Posición",
+  "controls.slitLineTitle": "Superponer la forma y posición de la rendija con una línea roja en ambos círculos",
+  "controls.slitPlate": "Mostrar",
+  "controls.slitPlateTitle": "Superponer la placa de rendija real (disco negro + ventana transparente) en el círculo izquierdo",
+  "controls.slitCount": "Cantidad",
+  "controls.fullscreenTitle": "Pantalla completa",
+  "controls.helpTitle": "Guía de uso",
+  "controls.imageGroupLabel": "Imagen",
+  "controls.slitGroupLabel": "Rendija",
+
+  // ---- panel de relación de rotación ----
+  "rotationRatio.title": "Relación de rotación",
+  "rotationRatio.slit": "Rendija",
+  "rotationRatio.image": "Dibujo",
+
+  // ---- botón de reproducción ----
+  "playButton.play": "Reproducir",
+  "playButton.pause": "Pausar",
+
+  // ---- controles de zoom ----
+  "zoomControls.zoomOut": "Alejar",
+  "zoomControls.reset": "Restablecer vista",
+  "zoomControls.zoomIn": "Acercar",
+
+  // ---- selector de imágenes ----
+  "imagePicker.title": "Imágenes",
+  "imagePicker.editTitle": "Editar este dibujo en modo de dibujo",
+  "imagePicker.deleteTitle": "Eliminar este dibujo",
+
+  // ---- selector de forma de rendija ----
+  "slitPicker.title": "Elegir una forma de rendija",
+  "slitPicker.deleteTitle": "Eliminar esta rendija personalizada",
+
+  // ---- datos de forma de rendija ----
+  "slitMask.presetBasic": "Básica",
+  "slitMask.customPrefix": "Personalizada ",
+
+  // ---- editor de dibujo (CompressEditor) ----
+  "compress.pickerTitle": "Elegir una imagen",
+  "compress.photoMoveTitle": "Mover foto (derecha)",
+  "compress.photoMoveTitleDisabled": "Mover foto (derecha): carga primero una foto",
+  "compress.savedToast": "Guardado",
+  "compress.loadHintLeft": "Carga una imagen maestra de 360° previamente deformada directamente en el círculo izquierdo.",
+  "compress.loadHintRight":
+    "Coloca tu propio dibujo o una foto dentro del sector de la derecha (lo que sobresalga se recorta automáticamente; después puedes ajustar la posición y el tamaño con la herramienta “Mover foto” y +/−).",
+  "compress.loadModalTitle": "Cargar una imagen",
+  "compress.loadTabLeft": "Maestra (a la izquierda)",
+  "compress.loadTabRight": "Colocación de foto (a la derecha)",
+  "compress.pickFromList": "Elegir de la lista de imágenes",
+  "compress.pickFromFile": "+ Desde un archivo",
+  "compress.outlineLabel": "Línea de contorno",
+  "compress.centerMarkLabel": "Marca central",
+  "compress.diameterLabel": "Diámetro",
+  "compress.dotShape": "Punto",
+  "compress.crossShape": "Cruz",
+  "compress.download": "Descargar",
+  "compress.exportModalTitle": "Ajustes de descarga PNG",
+  "compress.slitShapeSavedToast": "Forma de rendija guardada",
+  "compress.slitShapeModalTitle": "Forma de la rendija",
+  "compress.slitShapeDesc":
+    "Dibuja a mano la forma de la abertura de la placa de rendija dentro del sector amarillo (1/n). No solo líneas rectas: también funcionan diagonales, zigzags y ondas (blanco = zona abierta). El vértice es el centro del círculo, el arco exterior es su circunferencia.",
+  "compress.eraser": "Borrador",
+  "compress.resetToDefault": "Restablecer línea predeterminada",
+  "compress.genTitle":
+    "Generar a partir de parámetros (se redibuja cada vez que mueves un deslizador; sirve de base o punto de partida para el dibujo a mano)",
+  "compress.period": "Periodo",
+  "compress.amplitude": "Amplitud",
+  "compress.sharpness": "Nitidez",
+  "compress.generateBtn": "Generar esta forma",
+  "compress.loadImageBtn": "Cargar una imagen",
+  "compress.photoZoomOutTitle": "Reducir foto",
+  "compress.photoZoomInTitle": "Ampliar foto",
+  "compress.photoRemove": "Quitar foto",
+  "compress.portraitToggle": "⇄ Cambiar vista",
+  "compress.portraitToggleTitle":
+    "Cambiar qué círculo se muestra en modo vertical (derecha = patrón repetido / izquierda = 360° completo)",
+  "compress.toolBrush": "Pincel",
+  "compress.toolLine": "Línea",
+  "compress.toolCircle": "Círculo",
+  "compress.toolFill": "Relleno",
+  "compress.colorLabel": "Color",
+  "compress.thicknessLabel": "Grosor",
+  "compress.bgColorTitle": "Color de fondo",
+  "compress.pngExport": "Exportar PNG",
+  "compress.useWithoutSaving": "Usar sin guardar",
+  "compress.useWithoutSavingTitle":
+    "Aplica el dibujo actual al simulador temporalmente sin guardarlo en la galería (se pierde al recargar)",
+  "compress.leftPaneLabel": "Imagen de 360° (dibuja aquí)",
+  "compress.rightPaneLabel": "Patrón repetido (se dibuja en todas las secciones)",
+  "compress.hint":
+    "Puedes dibujar en cualquiera de los dos círculos. Dibujar en el izquierdo (imagen de 360°) lo comprime hacia el derecho; dibujar en el derecho (patrón repetido) lo copia con simetría K en todas las secciones. Usa “Cargar una imagen” para elegir una imagen maestra (a la izquierda) o colocar una foto (a la derecha); mueve una foto con la herramienta “Mover foto”, cambia el tamaño con +/− y lo que sobresalga se recorta automáticamente. Solo se guarda la imagen de 360° de la izquierda.",
+
+  // ---- main.ts ----
+  "main.untitled": "Sin título",
+} as const;

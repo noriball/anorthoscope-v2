@@ -1,3 +1,4 @@
+import { t } from "./i18n";
 import type { SlitShape } from "./ui/SlitPicker";
 
 const OLD_KEY = "anortho.slitMask.v1"; // 旧：単一カスタム（移行用）
@@ -73,7 +74,8 @@ export async function loadSlitShapes(): Promise<SlitShape[]> {
         const blob = await fileRes.blob();
         return {
           id: p.id,
-          name: p.name,
+          // 「基本」だけは翻訳する。それ以外（1〜4）は言語に依存しない番号なのでそのまま
+          name: p.id === "basic" ? t("slitMask.presetBasic") : p.name,
           dataURL: await blobToDataURL(blob),
           deletable: false,
         };
@@ -85,7 +87,12 @@ export async function loadSlitShapes(): Promise<SlitShape[]> {
   }
   // 自作スリット（複数・削除可）。名前は「自作N」で連番表示
   listCustomSlits().forEach((c, i) => {
-    shapes.push({ id: c.id, name: `自作${i + 1}`, dataURL: c.dataURL, deletable: true });
+    shapes.push({
+      id: c.id,
+      name: `${t("slitMask.customPrefix")}${i + 1}`,
+      dataURL: c.dataURL,
+      deletable: true,
+    });
   });
   return shapes;
 }
