@@ -1,0 +1,156 @@
+import type { TranslationKey } from "./ja";
+export const ru: Record<TranslationKey, string> = {
+  // ---- общие ----
+  "common.close": "Закрыть",
+  "common.save": "Сохранить",
+  "common.undo": "Отменить",
+  "common.clear": "Очистить",
+  "common.cancel": "Отмена",
+  "common.createLabel": "Создать",
+  "common.black": "Чёрный",
+  "common.white": "Белый",
+  "common.background": "Фон",
+  "common.deleteConfirm": "Удалить «{name}»?",
+  "common.yes": "Вкл.",
+  "common.no": "Выкл.",
+
+  // ---- руководство по управлению ----
+  "guide.subtitle": "Anorthoscope — руководство по управлению",
+  "guide.footer": "Нажмите в любом месте или Esc, чтобы закрыть",
+  "guide.rows.playPause.action": "Воспроизведение / пауза",
+  "guide.rows.playPause.location": "Кнопка воспроизведения в центре нижней панели",
+  "guide.rows.selectImage.action": "Выбрать изображение из списка",
+  "guide.rows.selectImage.location": "Изображение: Выбрать / Создать",
+  "guide.rows.hideImage.action": "Скрыть рисунок, чтобы видеть только движение щели",
+  "guide.rows.hideImage.location": "Изображение: Показать (вкл. — показывает, выкл. — скрывает)",
+  "guide.rows.speedFade.action": "Скорость вращения / затухание",
+  "guide.rows.speedFade.location": "Ползунки",
+  "guide.rows.rotationRatio.action": "Соотношение вращения",
+  "guide.rows.rotationRatio.location": "− + / значение на нижней центральной панели",
+  "guide.rows.selectSlit.action": "Выбрать или создать форму отверстия щели",
+  "guide.rows.selectSlit.location": "Щель: Выбрать / Создать",
+  "guide.rows.slitLine.action": "Наложить положение щели красной линией",
+  "guide.rows.slitLine.location": "Щель: Положение (вкл./выкл.)",
+  "guide.rows.slitPlate.action": "Наложить реальную пластину со щелью (чёрный диск + прозрачное окно)",
+  "guide.rows.slitPlate.location": "Щель: Показать (вкл./выкл.)",
+  "guide.rows.slitCount.action": "Изменить количество щелей",
+  "guide.rows.slitCount.location": "Щель: Количество − +",
+  "guide.rows.draw.action": "Нарисуйте свою картинку (на любом из кругов)",
+  "guide.rows.draw.location": "Изображение: Выбрать / Создать → + Новое",
+  "guide.rows.gallery.action": "Открыть, отредактировать или удалить сохранённый рисунок",
+  "guide.rows.gallery.location": "Из списка изображений",
+  "guide.rows.fullscreen.action": "Полный экран",
+  "guide.rows.fullscreen.location": "Кнопка полного экрана внизу справа",
+  "guide.rows.paintAxes.action": "Рисование: слева = изображение 360°, справа = повторяющийся узор 1/K",
+  "guide.rows.paintAxes.location": "Рисовать можно на любом из кругов",
+  "guide.rows.paintSymmetry.action": "Рисуйте на любом сегменте справа — он скопируется с K-кратной симметрией",
+  "guide.rows.paintSymmetry.location": "Та же геометрия, что и у анортоскопа",
+  "guide.rows.focusClick.action": "Нажмите на круг для увеличения / нажмите ещё раз, чтобы вернуться",
+  "guide.rows.focusClick.location": "Клик по изображению",
+  "guide.rows.focusZoom.action": "При увеличении перетаскивайте для панорамирования, используйте −/+ для масштабирования или сброса",
+  "guide.rows.focusZoom.location": "Кнопки перетаскивания / масштабирования",
+
+  // ---- нижняя панель управления ----
+  "controls.imagePick": "Выбрать / Создать",
+  "controls.imagePickTitle": "Выберите образец или свой рисунок, либо нарисуйте новый",
+  "controls.imageToggle": "Показать",
+  "controls.imageToggleTitle": "Переключить отображение рисунка (скройте, чтобы видеть только движение щели)",
+  "controls.slitSelect": "Выбрать / Создать",
+  "controls.slitSelectTitle": "Выбрать или создать форму отверстия щели",
+  "controls.speed": "Скорость",
+  "controls.fade": "Затухание",
+  "controls.slitLine": "Положение",
+  "controls.slitLineTitle": "Наложить форму и положение щели красной линией на оба круга",
+  "controls.slitPlate": "Показать",
+  "controls.slitPlateTitle": "Наложить реальную пластину со щелью (чёрный диск + прозрачное окно) на левый круг",
+  "controls.slitCount": "Количество",
+  "controls.fullscreenTitle": "Полный экран",
+  "controls.helpTitle": "Руководство по управлению",
+  "controls.imageGroupLabel": "Изображение",
+  "controls.slitGroupLabel": "Щель",
+
+  // ---- панель соотношения вращения ----
+  "rotationRatio.title": "Соотношение вращения",
+  "rotationRatio.slit": "Щель",
+  "rotationRatio.image": "Рисунок",
+
+  // ---- кнопка воспроизведения ----
+  "playButton.play": "Воспроизвести",
+  "playButton.pause": "Пауза",
+
+  // ---- управление масштабом ----
+  "zoomControls.zoomOut": "Уменьшить",
+  "zoomControls.reset": "Сбросить вид",
+  "zoomControls.zoomIn": "Увеличить",
+
+  // ---- выбор изображения ----
+  "imagePicker.title": "Изображения",
+  "imagePicker.editTitle": "Редактировать этот рисунок в режиме рисования",
+  "imagePicker.deleteTitle": "Удалить этот рисунок",
+
+  // ---- выбор формы щели ----
+  "slitPicker.title": "Выбрать форму щели",
+  "slitPicker.deleteTitle": "Удалить эту пользовательскую щель",
+
+  // ---- данные формы щели ----
+  "slitMask.presetBasic": "Базовая",
+  "slitMask.customPrefix": "Своя ",
+
+  // ---- редактор рисования (CompressEditor) ----
+  "compress.pickerTitle": "Выбрать изображение",
+  "compress.photoMoveTitle": "Переместить фото (справа)",
+  "compress.photoMoveTitleDisabled": "Переместить фото (справа): сначала загрузите фото",
+  "compress.savedToast": "Сохранено",
+  "compress.loadHintLeft": "Загружает заранее искажённое исходное изображение 360° прямо в левый круг.",
+  "compress.loadHintRight":
+    "Размещает ваш рисунок или фотографию внутри сектора справа (то, что выходит за пределы, автоматически обрезается; позже можно скорректировать положение и размер инструментом «Переместить фото» и +/−).",
+  "compress.loadModalTitle": "Загрузить изображение",
+  "compress.loadTabLeft": "Исходник (налево)",
+  "compress.loadTabRight": "Размещение фото (направо)",
+  "compress.pickFromList": "Выбрать из списка изображений",
+  "compress.pickFromFile": "+ Из файла",
+  "compress.outlineLabel": "Линия по окружности",
+  "compress.centerMarkLabel": "Отметка центра",
+  "compress.diameterLabel": "Диаметр",
+  "compress.dotShape": "Точка",
+  "compress.crossShape": "Крест",
+  "compress.download": "Скачать",
+  "compress.exportModalTitle": "Настройки загрузки PNG",
+  "compress.slitShapeSavedToast": "Форма щели сохранена",
+  "compress.slitShapeModalTitle": "Форма щели",
+  "compress.slitShapeDesc":
+    "Нарисуйте от руки форму отверстия пластины со щелью внутри жёлтого сектора (1/n). Не только прямые линии — подойдут и диагонали, зигзаги, волны (белый = открытая область). Вершина — центр круга, внешняя дуга — его окружность.",
+  "compress.eraser": "Ластик",
+  "compress.resetToDefault": "Вернуть линию по умолчанию",
+  "compress.genTitle":
+    "Сгенерировать по параметрам (перерисовывается при каждом движении ползунка — как основа или отправная точка для рисования от руки)",
+  "compress.period": "Период",
+  "compress.amplitude": "Амплитуда",
+  "compress.sharpness": "Резкость",
+  "compress.generateBtn": "Сгенерировать эту форму",
+  "compress.loadImageBtn": "Загрузить изображение",
+  "compress.photoZoomOutTitle": "Уменьшить фото",
+  "compress.photoZoomInTitle": "Увеличить фото",
+  "compress.photoRemove": "Удалить фото",
+  "compress.portraitToggle": "⇄ Переключить вид",
+  "compress.portraitToggleTitle":
+    "Переключить, какой круг показывается в портретном режиме (справа = повторяющийся узор / слева = полные 360°)",
+  "compress.toolBrush": "Кисть",
+  "compress.toolLine": "Линия",
+  "compress.toolCircle": "Круг",
+  "compress.toolFill": "Заливка",
+  "compress.colorLabel": "Цвет",
+  "compress.thicknessLabel": "Толщина",
+  "compress.bgColorTitle": "Цвет фона",
+  "compress.pngExport": "Экспорт в PNG",
+  "compress.useWithoutSaving": "Использовать без сохранения",
+  "compress.useWithoutSavingTitle":
+    "Временно применяет текущий рисунок к симулятору без сохранения в галерее (исчезает при перезагрузке)",
+  "compress.leftPaneLabel": "Изображение 360° (рисуйте здесь)",
+  "compress.rightPaneLabel": "Повторяющийся узор (рисует на каждом сегменте)",
+  "compress.hint":
+    "Рисовать можно на любом из кругов. Рисование слева (изображение 360°) сжимается вправо; рисование справа (повторяющийся узор) копируется с K-кратной симметрией на каждый сегмент. Используйте «Загрузить изображение», чтобы выбрать исходное изображение (налево) или разместить фото (направо) — перемещайте фото инструментом «Переместить фото», масштабируйте с помощью +/−, а всё, что выходит за пределы, обрезается автоматически. Сохраняется только левое изображение 360°.",
+
+  // ---- main.ts ----
+  "main.untitled": "Без названия",
+} as const;

@@ -404,6 +404,38 @@ body {
   gap: 12px;
   flex: 0 0 auto;
 }
+/* 画像・スリット側とスライダー側で #controls の残り幅を半分ずつ分け合う。
+   画像・スリット側はその中で中央寄せ、スライダー側は速度・フェード・背景の
+   3フィールドで均等配分する（再生ボタンの左右に大きな空白ができないように）。 */
+.bar-row-groups {
+  flex: 1 1 0;
+  justify-content: center;
+}
+.bar-row-sliders {
+  flex: 1 1 0;
+  /* スライダー類はラベル分だけ背が高いので、中央揃えだとラベルの無い
+     全画面・ガイドボタンが浮いて見える。下端で揃える。 */
+  align-items: flex-end;
+}
+.bar-row-sliders .params-group {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.bar-row-sliders .field {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.bar-row-sliders .slider-swatch {
+  width: 100%;
+}
+.bar-row-sliders .field-inline {
+  width: 100%;
+}
+.bar-row-sliders .field-inline .slider {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+}
 .sep {
   width: 1px;
   height: 34px;
@@ -1045,7 +1077,6 @@ body {
   .btn.wide { padding: 0 8px; }
   .btn.play { width: 68px; }
   .sep { display: none; }
-  .spacer { display: none; }
 
   /* モバイルでの並び順：①再生 ②画像・スリット ③スライダー類＋全画面・ガイド。
      各行を幅いっぱいの独立行にし、order で見た目の順序だけ入れ替える

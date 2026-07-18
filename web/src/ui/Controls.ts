@@ -115,6 +115,7 @@ export class ControlBar {
       field(t("controls.fade"), this.fadeInput),
       field(t("common.background"), this.bgInput),
     );
+    params.classList.add("params-group");
 
     // スリットの見え方：位置（赤線）と板表示はそれぞれ独立した表示/非表示トグル。
     // 内部ではクロスフェードで排他になる（板を出すと赤線は自動的に消える）ので、
@@ -171,11 +172,11 @@ export class ControlBar {
     const row3 = el("div", "bar-row bar-row-sliders");
     row3.append(params, sep(), actions);
 
-    // 再生は両側の spacer で中央へ寄せる。モバイルは spacer が消えて折返すので、
-    // 代わりに play-group を独立した行にして中央に置く（CSS 側）。
+    // 再生ボタンは固定幅、画像・スリット側とスライダー側で残り幅を半分ずつ分け合う
+    // （CSS 側 .bar-row-groups / .bar-row-sliders）。モバイルは折返して縦に並ぶ。
     const playGroup = group(this.playEl ?? el("span"));
     playGroup.classList.add("play-group");
-    this.root.append(row2, spacer(), playGroup, spacer(), row3);
+    this.root.append(row2, playGroup, row3);
     this.update();
   }
 
@@ -311,11 +312,6 @@ function labeledGroup(labelText: string, ...children: Node[]): HTMLElement {
 }
 function sep(): HTMLElement {
   return el("div", "sep");
-}
-function spacer(): HTMLElement {
-  const s = el("div", "spacer");
-  s.style.flex = "1 1 auto";
-  return s;
 }
 function field(labelText: string, input: HTMLInputElement | HTMLElement, unit?: string | HTMLElement): HTMLElement {
   const wrap = el("label", "field");

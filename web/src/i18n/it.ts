@@ -1,0 +1,156 @@
+import type { TranslationKey } from "./ja";
+export const it: Record<TranslationKey, string> = {
+  // ---- comune ----
+  "common.close": "Chiudi",
+  "common.save": "Salva",
+  "common.undo": "Annulla",
+  "common.clear": "Cancella",
+  "common.cancel": "Annulla",
+  "common.createLabel": "Nuovo",
+  "common.black": "Nero",
+  "common.white": "Bianco",
+  "common.background": "Sfondo",
+  "common.deleteConfirm": "Eliminare “{name}”?",
+  "common.yes": "Attivo",
+  "common.no": "Disattivo",
+
+  // ---- guida ai comandi ----
+  "guide.subtitle": "Anorthoscope — Guida ai comandi",
+  "guide.footer": "Clicca in un punto qualsiasi o premi Esc per chiudere",
+  "guide.rows.playPause.action": "Riproduci / Pausa",
+  "guide.rows.playPause.location": "Pulsante di riproduzione, al centro della barra inferiore",
+  "guide.rows.selectImage.action": "Scegli un'immagine dall'elenco",
+  "guide.rows.selectImage.location": "Immagine: Scegli / Crea",
+  "guide.rows.hideImage.action": "Nascondi il disegno per vedere solo il movimento della fenditura",
+  "guide.rows.hideImage.location": "Immagine: Mostra (attivo per mostrare, disattivo per nascondere)",
+  "guide.rows.speedFade.action": "Velocità di rotazione / dissolvenza",
+  "guide.rows.speedFade.location": "Cursori",
+  "guide.rows.rotationRatio.action": "Rapporto di rotazione",
+  "guide.rows.rotationRatio.location": "− + / valore nel pannello centrale inferiore",
+  "guide.rows.selectSlit.action": "Scegli o crea la forma dell'apertura della fenditura",
+  "guide.rows.selectSlit.location": "Fenditura: Scegli / Crea",
+  "guide.rows.slitLine.action": "Sovrapponi la posizione della fenditura con una linea rossa",
+  "guide.rows.slitLine.location": "Fenditura: Posizione (on/off)",
+  "guide.rows.slitPlate.action": "Sovrapponi il disco a fenditura reale (disco nero + finestra trasparente)",
+  "guide.rows.slitPlate.location": "Fenditura: Mostra (on/off)",
+  "guide.rows.slitCount.action": "Cambia il numero di fenditure",
+  "guide.rows.slitCount.location": "Fenditura: Numero − +",
+  "guide.rows.draw.action": "Disegna la tua immagine (su uno dei due cerchi)",
+  "guide.rows.draw.location": "Immagine: Scegli / Crea → + Nuovo",
+  "guide.rows.gallery.action": "Richiama, modifica o elimina un disegno salvato",
+  "guide.rows.gallery.location": "Dall'elenco immagini",
+  "guide.rows.fullscreen.action": "Schermo intero",
+  "guide.rows.fullscreen.location": "Pulsante schermo intero, in basso a destra",
+  "guide.rows.paintAxes.action": "Disegno: sinistra = immagine a 360°, destra = motivo ripetuto 1/K",
+  "guide.rows.paintAxes.location": "Puoi disegnare su entrambi i cerchi",
+  "guide.rows.paintSymmetry.action": "Disegna su qualsiasi sezione a destra e verrà copiata con simmetria di ordine K",
+  "guide.rows.paintSymmetry.location": "Stessa geometria dell'anortoscopio",
+  "guide.rows.focusClick.action": "Clicca su un cerchio per ingrandire / clicca di nuovo per tornare indietro",
+  "guide.rows.focusClick.location": "Clic sull'immagine",
+  "guide.rows.focusZoom.action": "Durante lo zoom, trascina per spostarti, usa −/+ per zoomare o ripristinare",
+  "guide.rows.focusZoom.location": "Pulsanti di trascinamento / zoom",
+
+  // ---- barra dei comandi inferiore ----
+  "controls.imagePick": "Scegli / Crea",
+  "controls.imagePickTitle": "Scegli un esempio o un tuo disegno, oppure disegnane uno nuovo",
+  "controls.imageToggle": "Mostra",
+  "controls.imageToggleTitle": "Attiva/disattiva il disegno (nascondilo per vedere solo il movimento della fenditura)",
+  "controls.slitSelect": "Scegli / Crea",
+  "controls.slitSelectTitle": "Scegli o crea la forma dell'apertura della fenditura",
+  "controls.speed": "Velocità",
+  "controls.fade": "Dissolvenza",
+  "controls.slitLine": "Posizione",
+  "controls.slitLineTitle": "Sovrapponi forma e posizione della fenditura con una linea rossa su entrambi i cerchi",
+  "controls.slitPlate": "Mostra",
+  "controls.slitPlateTitle": "Sovrapponi il disco a fenditura reale (disco nero + finestra trasparente) sul cerchio sinistro",
+  "controls.slitCount": "Numero",
+  "controls.fullscreenTitle": "Schermo intero",
+  "controls.helpTitle": "Guida ai comandi",
+  "controls.imageGroupLabel": "Immagine",
+  "controls.slitGroupLabel": "Fenditura",
+
+  // ---- pannello del rapporto di rotazione ----
+  "rotationRatio.title": "Rapporto di rotazione",
+  "rotationRatio.slit": "Fenditura",
+  "rotationRatio.image": "Disegno",
+
+  // ---- pulsante di riproduzione ----
+  "playButton.play": "Riproduci",
+  "playButton.pause": "Pausa",
+
+  // ---- controlli zoom ----
+  "zoomControls.zoomOut": "Riduci",
+  "zoomControls.reset": "Reimposta vista",
+  "zoomControls.zoomIn": "Ingrandisci",
+
+  // ---- selettore immagini ----
+  "imagePicker.title": "Immagini",
+  "imagePicker.editTitle": "Modifica questo disegno in modalità disegno",
+  "imagePicker.deleteTitle": "Elimina questo disegno",
+
+  // ---- selettore forma fenditura ----
+  "slitPicker.title": "Scegli una forma di fenditura",
+  "slitPicker.deleteTitle": "Elimina questa fenditura personalizzata",
+
+  // ---- dati forma fenditura ----
+  "slitMask.presetBasic": "Base",
+  "slitMask.customPrefix": "Personalizzata ",
+
+  // ---- editor di disegno (CompressEditor) ----
+  "compress.pickerTitle": "Scegli un'immagine",
+  "compress.photoMoveTitle": "Sposta foto (destra)",
+  "compress.photoMoveTitleDisabled": "Sposta foto (destra): carica prima una foto",
+  "compress.savedToast": "Salvato",
+  "compress.loadHintLeft": "Carica un'immagine master a 360° già deformata direttamente nel cerchio sinistro.",
+  "compress.loadHintRight":
+    "Posiziona un tuo disegno o una foto all'interno del settore a destra (ciò che fuoriesce viene ritagliato automaticamente; in seguito puoi regolare posizione e dimensione con lo strumento “Sposta foto” e +/−).",
+  "compress.loadModalTitle": "Carica un'immagine",
+  "compress.loadTabLeft": "Master (a sinistra)",
+  "compress.loadTabRight": "Posizionamento foto (a destra)",
+  "compress.pickFromList": "Scegli dall'elenco immagini",
+  "compress.pickFromFile": "+ Da un file",
+  "compress.outlineLabel": "Linea di contorno",
+  "compress.centerMarkLabel": "Segno centrale",
+  "compress.diameterLabel": "Diametro",
+  "compress.dotShape": "Punto",
+  "compress.crossShape": "Croce",
+  "compress.download": "Scarica",
+  "compress.exportModalTitle": "Impostazioni download PNG",
+  "compress.slitShapeSavedToast": "Forma della fenditura salvata",
+  "compress.slitShapeModalTitle": "Forma della fenditura",
+  "compress.slitShapeDesc":
+    "Disegna a mano la forma dell'apertura del disco a fenditura all'interno del settore giallo (1/n). Non solo linee rette: funzionano anche diagonali, zigzag e onde (bianco = area aperta). Il vertice è il centro del cerchio, l'arco esterno è la sua circonferenza.",
+  "compress.eraser": "Gomma",
+  "compress.resetToDefault": "Ripristina linea predefinita",
+  "compress.genTitle":
+    "Genera da parametri (ridisegna ogni volta che muovi un cursore — una base o un punto di partenza per il disegno a mano libera)",
+  "compress.period": "Periodo",
+  "compress.amplitude": "Ampiezza",
+  "compress.sharpness": "Nitidezza",
+  "compress.generateBtn": "Genera questa forma",
+  "compress.loadImageBtn": "Carica un'immagine",
+  "compress.photoZoomOutTitle": "Riduci foto",
+  "compress.photoZoomInTitle": "Ingrandisci foto",
+  "compress.photoRemove": "Rimuovi foto",
+  "compress.portraitToggle": "⇄ Cambia visualizzazione",
+  "compress.portraitToggleTitle":
+    "Cambia quale cerchio viene mostrato in modalità verticale (destra = motivo ripetuto / sinistra = 360° completo)",
+  "compress.toolBrush": "Pennello",
+  "compress.toolLine": "Linea",
+  "compress.toolCircle": "Cerchio",
+  "compress.toolFill": "Riempimento",
+  "compress.colorLabel": "Colore",
+  "compress.thicknessLabel": "Spessore",
+  "compress.bgColorTitle": "Colore di sfondo",
+  "compress.pngExport": "Esporta PNG",
+  "compress.useWithoutSaving": "Usa senza salvare",
+  "compress.useWithoutSavingTitle":
+    "Applica il disegno attuale al simulatore temporaneamente, senza salvarlo nella galleria (si perde ricaricando)",
+  "compress.leftPaneLabel": "Immagine a 360° (disegna qui)",
+  "compress.rightPaneLabel": "Motivo ripetuto (disegna su ogni sezione)",
+  "compress.hint":
+    "Puoi disegnare su entrambi i cerchi. Disegnare a sinistra (immagine a 360°) lo comprime verso destra; disegnare a destra (motivo ripetuto) lo copia con simmetria di ordine K su ogni sezione. Usa “Carica un'immagine” per scegliere un'immagine master (a sinistra) o posizionare una foto (a destra) — sposta una foto con lo strumento “Sposta foto”, ridimensiona con +/−, e ciò che fuoriesce viene ritagliato automaticamente. Viene salvata solo l'immagine a 360° di sinistra.",
+
+  // ---- main.ts ----
+  "main.untitled": "Senza titolo",
+} as const;

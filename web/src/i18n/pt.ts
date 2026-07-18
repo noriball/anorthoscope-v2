@@ -1,0 +1,156 @@
+import type { TranslationKey } from "./ja";
+export const pt: Record<TranslationKey, string> = {
+  // ---- comum ----
+  "common.close": "Fechar",
+  "common.save": "Salvar",
+  "common.undo": "Desfazer",
+  "common.clear": "Limpar",
+  "common.cancel": "Cancelar",
+  "common.createLabel": "Novo",
+  "common.black": "Preto",
+  "common.white": "Branco",
+  "common.background": "Fundo",
+  "common.deleteConfirm": "Excluir “{name}”?",
+  "common.yes": "Ativado",
+  "common.no": "Desativado",
+
+  // ---- guia de operação ----
+  "guide.subtitle": "Anorthoscope — Guia de operação",
+  "guide.footer": "Clique em qualquer lugar ou pressione Esc para fechar",
+  "guide.rows.playPause.action": "Reproduzir / Pausar",
+  "guide.rows.playPause.location": "Botão de reprodução, no centro da barra inferior",
+  "guide.rows.selectImage.action": "Escolher uma imagem na lista",
+  "guide.rows.selectImage.location": "Imagem: Escolher / Criar",
+  "guide.rows.hideImage.action": "Ocultar o desenho para ver apenas o movimento da fenda",
+  "guide.rows.hideImage.location": "Imagem: Mostrar (ativado exibe, desativado oculta)",
+  "guide.rows.speedFade.action": "Velocidade de rotação / esmaecimento",
+  "guide.rows.speedFade.location": "Controles deslizantes",
+  "guide.rows.rotationRatio.action": "Proporção de rotação",
+  "guide.rows.rotationRatio.location": "− + / valor no painel central inferior",
+  "guide.rows.selectSlit.action": "Escolher ou criar o formato da abertura da fenda",
+  "guide.rows.selectSlit.location": "Fenda: Escolher / Criar",
+  "guide.rows.slitLine.action": "Sobrepor a posição da fenda com uma linha vermelha",
+  "guide.rows.slitLine.location": "Fenda: Posição (ativado/desativado)",
+  "guide.rows.slitPlate.action": "Sobrepor o disco de fenda real (disco preto + janela transparente)",
+  "guide.rows.slitPlate.location": "Fenda: Mostrar (ativado/desativado)",
+  "guide.rows.slitCount.action": "Alterar o número de fendas",
+  "guide.rows.slitCount.location": "Fenda: Quantidade − +",
+  "guide.rows.draw.action": "Desenhe sua própria imagem (em qualquer um dos círculos)",
+  "guide.rows.draw.location": "Imagem: Escolher / Criar → + Novo",
+  "guide.rows.gallery.action": "Recuperar, editar ou excluir um desenho salvo",
+  "guide.rows.gallery.location": "Na lista de imagens",
+  "guide.rows.fullscreen.action": "Tela cheia",
+  "guide.rows.fullscreen.location": "Botão de tela cheia, no canto inferior direito",
+  "guide.rows.paintAxes.action": "Desenho: esquerda = imagem de 360°, direita = padrão repetido 1/K",
+  "guide.rows.paintAxes.location": "Você pode desenhar em qualquer um dos círculos",
+  "guide.rows.paintSymmetry.action": "Desenhe em qualquer seção à direita e ela será copiada com simetria de ordem K",
+  "guide.rows.paintSymmetry.location": "Mesma geometria do anortoscópio",
+  "guide.rows.focusClick.action": "Clique em um círculo para ampliar / clique novamente para voltar",
+  "guide.rows.focusClick.location": "Clique na imagem",
+  "guide.rows.focusZoom.action": "Com o zoom ativo, arraste para deslocar, use −/+ para ampliar, reduzir ou redefinir",
+  "guide.rows.focusZoom.location": "Botões de arrastar / zoom",
+
+  // ---- barra de controle inferior ----
+  "controls.imagePick": "Escolher / Criar",
+  "controls.imagePickTitle": "Escolha um exemplo ou seu próprio desenho, ou desenhe um novo",
+  "controls.imageToggle": "Mostrar",
+  "controls.imageToggleTitle": "Alternar a exibição do desenho (oculte para ver apenas o movimento da fenda)",
+  "controls.slitSelect": "Escolher / Criar",
+  "controls.slitSelectTitle": "Escolher ou criar o formato da abertura da fenda",
+  "controls.speed": "Velocidade",
+  "controls.fade": "Esmaecimento",
+  "controls.slitLine": "Posição",
+  "controls.slitLineTitle": "Sobrepor o formato e a posição da fenda com uma linha vermelha em ambos os círculos",
+  "controls.slitPlate": "Mostrar",
+  "controls.slitPlateTitle": "Sobrepor o disco de fenda real (disco preto + janela transparente) no círculo esquerdo",
+  "controls.slitCount": "Quantidade",
+  "controls.fullscreenTitle": "Tela cheia",
+  "controls.helpTitle": "Guia de operação",
+  "controls.imageGroupLabel": "Imagem",
+  "controls.slitGroupLabel": "Fenda",
+
+  // ---- painel de proporção de rotação ----
+  "rotationRatio.title": "Proporção de rotação",
+  "rotationRatio.slit": "Fenda",
+  "rotationRatio.image": "Desenho",
+
+  // ---- botão de reprodução ----
+  "playButton.play": "Reproduzir",
+  "playButton.pause": "Pausar",
+
+  // ---- controles de zoom ----
+  "zoomControls.zoomOut": "Reduzir",
+  "zoomControls.reset": "Redefinir visualização",
+  "zoomControls.zoomIn": "Ampliar",
+
+  // ---- seletor de imagens ----
+  "imagePicker.title": "Imagens",
+  "imagePicker.editTitle": "Editar este desenho no modo de desenho",
+  "imagePicker.deleteTitle": "Excluir este desenho",
+
+  // ---- seletor de forma de fenda ----
+  "slitPicker.title": "Escolher uma forma de fenda",
+  "slitPicker.deleteTitle": "Excluir esta fenda personalizada",
+
+  // ---- dados de forma de fenda ----
+  "slitMask.presetBasic": "Básica",
+  "slitMask.customPrefix": "Personalizada ",
+
+  // ---- editor de desenho (CompressEditor) ----
+  "compress.pickerTitle": "Escolher uma imagem",
+  "compress.photoMoveTitle": "Mover foto (direita)",
+  "compress.photoMoveTitleDisabled": "Mover foto (direita): carregue uma foto primeiro",
+  "compress.savedToast": "Salvo",
+  "compress.loadHintLeft": "Carrega uma imagem-matriz de 360° já distorcida diretamente no círculo esquerdo.",
+  "compress.loadHintRight":
+    "Coloca seu próprio desenho ou uma foto dentro do setor à direita (o que ultrapassar é recortado automaticamente; depois é possível ajustar posição e tamanho com a ferramenta “Mover foto” e +/−).",
+  "compress.loadModalTitle": "Carregar uma imagem",
+  "compress.loadTabLeft": "Matriz (para a esquerda)",
+  "compress.loadTabRight": "Posicionamento de foto (para a direita)",
+  "compress.pickFromList": "Escolher na lista de imagens",
+  "compress.pickFromFile": "+ De um arquivo",
+  "compress.outlineLabel": "Linha de contorno",
+  "compress.centerMarkLabel": "Marca central",
+  "compress.diameterLabel": "Diâmetro",
+  "compress.dotShape": "Ponto",
+  "compress.crossShape": "Cruz",
+  "compress.download": "Baixar",
+  "compress.exportModalTitle": "Configurações de download PNG",
+  "compress.slitShapeSavedToast": "Forma da fenda salva",
+  "compress.slitShapeModalTitle": "Forma da fenda",
+  "compress.slitShapeDesc":
+    "Desenhe à mão o formato da abertura do disco de fenda dentro do setor amarelo (1/n). Não só linhas retas — diagonais, ziguezagues e ondas também funcionam (branco = área aberta). O vértice é o centro do círculo, o arco externo é a sua circunferência.",
+  "compress.eraser": "Borracha",
+  "compress.resetToDefault": "Restaurar linha padrão",
+  "compress.genTitle":
+    "Gerar a partir de parâmetros (redesenha a cada movimento de um controle deslizante — uma base ou ponto de partida para o desenho à mão)",
+  "compress.period": "Período",
+  "compress.amplitude": "Amplitude",
+  "compress.sharpness": "Nitidez",
+  "compress.generateBtn": "Gerar esta forma",
+  "compress.loadImageBtn": "Carregar uma imagem",
+  "compress.photoZoomOutTitle": "Reduzir foto",
+  "compress.photoZoomInTitle": "Ampliar foto",
+  "compress.photoRemove": "Remover foto",
+  "compress.portraitToggle": "⇄ Alternar exibição",
+  "compress.portraitToggleTitle":
+    "Alternar qual círculo é exibido no modo retrato (direita = padrão repetido / esquerda = 360° completo)",
+  "compress.toolBrush": "Pincel",
+  "compress.toolLine": "Linha",
+  "compress.toolCircle": "Círculo",
+  "compress.toolFill": "Preencher",
+  "compress.colorLabel": "Cor",
+  "compress.thicknessLabel": "Espessura",
+  "compress.bgColorTitle": "Cor de fundo",
+  "compress.pngExport": "Exportar PNG",
+  "compress.useWithoutSaving": "Usar sem salvar",
+  "compress.useWithoutSavingTitle":
+    "Aplica o desenho atual ao simulador temporariamente, sem salvá-lo na galeria (perdido ao recarregar)",
+  "compress.leftPaneLabel": "Imagem de 360° (desenhe aqui)",
+  "compress.rightPaneLabel": "Padrão repetido (desenha em todas as seções)",
+  "compress.hint":
+    "Você pode desenhar em qualquer um dos círculos. Desenhar à esquerda (imagem de 360°) comprime para a direita; desenhar à direita (padrão repetido) copia com simetria de ordem K em todas as seções. Use “Carregar uma imagem” para escolher uma imagem-matriz (para a esquerda) ou posicionar uma foto (para a direita) — mova uma foto com a ferramenta “Mover foto”, redimensione com +/−, e o que ultrapassar é recortado automaticamente. Apenas a imagem de 360° da esquerda é salva.",
+
+  // ---- main.ts ----
+  "main.untitled": "Sem título",
+} as const;

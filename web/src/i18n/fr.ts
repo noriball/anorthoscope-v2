@@ -1,0 +1,156 @@
+import type { TranslationKey } from "./ja";
+export const fr: Record<TranslationKey, string> = {
+  // ---- commun ----
+  "common.close": "Fermer",
+  "common.save": "Enregistrer",
+  "common.undo": "Annuler",
+  "common.clear": "Effacer",
+  "common.cancel": "Annuler",
+  "common.createLabel": "Nouveau",
+  "common.black": "Noir",
+  "common.white": "Blanc",
+  "common.background": "Arrière-plan",
+  "common.deleteConfirm": "Supprimer « {name} » ?",
+  "common.yes": "Activé",
+  "common.no": "Désactivé",
+
+  // ---- guide d'utilisation ----
+  "guide.subtitle": "Anorthoscope — Guide d'utilisation",
+  "guide.footer": "Cliquez n'importe où ou appuyez sur Échap pour fermer",
+  "guide.rows.playPause.action": "Lecture / Pause",
+  "guide.rows.playPause.location": "Bouton de lecture, au centre de la barre inférieure",
+  "guide.rows.selectImage.action": "Choisir une image dans la liste",
+  "guide.rows.selectImage.location": "Image : Choisir / Créer",
+  "guide.rows.hideImage.action": "Masquer le dessin pour ne voir que le mouvement de la fente",
+  "guide.rows.hideImage.location": "Image : Afficher (activé pour afficher, désactivé pour masquer)",
+  "guide.rows.speedFade.action": "Vitesse de rotation / fondu",
+  "guide.rows.speedFade.location": "Curseurs",
+  "guide.rows.rotationRatio.action": "Rapport de rotation",
+  "guide.rows.rotationRatio.location": "− + / valeur dans le panneau central inférieur",
+  "guide.rows.selectSlit.action": "Choisir ou créer la forme de l'ouverture de la fente",
+  "guide.rows.selectSlit.location": "Fente : Choisir / Créer",
+  "guide.rows.slitLine.action": "Superposer la position de la fente avec une ligne rouge",
+  "guide.rows.slitLine.location": "Fente : Position (activé/désactivé)",
+  "guide.rows.slitPlate.action": "Superposer le disque à fente réel (disque noir + fenêtre transparente)",
+  "guide.rows.slitPlate.location": "Fente : Afficher (activé/désactivé)",
+  "guide.rows.slitCount.action": "Changer le nombre de fentes",
+  "guide.rows.slitCount.location": "Fente : Nombre − +",
+  "guide.rows.draw.action": "Dessiner votre propre image (sur l'un ou l'autre cercle)",
+  "guide.rows.draw.location": "Image : Choisir / Créer → + Nouveau",
+  "guide.rows.gallery.action": "Récupérer, modifier ou supprimer un dessin enregistré",
+  "guide.rows.gallery.location": "Depuis la liste d'images",
+  "guide.rows.fullscreen.action": "Plein écran",
+  "guide.rows.fullscreen.location": "Bouton plein écran, en bas à droite",
+  "guide.rows.paintAxes.action": "Dessin : gauche = image 360°, droite = motif répété 1/K",
+  "guide.rows.paintAxes.location": "Vous pouvez dessiner sur les deux cercles",
+  "guide.rows.paintSymmetry.action": "Dessinez sur n'importe quelle section à droite, elle sera copiée avec une symétrie d'ordre K",
+  "guide.rows.paintSymmetry.location": "Même géométrie que l'anorthoscope",
+  "guide.rows.focusClick.action": "Cliquez sur un cercle pour zoomer / cliquez à nouveau pour revenir",
+  "guide.rows.focusClick.location": "Clic sur l'image",
+  "guide.rows.focusZoom.action": "En zoom, faites glisser pour vous déplacer, utilisez −/+ pour zoomer ou réinitialiser",
+  "guide.rows.focusZoom.location": "Boutons de glissement / zoom",
+
+  // ---- barre de contrôle inférieure ----
+  "controls.imagePick": "Choisir / Créer",
+  "controls.imagePickTitle": "Choisissez un exemple ou votre propre dessin, ou dessinez-en un nouveau",
+  "controls.imageToggle": "Afficher",
+  "controls.imageToggleTitle": "Basculer l'affichage du dessin (masquez-le pour ne voir que le mouvement de la fente)",
+  "controls.slitSelect": "Choisir / Créer",
+  "controls.slitSelectTitle": "Choisir ou créer la forme de l'ouverture de la fente",
+  "controls.speed": "Vitesse",
+  "controls.fade": "Fondu",
+  "controls.slitLine": "Position",
+  "controls.slitLineTitle": "Superposer la forme et la position de la fente avec une ligne rouge sur les deux cercles",
+  "controls.slitPlate": "Afficher",
+  "controls.slitPlateTitle": "Superposer le disque à fente réel (disque noir + fenêtre transparente) sur le cercle gauche",
+  "controls.slitCount": "Nombre",
+  "controls.fullscreenTitle": "Plein écran",
+  "controls.helpTitle": "Guide d'utilisation",
+  "controls.imageGroupLabel": "Image",
+  "controls.slitGroupLabel": "Fente",
+
+  // ---- panneau du rapport de rotation ----
+  "rotationRatio.title": "Rapport de rotation",
+  "rotationRatio.slit": "Fente",
+  "rotationRatio.image": "Dessin",
+
+  // ---- bouton de lecture ----
+  "playButton.play": "Lecture",
+  "playButton.pause": "Pause",
+
+  // ---- contrôles de zoom ----
+  "zoomControls.zoomOut": "Réduire",
+  "zoomControls.reset": "Réinitialiser la vue",
+  "zoomControls.zoomIn": "Agrandir",
+
+  // ---- sélecteur d'images ----
+  "imagePicker.title": "Images",
+  "imagePicker.editTitle": "Modifier ce dessin en mode dessin",
+  "imagePicker.deleteTitle": "Supprimer ce dessin",
+
+  // ---- sélecteur de forme de fente ----
+  "slitPicker.title": "Choisir une forme de fente",
+  "slitPicker.deleteTitle": "Supprimer cette fente personnalisée",
+
+  // ---- données de forme de fente ----
+  "slitMask.presetBasic": "Basique",
+  "slitMask.customPrefix": "Personnalisée ",
+
+  // ---- éditeur de dessin (CompressEditor) ----
+  "compress.pickerTitle": "Choisir une image",
+  "compress.photoMoveTitle": "Déplacer la photo (droite)",
+  "compress.photoMoveTitleDisabled": "Déplacer la photo (droite) : chargez d'abord une photo",
+  "compress.savedToast": "Enregistré",
+  "compress.loadHintLeft": "Charge une image maîtresse 360° déjà déformée directement dans le cercle gauche.",
+  "compress.loadHintRight":
+    "Place votre propre dessin ou une photo à l'intérieur du secteur de droite (ce qui dépasse est automatiquement rogné ; vous pourrez ensuite ajuster la position et la taille avec l'outil « Déplacer la photo » et +/−).",
+  "compress.loadModalTitle": "Charger une image",
+  "compress.loadTabLeft": "Maîtresse (vers la gauche)",
+  "compress.loadTabRight": "Placement de photo (vers la droite)",
+  "compress.pickFromList": "Choisir dans la liste d'images",
+  "compress.pickFromFile": "+ Depuis un fichier",
+  "compress.outlineLabel": "Ligne de contour",
+  "compress.centerMarkLabel": "Marque centrale",
+  "compress.diameterLabel": "Diamètre",
+  "compress.dotShape": "Point",
+  "compress.crossShape": "Croix",
+  "compress.download": "Télécharger",
+  "compress.exportModalTitle": "Paramètres de téléchargement PNG",
+  "compress.slitShapeSavedToast": "Forme de fente enregistrée",
+  "compress.slitShapeModalTitle": "Forme de la fente",
+  "compress.slitShapeDesc":
+    "Dessinez à la main la forme de l'ouverture du disque à fente dans le secteur jaune (1/n). Pas seulement des lignes droites — diagonales, zigzags et ondulations fonctionnent aussi (blanc = zone ouverte). Le sommet est le centre du cercle, l'arc extérieur est sa circonférence.",
+  "compress.eraser": "Gomme",
+  "compress.resetToDefault": "Revenir à la ligne par défaut",
+  "compress.genTitle":
+    "Générer à partir de paramètres (redessine à chaque déplacement d'un curseur — une base ou un point de départ pour le dessin à main levée)",
+  "compress.period": "Période",
+  "compress.amplitude": "Amplitude",
+  "compress.sharpness": "Netteté",
+  "compress.generateBtn": "Générer cette forme",
+  "compress.loadImageBtn": "Charger une image",
+  "compress.photoZoomOutTitle": "Réduire la photo",
+  "compress.photoZoomInTitle": "Agrandir la photo",
+  "compress.photoRemove": "Retirer la photo",
+  "compress.portraitToggle": "⇄ Changer d'affichage",
+  "compress.portraitToggleTitle":
+    "Changer quel cercle est affiché en mode portrait (droite = motif répété / gauche = 360° complet)",
+  "compress.toolBrush": "Pinceau",
+  "compress.toolLine": "Ligne",
+  "compress.toolCircle": "Cercle",
+  "compress.toolFill": "Remplissage",
+  "compress.colorLabel": "Couleur",
+  "compress.thicknessLabel": "Épaisseur",
+  "compress.bgColorTitle": "Couleur d'arrière-plan",
+  "compress.pngExport": "Exporter en PNG",
+  "compress.useWithoutSaving": "Utiliser sans enregistrer",
+  "compress.useWithoutSavingTitle":
+    "Applique le dessin actuel au simulateur temporairement, sans l'enregistrer dans la galerie (perdu au rechargement)",
+  "compress.leftPaneLabel": "Image 360° (dessinez ici)",
+  "compress.rightPaneLabel": "Motif répété (dessine sur chaque section)",
+  "compress.hint":
+    "Vous pouvez dessiner sur les deux cercles. Dessiner à gauche (image 360°) le comprime vers la droite ; dessiner à droite (motif répété) le copie avec une symétrie d'ordre K sur chaque section. Utilisez « Charger une image » pour choisir une image maîtresse (vers la gauche) ou placer une photo (vers la droite) — déplacez une photo avec l'outil « Déplacer la photo », redimensionnez avec +/−, et ce qui dépasse est automatiquement rogné. Seule l'image 360° de gauche est enregistrée.",
+
+  // ---- main.ts ----
+  "main.untitled": "Sans titre",
+} as const;
