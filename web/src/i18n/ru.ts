@@ -67,7 +67,7 @@ export const ru: Record<TranslationKey, string> = {
   "controls.slitCount": "Количество",
   "controls.fullscreenTitle": "Полный экран",
   "controls.helpTitle": "Руководство по управлению",
-  "controls.randomTitle": "Случайно изменить скорость, соотношение вращения, количество щелей и затухание",
+  "controls.randomTitle": "Случайно изменить скорость, соотношение вращения, количество щелей, затухание, изображение и форму щели",
   "controls.shareTitle": "Скопировать ссылку, воспроизводящую текущий вид",
   "controls.recordTitle": "Записать как видео (нажмите ещё раз, чтобы остановить и сохранить)",
   "controls.recordStopTitle": "Остановить запись и сохранить",

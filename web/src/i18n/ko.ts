@@ -67,7 +67,7 @@ export const ko: Record<TranslationKey, string> = {
   "controls.slitCount": "개수",
   "controls.fullscreenTitle": "전체 화면",
   "controls.helpTitle": "조작 가이드",
-  "controls.randomTitle": "속도・회전비・슬릿 개수・페이드를 무작위로 변경",
+  "controls.randomTitle": "속도・회전비・슬릿 개수・페이드・이미지・슬릿 모양을 무작위로 변경",
   "controls.shareTitle": "현재 모습을 재현하는 링크 복사",
   "controls.recordTitle": "동영상으로 녹화(다시 누르면 정지하고 저장)",
   "controls.recordStopTitle": "녹화 정지 및 저장",

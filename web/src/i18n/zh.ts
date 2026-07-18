@@ -67,7 +67,7 @@ export const zh: Record<TranslationKey, string> = {
   "controls.slitCount": "数量",
   "controls.fullscreenTitle": "全屏",
   "controls.helpTitle": "操作指南",
-  "controls.randomTitle": "随机改变速度、转速比、狭缝数量和淡出",
+  "controls.randomTitle": "随机改变速度、转速比、狭缝数量、淡出、图片和狭缝形状",
   "controls.shareTitle": "复制可重现当前效果的链接",
   "controls.recordTitle": "录制为视频（再次点击可停止并保存）",
   "controls.recordStopTitle": "停止录制并保存",

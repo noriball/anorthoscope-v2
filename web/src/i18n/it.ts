@@ -67,7 +67,7 @@ export const it: Record<TranslationKey, string> = {
   "controls.slitCount": "Numero",
   "controls.fullscreenTitle": "Schermo intero",
   "controls.helpTitle": "Guida ai comandi",
-  "controls.randomTitle": "Cambia in modo casuale velocità, rapporto di rotazione, numero di fenditure e dissolvenza",
+  "controls.randomTitle": "Cambia in modo casuale velocità, rapporto di rotazione, numero di fenditure, dissolvenza, immagine e forma della fenditura",
   "controls.shareTitle": "Copia un link che riproduce l'aspetto attuale",
   "controls.recordTitle": "Registra come video (premi di nuovo per fermare e salvare)",
   "controls.recordStopTitle": "Ferma la registrazione e salva",

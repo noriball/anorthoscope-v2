@@ -67,7 +67,7 @@ export const nl: Record<TranslationKey, string> = {
   "controls.slitCount": "Aantal",
   "controls.fullscreenTitle": "Volledig scherm",
   "controls.helpTitle": "Bedieningsgids",
-  "controls.randomTitle": "Verander snelheid, rotatieverhouding, aantal spleten en vervaging willekeurig",
+  "controls.randomTitle": "Verander snelheid, rotatieverhouding, aantal spleten, vervaging, afbeelding en spleetvorm willekeurig",
   "controls.shareTitle": "Kopieer een link die de huidige weergave reproduceert",
   "controls.recordTitle": "Opnemen als video (druk nogmaals om te stoppen en op te slaan)",
   "controls.recordStopTitle": "Opname stoppen en opslaan",

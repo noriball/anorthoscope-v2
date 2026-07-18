@@ -107,9 +107,9 @@ function randomInt(min: number, max: number): number {
 function randomFloat(min: number, max: number): number {
   return Math.random() * (max - min) + min;
 }
-/** 主要パラメータ（速度・回転比・スリット数・フェード）をランダムに変える。
- *  値が0付近（実質止まって見える）にならないよう、速度と回転比は下限を設ける。
- *  回転比は可動域全体（±360）だと極端すぎて見た目が破綻しやすいため、
+/** 主要パラメータ（速度・回転比・スリット数・フェード）に加え、画像とスリット形状も
+ *  ランダムに変える。値が0付近（実質止まって見える）にならないよう、速度と回転比は
+ *  下限を設ける。回転比は可動域全体（±360）だと極端すぎて見た目が破綻しやすいため、
  *  面白い見え方になりやすい実用的な範囲に絞る。 */
 function randomizeParams(): void {
   let speed = randomFloat(SPEED_MIN, SPEED_MAX);
@@ -121,6 +121,8 @@ function randomizeParams(): void {
   const numSlits = randomInt(SLITS_MIN, SLITS_MAX);
   const fadeAlpha = randomFloat(FADE_MIN, FADE_MAX);
   state.params = { ...state.params, speed, imageRotFactor, slitRotFactor, numSlits, fadeAlpha };
+  if (state.images.length > 0) setIndex(randomInt(0, state.images.length - 1));
+  if (state.slitShapes.length > 0) setSlitShape(randomInt(0, state.slitShapes.length - 1));
   bar.update();
   rotationRatio.update();
 }

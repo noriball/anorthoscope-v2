@@ -67,7 +67,7 @@ export const fr: Record<TranslationKey, string> = {
   "controls.slitCount": "Nombre",
   "controls.fullscreenTitle": "Plein écran",
   "controls.helpTitle": "Guide d'utilisation",
-  "controls.randomTitle": "Change aléatoirement la vitesse, le rapport de rotation, le nombre de fentes et le fondu",
+  "controls.randomTitle": "Change aléatoirement la vitesse, le rapport de rotation, le nombre de fentes, le fondu, l'image et la forme de la fente",
   "controls.shareTitle": "Copier un lien qui reproduit l'apparence actuelle",
   "controls.recordTitle": "Enregistrer en vidéo (appuyez à nouveau pour arrêter et enregistrer)",
   "controls.recordStopTitle": "Arrêter l'enregistrement et sauvegarder",

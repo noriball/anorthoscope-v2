@@ -67,7 +67,7 @@ export const pt: Record<TranslationKey, string> = {
   "controls.slitCount": "Quantidade",
   "controls.fullscreenTitle": "Tela cheia",
   "controls.helpTitle": "Guia de operação",
-  "controls.randomTitle": "Altera aleatoriamente a velocidade, a proporção de rotação, a quantidade de fendas e o esmaecimento",
+  "controls.randomTitle": "Altera aleatoriamente a velocidade, a proporção de rotação, a quantidade de fendas, o esmaecimento, a imagem e a forma da fenda",
   "controls.shareTitle": "Copiar um link que reproduz a aparência atual",
   "controls.recordTitle": "Gravar como vídeo (pressione novamente para parar e salvar)",
   "controls.recordStopTitle": "Parar a gravação e salvar",

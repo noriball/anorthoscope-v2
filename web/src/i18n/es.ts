@@ -67,7 +67,7 @@ export const es: Record<TranslationKey, string> = {
   "controls.slitCount": "Cantidad",
   "controls.fullscreenTitle": "Pantalla completa",
   "controls.helpTitle": "Guía de uso",
-  "controls.randomTitle": "Cambia aleatoriamente la velocidad, la relación de rotación, el número de rendijas y el desvanecimiento",
+  "controls.randomTitle": "Cambia aleatoriamente la velocidad, la relación de rotación, el número de rendijas, el desvanecimiento, la imagen y la forma de la rendija",
   "controls.shareTitle": "Copiar un enlace que reproduce el aspecto actual",
   "controls.recordTitle": "Grabar como vídeo (vuelve a pulsar para detener y guardar)",
   "controls.recordStopTitle": "Detener grabación y guardar",

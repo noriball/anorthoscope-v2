@@ -67,7 +67,7 @@ export const en: Record<TranslationKey, string> = {
   "controls.slitCount": "Count",
   "controls.fullscreenTitle": "Fullscreen",
   "controls.helpTitle": "Controls guide",
-  "controls.randomTitle": "Randomly change speed, rotation ratio, slit count, and fade",
+  "controls.randomTitle": "Randomly change speed, rotation ratio, slit count, fade, image, and slit shape",
   "controls.shareTitle": "Copy a link that reproduces the current look",
   "controls.recordTitle": "Record as video (press again to stop and save)",
   "controls.recordStopTitle": "Stop recording and save",

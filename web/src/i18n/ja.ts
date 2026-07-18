@@ -67,7 +67,7 @@ export const ja = {
   "controls.slitCount": "本数",
   "controls.fullscreenTitle": "フルスクリーン",
   "controls.helpTitle": "操作ガイド",
-  "controls.randomTitle": "速度・回転比・スリット数・フェードをランダムに変える",
+  "controls.randomTitle": "速度・回転比・スリット数・フェード・画像・スリット形状をランダムに変える",
   "controls.shareTitle": "今の見え方を再現するリンクをコピー",
   "controls.recordTitle": "動画として録画（もう一度押すと停止して保存）",
   "controls.recordStopTitle": "録画を停止して保存",

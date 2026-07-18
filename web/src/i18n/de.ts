@@ -67,7 +67,7 @@ export const de: Record<TranslationKey, string> = {
   "controls.slitCount": "Anzahl",
   "controls.fullscreenTitle": "Vollbild",
   "controls.helpTitle": "Bedienungsanleitung",
-  "controls.randomTitle": "Geschwindigkeit, Drehzahlverhältnis, Schlitzanzahl und Ausblenden zufällig ändern",
+  "controls.randomTitle": "Geschwindigkeit, Drehzahlverhältnis, Schlitzanzahl, Ausblenden, Bild und Schlitzform zufällig ändern",
   "controls.shareTitle": "Link kopieren, der das aktuelle Erscheinungsbild reproduziert",
   "controls.recordTitle": "Als Video aufnehmen (erneut drücken zum Stoppen und Speichern)",
   "controls.recordStopTitle": "Aufnahme stoppen und speichern",

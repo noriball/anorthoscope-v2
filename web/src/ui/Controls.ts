@@ -187,7 +187,7 @@ export class ControlBar {
     );
     full.classList.add("icon");
     const help = this.button("?", () => this.hooks.openGuide(), t("controls.helpTitle"));
-    const actions = group(random, share, this.recordBtn, reset, full, help);
+    const actions = group(random, reset, share, this.recordBtn, full, help);
     actions.classList.add("bar-actions"); // モバイルで固定サイズのまま右端に留めるための目印
 
     // 「画像」「スリット」を1行、「スライダー類＋全画面・ガイド」を1行にまとめておく。
@@ -311,8 +311,8 @@ export class ControlBar {
     this.slitLineToggleBtn.classList.toggle("on", p.showGuideLines);
     this.slitPlateToggleBtn.classList.toggle("on", p.slitPlate);
 
-    // 絵を隠しているときはトグルを点灯（＝この操作が効いている合図）
-    this.imageToggleBtn.classList.toggle("on", !p.showImage);
+    // 他の「表示」トグル（スリット：表示など）と同じく、黄色＝表示中を表す
+    this.imageToggleBtn.classList.toggle("on", p.showImage);
 
     const recording = this.hooks.isRecording();
     this.recordBtn.classList.toggle("on", recording);
