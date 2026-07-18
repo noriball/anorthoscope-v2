@@ -8,6 +8,7 @@ import {
   SLITS_MAX,
   FADE_MIN,
   FADE_MAX,
+  BG_MAX,
   RECORD_FPS,
   RECORD_MAX_DURATION_MS,
   type Params,
@@ -237,24 +238,18 @@ function toggleRecording(): void {
 }
 
 // ===========================================================
-// 起動時の状態に戻す
+// 基本設定に戻す
 // ===========================================================
-interface BootSnapshot {
-  params: Params;
-  bgValue: number;
-  imageIndex: number;
-  slitIndex: number;
-}
-/** 起動直後（共有リンクで開いた場合はその復元後）の状態のスナップショット。
- *  ランダム・手動調整でどれだけ変えても、この内容へワンボタンで戻せるようにする。 */
-let bootSnapshot: BootSnapshot | null = null;
-
-function resetToBootState(): void {
-  if (!bootSnapshot) return;
-  state.params = { ...bootSnapshot.params };
-  setIndex(bootSnapshot.imageIndex);
-  setSlitShape(bootSnapshot.slitIndex);
-  bar.setBgValue(bootSnapshot.bgValue);
+/** ランダム・手動調整でどれだけ変えても、常に工場出荷時の既定値
+ *  （既定パラメータ・先頭の画像・基本＝直線のスリット形状）へ戻す。
+ *  起動時にたまたま読み込まれていた状態（共有リンクや前回の選択）ではなく、
+ *  常に同じ「基本」に固定する。 */
+function resetToDefaults(): void {
+  state.params = { ...DEFAULT_PARAMS };
+  setIndex(0);
+  const basicIdx = state.slitShapes.findIndex((s) => s.id === "basic");
+  setSlitShape(basicIdx >= 0 ? basicIdx : 0);
+  bar.setBgValue(BG_MAX);
   bar.update();
   rotationRatio.update();
 }
@@ -298,7 +293,7 @@ const hooks: AppHooks = {
   share: () => void shareCurrentState(),
   toggleRecording,
   isRecording: () => activeRecording !== null,
-  resetToBootState,
+  resetToDefaults,
 };
 
 // 再生／停止は下部バーの中央に置く（バーは常に出ているので、単一パネルへ
@@ -700,13 +695,6 @@ async function boot(): Promise<void> {
     bar.update();
     rotationRatio.update();
   }
-  // 起動直後（共有リンクがあればその復元後）の状態を、リセットボタンの戻り先として控える
-  bootSnapshot = {
-    params: { ...state.params },
-    bgValue: bar.getBgValue(),
-    imageIndex: state.index,
-    slitIndex: state.slitIndex,
-  };
   requestAnimationFrame((t) => {
     last = t;
     loop(t);

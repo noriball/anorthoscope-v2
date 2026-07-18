@@ -38,8 +38,8 @@ export interface AppHooks {
   /** 動画としての録画を開始／停止する（停止時にファイルとして保存） */
   toggleRecording(): void;
   isRecording(): boolean;
-  /** 起動時（共有リンクで開いた場合はその状態）に戻す */
-  resetToBootState(): void;
+  /** 基本設定（既定パラメータ・先頭の画像・基本＝直線のスリット形状）に戻す */
+  resetToDefaults(): void;
 }
 
 /** 全操作をボタンと数値入力に集約した下部コントロールバー */
@@ -175,7 +175,7 @@ export class ControlBar {
     const reset = this.iconButton(
       "reset",
       "",
-      () => this.hooks.resetToBootState(),
+      () => this.hooks.resetToDefaults(),
       t("controls.resetTitle"),
     );
     reset.classList.add("icon");
