@@ -425,6 +425,10 @@ body {
   flex-wrap: wrap;
   row-gap: 8px;
 }
+/* 再生ボタンと右側の速度操作が近すぎないよう、ボタン1個ぶんの間隔を確保する。 */
+.play-group {
+  margin-right: 42px;
+}
 .bar-row-sliders .params-group {
   flex: 1 1 auto;
   min-width: 0;
@@ -1104,6 +1108,7 @@ body {
   .play-group {
     justify-content: center;
     order: -3;
+    margin-right: 0;
   }
   .bar-row-groups {
     order: -2;
