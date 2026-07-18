@@ -17,7 +17,7 @@ export const TRIM_HEIGHT = 6;
 export const TRIM_OFFSET = 10;
 
 /** 残像フェードの不透明度（1フレームあたり）の既定値。小さいほど残像が長く残る */
-export const FADE_ALPHA = 0.01;
+export const FADE_ALPHA = 0.025;
 export const FADE_MIN = 0;
 export const FADE_MAX = 0.05;
 export const FADE_STEP = 0.0025;
