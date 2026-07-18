@@ -293,6 +293,7 @@ const hooks: AppHooks = {
   share: () => void shareCurrentState(),
   toggleRecording,
   isRecording: () => activeRecording !== null,
+  isRightFocused: () => sim.getFocus() === "right",
   resetToDefaults,
 };
 
@@ -321,6 +322,7 @@ function syncFocusUI(): void {
   zoomControls.setVisible(focused);
   rotationRatio.setVisible(!focused);
   view.classList.toggle("focused", focused);
+  bar.update();
 }
 
 // ===========================================================

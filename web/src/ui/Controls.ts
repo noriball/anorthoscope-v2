@@ -38,6 +38,8 @@ export interface AppHooks {
   /** 動画としての録画を開始／停止する（停止時にファイルとして保存） */
   toggleRecording(): void;
   isRecording(): boolean;
+  /** 右の結果円だけを個別表示しているか */
+  isRightFocused(): boolean;
   /** 基本設定（既定パラメータ・先頭の画像・基本＝直線のスリット形状）に戻す */
   resetToDefaults(): void;
 }
@@ -307,9 +309,13 @@ export class ControlBar {
   /** 状態に合わせて表示を更新（値・アクティブ） */
   update(): void {
     const p = this.hooks.getParams();
+    const isRightFocused = this.hooks.isRightFocused();
 
     this.slitLineToggleBtn.classList.toggle("on", p.showGuideLines);
-    this.slitPlateToggleBtn.classList.toggle("on", p.slitPlate);
+    // 右の結果円だけを見ている間は、左のスリット板は画面に現れない。
+    // 設定は保持し、両円表示へ戻ったときに元の状態で再び有効にする。
+    this.slitPlateToggleBtn.disabled = isRightFocused;
+    this.slitPlateToggleBtn.classList.toggle("on", p.slitPlate && !isRightFocused);
 
     // 他の「表示」トグル（スリット：表示など）と同じく、黄色＝表示中を表す
     this.imageToggleBtn.classList.toggle("on", p.showImage);

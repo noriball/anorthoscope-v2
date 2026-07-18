@@ -474,6 +474,14 @@ body {
 .btn:active {
   transform: translateY(1px);
 }
+.btn:disabled {
+  opacity: .35;
+  cursor: default;
+}
+.btn:disabled:hover {
+  background: var(--panel);
+  border-color: var(--border);
+}
 .btn.on {
   background: var(--accent);
   border-color: var(--accent);
