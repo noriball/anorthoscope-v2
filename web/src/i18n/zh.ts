@@ -13,6 +13,7 @@ export const zh: Record<TranslationKey, string> = {
   "common.deleteConfirm": "要删除“{name}”吗？",
   "common.yes": "开",
   "common.no": "关",
+  "common.saveFailed": "保存失败。浏览器的存储空间可能已满。",
 
   // ---- 操作指南 ----
   "guide.subtitle": "Anorthoscope 操作指南",
@@ -66,6 +67,11 @@ export const zh: Record<TranslationKey, string> = {
   "controls.slitCount": "数量",
   "controls.fullscreenTitle": "全屏",
   "controls.helpTitle": "操作指南",
+  "controls.randomTitle": "随机改变速度、转速比、狭缝数量和淡出",
+  "controls.shareTitle": "复制可重现当前效果的链接",
+  "controls.recordTitle": "录制为视频（再次点击可停止并保存）",
+  "controls.recordStopTitle": "停止录制并保存",
+  "controls.resetTitle": "恢复到基本设置（启动时的状态）",
   "controls.imageGroupLabel": "图片",
   "controls.slitGroupLabel": "狭缝",
 
@@ -150,4 +156,9 @@ export const zh: Record<TranslationKey, string> = {
 
   // ---- main.ts ----
   "main.untitled": "无标题",
+  "main.shareCopied": "已复制分享链接",
+  "main.shareCopyFailed": "复制分享链接失败",
+  "main.shareImageUnavailableNote": "（自制的绘图在其他浏览器中不存在，因此图片不会一并共享）",
+  "main.recordUnsupported": "此浏览器不支持视频录制",
+  "main.recordMaxDurationToast": "已达到60秒的录制时长上限，已自动保存",
 } as const;

@@ -13,6 +13,7 @@ export const ja = {
   "common.deleteConfirm": "「{name}」を削除しますか？",
   "common.yes": "あり",
   "common.no": "なし",
+  "common.saveFailed": "保存に失敗しました。ブラウザの保存容量が上限に達している可能性があります。",
 
   // ---- 操作ガイド ----
   "guide.subtitle": "アノルソスコープ 操作ガイド",
@@ -66,6 +67,11 @@ export const ja = {
   "controls.slitCount": "本数",
   "controls.fullscreenTitle": "フルスクリーン",
   "controls.helpTitle": "操作ガイド",
+  "controls.randomTitle": "速度・回転比・スリット数・フェードをランダムに変える",
+  "controls.shareTitle": "今の見え方を再現するリンクをコピー",
+  "controls.recordTitle": "動画として録画（もう一度押すと停止して保存）",
+  "controls.recordStopTitle": "録画を停止して保存",
+  "controls.resetTitle": "基本設定（起動時の状態）に戻す",
   "controls.imageGroupLabel": "画像",
   "controls.slitGroupLabel": "スリット",
 
@@ -151,6 +157,11 @@ export const ja = {
 
   // ---- main.ts ----
   "main.untitled": "無題",
+  "main.shareCopied": "共有リンクをコピーしました",
+  "main.shareCopyFailed": "共有リンクのコピーに失敗しました",
+  "main.shareImageUnavailableNote": "（自作の絵は共有先のブラウザに無いため反映されません）",
+  "main.recordUnsupported": "このブラウザでは動画の録画に対応していません",
+  "main.recordMaxDurationToast": "録画時間の上限（60秒）に達したため保存しました",
 } as const;
 
 export type TranslationKey = keyof typeof ja;

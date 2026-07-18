@@ -44,7 +44,7 @@ const PHOTO_ZOOM_STEP = 1.15;
 export class CompressEditor {
   private readonly onSaved: (d: Drawing) => void;
   private readonly onUseWithoutSaving: (dataURL: string, divisions: number) => void;
-  private readonly onSlitMaskChanged: (dataURL: string) => void;
+  private readonly onSlitMaskChanged: (dataURL: string) => Promise<void>;
   private readonly onClose: () => void;
   private readonly picker: ImagePicker;
   private getImages: () => Picture[] = () => [];
@@ -183,7 +183,7 @@ export class CompressEditor {
   constructor(
     onSaved: (d: Drawing) => void,
     onUseWithoutSaving: (dataURL: string, divisions: number) => void,
-    onSlitMaskChanged: (dataURL: string) => void,
+    onSlitMaskChanged: (dataURL: string) => Promise<void>,
     onClose: () => void,
   ) {
     this.onSaved = onSaved;
@@ -921,15 +921,21 @@ export class CompressEditor {
   // =========================================================
   private save(): void {
     const dataURL = this.buildDiscAtSize(PAINT_SIZE).toDataURL("image/png");
-    const d = saveDrawing({
-      id: this.editingId ?? undefined,
-      dataURL,
-      bg: this.bgColor,
-      divisions: this.divisions,
-    });
-    this.onSaved(d);
-    showToast(t("compress.savedToast"));
-    this.close();
+    try {
+      const d = saveDrawing({
+        id: this.editingId ?? undefined,
+        dataURL,
+        bg: this.bgColor,
+        divisions: this.divisions,
+      });
+      this.onSaved(d);
+      showToast(t("compress.savedToast"));
+      this.close();
+    } catch {
+      // 主にブラウザの保存容量（localStorage）上限。モーダルは開いたままにして
+      // 絵を失わないようにし、ユーザーが不要な作品を消すなどして再試行できるようにする。
+      showToast(t("common.saveFailed"));
+    }
   }
 
   /** ギャラリーには保存せず、今の絵を一時的にシミュレータへ反映するだけ（リロードで消える） */
@@ -1347,12 +1353,17 @@ export class CompressEditor {
     this.drawDefaultSlitShape();
   }
 
-  private saveSlitShape(): void {
+  private async saveSlitShape(): Promise<void> {
     const dataURL = this.slitShapeCanvas.toDataURL("image/png");
     // 永続化（一覧への追加）は main 側の onSlitMaskChanged が担う
-    this.onSlitMaskChanged(dataURL);
-    showToast(t("compress.slitShapeSavedToast"));
-    this.closeSlitShapeModal();
+    try {
+      await this.onSlitMaskChanged(dataURL);
+      showToast(t("compress.slitShapeSavedToast"));
+      this.closeSlitShapeModal();
+    } catch {
+      // 主にブラウザの保存容量（localStorage）上限。モーダルは開いたままにする。
+      showToast(t("common.saveFailed"));
+    }
   }
 
   /** パラメータ生成用のスライダー1行（ラベル・スライダー・現在値）。
@@ -1772,6 +1783,6 @@ function sameColor(a: number[], b: number[]): boolean {
   return a[0] === b[0] && a[1] === b[1] && a[2] === b[2] && a[3] === b[3];
 }
 
-// 開発時：フル HMR（PaintEditor と同じ理由）
+// 開発時：フル HMR（起動時に 1 度だけ生成されるため、部分 HMR だと古いインスタンスが残ってしまう）
 const hot = (import.meta as unknown as { hot?: { invalidate(): void } }).hot;
 if (hot) hot.invalidate();

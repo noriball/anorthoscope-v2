@@ -13,6 +13,7 @@ export const en: Record<TranslationKey, string> = {
   "common.deleteConfirm": "Delete “{name}”?",
   "common.yes": "On",
   "common.no": "Off",
+  "common.saveFailed": "Save failed. Your browser's storage may be full.",
 
   // ---- controls guide ----
   "guide.subtitle": "Anorthoscope Controls Guide",
@@ -66,6 +67,11 @@ export const en: Record<TranslationKey, string> = {
   "controls.slitCount": "Count",
   "controls.fullscreenTitle": "Fullscreen",
   "controls.helpTitle": "Controls guide",
+  "controls.randomTitle": "Randomly change speed, rotation ratio, slit count, and fade",
+  "controls.shareTitle": "Copy a link that reproduces the current look",
+  "controls.recordTitle": "Record as video (press again to stop and save)",
+  "controls.recordStopTitle": "Stop recording and save",
+  "controls.resetTitle": "Reset to default settings (the state at startup)",
   "controls.imageGroupLabel": "Image",
   "controls.slitGroupLabel": "Slit",
 
@@ -153,4 +159,10 @@ export const en: Record<TranslationKey, string> = {
 
   // ---- main.ts ----
   "main.untitled": "Untitled",
+  "main.shareCopied": "Share link copied",
+  "main.shareCopyFailed": "Failed to copy the share link",
+  "main.shareImageUnavailableNote":
+    " (custom drawings aren't available on other browsers, so the image won't carry over)",
+  "main.recordUnsupported": "Video recording isn't supported in this browser",
+  "main.recordMaxDurationToast": "Reached the 60-second recording limit, so it was saved",
 } as const;

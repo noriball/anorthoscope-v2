@@ -1,5 +1,17 @@
 import "./style.css";
-import { DEFAULT_PARAMS, ZOOM_STEP_FACTOR, type Params } from "./config";
+import {
+  DEFAULT_PARAMS,
+  ZOOM_STEP_FACTOR,
+  SPEED_MIN,
+  SPEED_MAX,
+  SLITS_MIN,
+  SLITS_MAX,
+  FADE_MIN,
+  FADE_MAX,
+  RECORD_FPS,
+  RECORD_MAX_DURATION_MS,
+  type Params,
+} from "./config";
 import { loadInitialImages, pictureFromURL, type Picture } from "./images";
 import { deleteDrawing, listDrawings, type Drawing } from "./gallery";
 import {
@@ -19,6 +31,9 @@ import { Guide } from "./ui/Guide";
 import { CompressEditor } from "./ui/CompressEditor";
 import { ImagePicker } from "./ui/ImagePicker";
 import { SlitPicker, type SlitShape } from "./ui/SlitPicker";
+import { encodeShareState, decodeShareState } from "./share";
+import { showToast } from "./ui/toast";
+import { startRecording, type Recording } from "./recorder";
 
 // ===========================================================
 // アプリ状態
@@ -86,6 +101,162 @@ function setIndex(i: number): void {
   bar.update();
 }
 
+function randomInt(min: number, max: number): number {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+function randomFloat(min: number, max: number): number {
+  return Math.random() * (max - min) + min;
+}
+/** 主要パラメータ（速度・回転比・スリット数・フェード）をランダムに変える。
+ *  値が0付近（実質止まって見える）にならないよう、速度と回転比は下限を設ける。
+ *  回転比は可動域全体（±360）だと極端すぎて見た目が破綻しやすいため、
+ *  面白い見え方になりやすい実用的な範囲に絞る。 */
+function randomizeParams(): void {
+  let speed = randomFloat(SPEED_MIN, SPEED_MAX);
+  if (Math.abs(speed) < 0.3) speed = speed < 0 ? -0.3 : 0.3;
+  let imageRotFactor = randomInt(-8, 8);
+  if (imageRotFactor === 0) imageRotFactor = 1;
+  let slitRotFactor = randomInt(-8, 8);
+  if (slitRotFactor === 0) slitRotFactor = 1;
+  const numSlits = randomInt(SLITS_MIN, SLITS_MAX);
+  const fadeAlpha = randomFloat(FADE_MIN, FADE_MAX);
+  state.params = { ...state.params, speed, imageRotFactor, slitRotFactor, numSlits, fadeAlpha };
+  bar.update();
+  rotationRatio.update();
+}
+
+/** クリップボードへコピー。Clipboard API が使えない環境（非HTTPS配信など）では
+ *  一時的な textarea + execCommand("copy") にフォールバックする。 */
+async function copyText(text: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    /* フォールバックへ */
+  }
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.append(ta);
+    ta.focus();
+    ta.select();
+    const ok = document.execCommand("copy");
+    ta.remove();
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
+/** 現在の見え方（速度・回転比・スリット数・フェード・背景色・選択中の画像/スリット形状）を
+ *  再現する URL を作ってクリップボードへコピーする。
+ *  自作の絵・自作スリットはこのブラウザの localStorage にしか無く共有先で再現できないため、
+ *  その場合は画像/スリットの指定を省略し（受け取り側は既定のまま）、トーストでその旨を添える。 */
+async function shareCurrentState(): Promise<void> {
+  const isCustomImage = [...drawingIndex.values()].includes(state.index);
+  const imageName = isCustomImage ? undefined : currentPicture()?.name;
+  const currentSlit = state.slitShapes[state.slitIndex];
+  const slitId = currentSlit && !currentSlit.deletable ? currentSlit.id : undefined;
+
+  const query = encodeShareState({
+    params: state.params,
+    bgValue: bar.getBgValue(),
+    imageName,
+    slitId,
+  });
+  const url = `${location.origin}${location.pathname}?${query}`;
+
+  const ok = await copyText(url);
+  if (!ok) {
+    showToast(t("main.shareCopyFailed"));
+    return;
+  }
+  const note = isCustomImage ? t("main.shareImageUnavailableNote") : "";
+  showToast(t("main.shareCopied") + note);
+}
+
+/** 起動時：URL クエリに共有状態があれば復元する（あれば true）。
+ *  適用後は URL からクエリを消し、以降の「共有」操作が今の状態を正しく反映するようにする。 */
+function applyShareStateFromURL(): boolean {
+  const decoded = decodeShareState(location.search);
+  if (!decoded) return false;
+
+  state.params = { ...state.params, ...decoded.params };
+
+  if (decoded.imageName) {
+    const idx = state.images.findIndex((p) => p.name === decoded.imageName);
+    if (idx >= 0) state.index = idx;
+  }
+  if (decoded.slitId) {
+    const idx = state.slitShapes.findIndex((s) => s.id === decoded.slitId);
+    if (idx >= 0) {
+      state.slitIndex = idx;
+      const shape = state.slitShapes[idx];
+      sim.setSlitMask(shape.dataURL);
+      setSelectedSlitId(shape.id);
+    }
+  }
+  if (decoded.bgValue !== undefined) bar.setBgValue(decoded.bgValue);
+
+  history.replaceState(null, "", location.pathname);
+  return true;
+}
+
+// ===========================================================
+// 動画録画
+// ===========================================================
+let activeRecording: Recording | null = null;
+
+/** 録画の開始／停止をトグルする。開始できない環境（対応ブラウザでない）ならトーストで知らせる。
+ *  安全のため RECORD_MAX_DURATION_MS で自動停止した場合もここへコールバックで戻る。 */
+function toggleRecording(): void {
+  if (activeRecording) {
+    const rec = activeRecording;
+    activeRecording = null;
+    bar.update();
+    void rec.stop();
+    return;
+  }
+  const rec = startRecording(view, RECORD_FPS, RECORD_MAX_DURATION_MS, () => {
+    activeRecording = null;
+    bar.update();
+    showToast(t("main.recordMaxDurationToast"));
+  });
+  if (!rec) {
+    showToast(t("main.recordUnsupported"));
+    return;
+  }
+  activeRecording = rec;
+  bar.update();
+}
+
+// ===========================================================
+// 起動時の状態に戻す
+// ===========================================================
+interface BootSnapshot {
+  params: Params;
+  bgValue: number;
+  imageIndex: number;
+  slitIndex: number;
+}
+/** 起動直後（共有リンクで開いた場合はその復元後）の状態のスナップショット。
+ *  ランダム・手動調整でどれだけ変えても、この内容へワンボタンで戻せるようにする。 */
+let bootSnapshot: BootSnapshot | null = null;
+
+function resetToBootState(): void {
+  if (!bootSnapshot) return;
+  state.params = { ...bootSnapshot.params };
+  setIndex(bootSnapshot.imageIndex);
+  setSlitShape(bootSnapshot.slitIndex);
+  bar.setBgValue(bootSnapshot.bgValue);
+  bar.update();
+  rotationRatio.update();
+}
+
 // ===========================================================
 // 操作フック
 // ===========================================================
@@ -121,6 +292,11 @@ const hooks: AppHooks = {
   openSlitPicker: () => slitPicker.show(),
   getImages: () => state.images,
   getIndex: () => state.index,
+  randomize: () => randomizeParams(),
+  share: () => void shareCurrentState(),
+  toggleRecording,
+  isRecording: () => activeRecording !== null,
+  resetToBootState,
 };
 
 // 再生／停止は下部バーの中央に置く（バーは常に出ているので、単一パネルへ
@@ -515,7 +691,20 @@ async function boot(): Promise<void> {
   } catch (err) {
     console.error("スリット形状の読み込みに失敗しました", err);
   }
-  setIndex(0);
+  // 共有リンク（URL クエリ）があれば、初期状態の代わりにそちらを復元する
+  const restoredFromShare = applyShareStateFromURL();
+  setIndex(restoredFromShare ? state.index : 0);
+  if (restoredFromShare) {
+    bar.update();
+    rotationRatio.update();
+  }
+  // 起動直後（共有リンクがあればその復元後）の状態を、リセットボタンの戻り先として控える
+  bootSnapshot = {
+    params: { ...state.params },
+    bgValue: bar.getBgValue(),
+    imageIndex: state.index,
+    slitIndex: state.slitIndex,
+  };
   requestAnimationFrame((t) => {
     last = t;
     loop(t);

@@ -13,6 +13,7 @@ export const fr: Record<TranslationKey, string> = {
   "common.deleteConfirm": "Supprimer « {name} » ?",
   "common.yes": "Activé",
   "common.no": "Désactivé",
+  "common.saveFailed": "Échec de l'enregistrement. Le stockage du navigateur est peut-être plein.",
 
   // ---- guide d'utilisation ----
   "guide.subtitle": "Anorthoscope — Guide d'utilisation",
@@ -66,6 +67,11 @@ export const fr: Record<TranslationKey, string> = {
   "controls.slitCount": "Nombre",
   "controls.fullscreenTitle": "Plein écran",
   "controls.helpTitle": "Guide d'utilisation",
+  "controls.randomTitle": "Change aléatoirement la vitesse, le rapport de rotation, le nombre de fentes et le fondu",
+  "controls.shareTitle": "Copier un lien qui reproduit l'apparence actuelle",
+  "controls.recordTitle": "Enregistrer en vidéo (appuyez à nouveau pour arrêter et enregistrer)",
+  "controls.recordStopTitle": "Arrêter l'enregistrement et sauvegarder",
+  "controls.resetTitle": "Revenir aux réglages de base (l'état au démarrage)",
   "controls.imageGroupLabel": "Image",
   "controls.slitGroupLabel": "Fente",
 
@@ -153,4 +159,10 @@ export const fr: Record<TranslationKey, string> = {
 
   // ---- main.ts ----
   "main.untitled": "Sans titre",
+  "main.shareCopied": "Lien de partage copié",
+  "main.shareCopyFailed": "Échec de la copie du lien de partage",
+  "main.shareImageUnavailableNote":
+    " (les dessins personnalisés ne sont pas disponibles dans d'autres navigateurs, l'image ne sera donc pas transmise)",
+  "main.recordUnsupported": "L'enregistrement vidéo n'est pas pris en charge par ce navigateur",
+  "main.recordMaxDurationToast": "La limite d'enregistrement de 60 secondes a été atteinte, donc il a été enregistré",
 } as const;

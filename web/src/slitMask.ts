@@ -37,11 +37,9 @@ export function listCustomSlits(): CustomSlit[] {
 }
 
 function writeList(list: CustomSlit[]): void {
-  try {
-    localStorage.setItem(LIST_KEY, JSON.stringify(list));
-  } catch {
-    /* ignore */
-  }
+  // 保存容量の上限超過などで失敗した場合はそのまま投げる。呼び出し元
+  // （CompressEditor の saveSlitShape）でユーザーに通知する。
+  localStorage.setItem(LIST_KEY, JSON.stringify(list));
 }
 
 /** 自作スリットを1つ追加して、その要素を返す */

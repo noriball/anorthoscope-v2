@@ -31,6 +31,15 @@ export interface AppHooks {
   openSlitPicker(): void;
   getImages(): Picture[];
   getIndex(): number;
+  /** 速度・回転比・スリット数・フェードをランダムに変える */
+  randomize(): void;
+  /** 現在の見え方を再現する URL をコピーする */
+  share(): void;
+  /** 動画としての録画を開始／停止する（停止時にファイルとして保存） */
+  toggleRecording(): void;
+  isRecording(): boolean;
+  /** 起動時（共有リンクで開いた場合はその状態）に戻す */
+  resetToBootState(): void;
 }
 
 /** 全操作をボタンと数値入力に集約した下部コントロールバー */
@@ -43,6 +52,7 @@ export class ControlBar {
   private imageToggleBtn!: HTMLButtonElement;
   private slitLineToggleBtn!: HTMLButtonElement;
   private slitPlateToggleBtn!: HTMLButtonElement;
+  private recordBtn!: HTMLButtonElement;
 
   private speedInput!: HTMLInputElement;
   private speedValueLabel!: HTMLSpanElement;
@@ -141,6 +151,34 @@ export class ControlBar {
       }),
     );
 
+    const random = this.iconButton(
+      "dice",
+      "",
+      () => this.hooks.randomize(),
+      t("controls.randomTitle"),
+    );
+    random.classList.add("icon");
+    const share = this.iconButton(
+      "share",
+      "",
+      () => this.hooks.share(),
+      t("controls.shareTitle"),
+    );
+    share.classList.add("icon");
+    this.recordBtn = this.iconButton(
+      "record",
+      "",
+      () => this.hooks.toggleRecording(),
+      t("controls.recordTitle"),
+    );
+    this.recordBtn.classList.add("icon");
+    const reset = this.iconButton(
+      "reset",
+      "",
+      () => this.hooks.resetToBootState(),
+      t("controls.resetTitle"),
+    );
+    reset.classList.add("icon");
     const full = this.iconButton(
       "fullscreen",
       "",
@@ -149,7 +187,7 @@ export class ControlBar {
     );
     full.classList.add("icon");
     const help = this.button("?", () => this.hooks.openGuide(), t("controls.helpTitle"));
-    const actions = group(full, help);
+    const actions = group(random, share, this.recordBtn, reset, full, help);
     actions.classList.add("bar-actions"); // モバイルで固定サイズのまま右端に留めるための目印
 
     // 「画像」「スリット」を1行、「スライダー類＋全画面・ガイド」を1行にまとめておく。
@@ -276,11 +314,28 @@ export class ControlBar {
     // 絵を隠しているときはトグルを点灯（＝この操作が効いている合図）
     this.imageToggleBtn.classList.toggle("on", !p.showImage);
 
+    const recording = this.hooks.isRecording();
+    this.recordBtn.classList.toggle("on", recording);
+    setIconLabel(this.recordBtn, recording ? "recordStop" : "record");
+    this.recordBtn.title = recording ? t("controls.recordStopTitle") : t("controls.recordTitle");
+
     // 入力欄はフォーカス中なら上書きしない（打鍵・ドラッグの邪魔をしない）
     setInputUnlessFocused(this.speedInput, String(p.speed));
     this.speedValueLabel.textContent = `${p.speed.toFixed(1)}×`;
     setInputUnlessFocused(this.fadeInput, String(p.fadeAlpha));
     setInputUnlessFocused(this.slitCountInput, String(p.numSlits));
+  }
+
+  /** 背景色スライダーの現在値（0〜255）。共有リンクの生成に使う */
+  getBgValue(): number {
+    return Number(this.bgInput.value);
+  }
+
+  /** 背景色スライダーを外部から設定する（共有リンクの復元に使う）。
+   *  実際の色反映・フェード配色の更新は既存の oninput ハンドラに任せる。 */
+  setBgValue(v: number): void {
+    this.bgInput.value = String(v);
+    this.bgInput.dispatchEvent(new Event("input"));
   }
 }
 

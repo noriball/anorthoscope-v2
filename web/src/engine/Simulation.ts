@@ -815,6 +815,9 @@ export class Simulation {
     // 通常の残像フェード（drawLeftPanel/fadeRightPanel の alpha=fadeAlpha 合成）に
     // 任せて、新しい背景色へ自然に馴染ませる。
   }
+  getBgColor(): string {
+    return this.bgColor;
+  }
 }
 
 function must<T>(v: T | null): T {

@@ -13,6 +13,7 @@ export const it: Record<TranslationKey, string> = {
   "common.deleteConfirm": "Eliminare “{name}”?",
   "common.yes": "Attivo",
   "common.no": "Disattivo",
+  "common.saveFailed": "Salvataggio non riuscito. Lo spazio di archiviazione del browser potrebbe essere pieno.",
 
   // ---- guida ai comandi ----
   "guide.subtitle": "Anorthoscope — Guida ai comandi",
@@ -66,6 +67,11 @@ export const it: Record<TranslationKey, string> = {
   "controls.slitCount": "Numero",
   "controls.fullscreenTitle": "Schermo intero",
   "controls.helpTitle": "Guida ai comandi",
+  "controls.randomTitle": "Cambia in modo casuale velocità, rapporto di rotazione, numero di fenditure e dissolvenza",
+  "controls.shareTitle": "Copia un link che riproduce l'aspetto attuale",
+  "controls.recordTitle": "Registra come video (premi di nuovo per fermare e salvare)",
+  "controls.recordStopTitle": "Ferma la registrazione e salva",
+  "controls.resetTitle": "Ripristina le impostazioni di base (lo stato all'avvio)",
   "controls.imageGroupLabel": "Immagine",
   "controls.slitGroupLabel": "Fenditura",
 
@@ -153,4 +159,10 @@ export const it: Record<TranslationKey, string> = {
 
   // ---- main.ts ----
   "main.untitled": "Senza titolo",
+  "main.shareCopied": "Link di condivisione copiato",
+  "main.shareCopyFailed": "Impossibile copiare il link di condivisione",
+  "main.shareImageUnavailableNote":
+    " (i disegni personalizzati non sono disponibili in altri browser, quindi l'immagine non verrà trasferita)",
+  "main.recordUnsupported": "La registrazione video non è supportata in questo browser",
+  "main.recordMaxDurationToast": "Raggiunto il limite di registrazione di 60 secondi, quindi è stato salvato",
 } as const;

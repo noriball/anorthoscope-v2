@@ -13,6 +13,7 @@ export const ru: Record<TranslationKey, string> = {
   "common.deleteConfirm": "Удалить «{name}»?",
   "common.yes": "Вкл.",
   "common.no": "Выкл.",
+  "common.saveFailed": "Не удалось сохранить. Возможно, хранилище браузера заполнено.",
 
   // ---- руководство по управлению ----
   "guide.subtitle": "Anorthoscope — руководство по управлению",
@@ -66,6 +67,11 @@ export const ru: Record<TranslationKey, string> = {
   "controls.slitCount": "Количество",
   "controls.fullscreenTitle": "Полный экран",
   "controls.helpTitle": "Руководство по управлению",
+  "controls.randomTitle": "Случайно изменить скорость, соотношение вращения, количество щелей и затухание",
+  "controls.shareTitle": "Скопировать ссылку, воспроизводящую текущий вид",
+  "controls.recordTitle": "Записать как видео (нажмите ещё раз, чтобы остановить и сохранить)",
+  "controls.recordStopTitle": "Остановить запись и сохранить",
+  "controls.resetTitle": "Вернуть базовые настройки (состояние при запуске)",
   "controls.imageGroupLabel": "Изображение",
   "controls.slitGroupLabel": "Щель",
 
@@ -153,4 +159,10 @@ export const ru: Record<TranslationKey, string> = {
 
   // ---- main.ts ----
   "main.untitled": "Без названия",
+  "main.shareCopied": "Ссылка для общего доступа скопирована",
+  "main.shareCopyFailed": "Не удалось скопировать ссылку для общего доступа",
+  "main.shareImageUnavailableNote":
+    " (собственные рисунки недоступны в других браузерах, поэтому изображение не будет перенесено)",
+  "main.recordUnsupported": "Запись видео не поддерживается в этом браузере",
+  "main.recordMaxDurationToast": "Достигнут предел записи в 60 секунд, поэтому запись сохранена",
 } as const;

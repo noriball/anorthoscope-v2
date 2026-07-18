@@ -13,6 +13,7 @@ export const ko: Record<TranslationKey, string> = {
   "common.deleteConfirm": "“{name}”을(를) 삭제하시겠습니까?",
   "common.yes": "켜짐",
   "common.no": "꺼짐",
+  "common.saveFailed": "저장에 실패했습니다. 브라우저의 저장 용량이 가득 찼을 수 있습니다.",
 
   // ---- 조작 가이드 ----
   "guide.subtitle": "Anorthoscope 조작 가이드",
@@ -66,6 +67,11 @@ export const ko: Record<TranslationKey, string> = {
   "controls.slitCount": "개수",
   "controls.fullscreenTitle": "전체 화면",
   "controls.helpTitle": "조작 가이드",
+  "controls.randomTitle": "속도・회전비・슬릿 개수・페이드를 무작위로 변경",
+  "controls.shareTitle": "현재 모습을 재현하는 링크 복사",
+  "controls.recordTitle": "동영상으로 녹화(다시 누르면 정지하고 저장)",
+  "controls.recordStopTitle": "녹화 정지 및 저장",
+  "controls.resetTitle": "기본 설정(시작 시 상태)으로 되돌리기",
   "controls.imageGroupLabel": "이미지",
   "controls.slitGroupLabel": "슬릿",
 
@@ -150,4 +156,9 @@ export const ko: Record<TranslationKey, string> = {
 
   // ---- main.ts ----
   "main.untitled": "제목 없음",
+  "main.shareCopied": "공유 링크를 복사했습니다",
+  "main.shareCopyFailed": "공유 링크 복사에 실패했습니다",
+  "main.shareImageUnavailableNote": "(직접 그린 그림은 다른 브라우저에는 없으므로 이미지는 반영되지 않습니다)",
+  "main.recordUnsupported": "이 브라우저에서는 동영상 녹화를 지원하지 않습니다",
+  "main.recordMaxDurationToast": "녹화 시간 상한(60초)에 도달하여 저장했습니다",
 } as const;

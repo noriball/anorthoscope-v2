@@ -13,6 +13,7 @@ export const de: Record<TranslationKey, string> = {
   "common.deleteConfirm": "„{name}“ löschen?",
   "common.yes": "An",
   "common.no": "Aus",
+  "common.saveFailed": "Speichern fehlgeschlagen. Der Speicherplatz des Browsers ist möglicherweise voll.",
 
   // ---- Bedienungsanleitung ----
   "guide.subtitle": "Anorthoscope – Bedienungsanleitung",
@@ -66,6 +67,11 @@ export const de: Record<TranslationKey, string> = {
   "controls.slitCount": "Anzahl",
   "controls.fullscreenTitle": "Vollbild",
   "controls.helpTitle": "Bedienungsanleitung",
+  "controls.randomTitle": "Geschwindigkeit, Drehzahlverhältnis, Schlitzanzahl und Ausblenden zufällig ändern",
+  "controls.shareTitle": "Link kopieren, der das aktuelle Erscheinungsbild reproduziert",
+  "controls.recordTitle": "Als Video aufnehmen (erneut drücken zum Stoppen und Speichern)",
+  "controls.recordStopTitle": "Aufnahme stoppen und speichern",
+  "controls.resetTitle": "Auf Grundeinstellungen zurücksetzen (Zustand beim Start)",
   "controls.imageGroupLabel": "Bild",
   "controls.slitGroupLabel": "Schlitz",
 
@@ -153,4 +159,10 @@ export const de: Record<TranslationKey, string> = {
 
   // ---- main.ts ----
   "main.untitled": "Ohne Titel",
+  "main.shareCopied": "Freigabelink kopiert",
+  "main.shareCopyFailed": "Freigabelink konnte nicht kopiert werden",
+  "main.shareImageUnavailableNote":
+    " (eigene Zeichnungen sind in anderen Browsern nicht vorhanden, daher wird das Bild nicht übernommen)",
+  "main.recordUnsupported": "Videoaufnahme wird von diesem Browser nicht unterstützt",
+  "main.recordMaxDurationToast": "Das Aufnahmelimit von 60 Sekunden wurde erreicht, daher wurde gespeichert",
 } as const;

@@ -23,7 +23,11 @@ export type IconName =
   | "line"
   | "circle"
   | "fill"
-  | "move"; // 写真を移動
+  | "move" // 写真を移動
+  | "dice" // ランダム
+  | "share" // 共有リンク
+  | "record" // 録画開始
+  | "recordStop"; // 録画停止
 
 // viewBox は全て 0 0 16 16。塗りつぶす要素だけ class="solid" を付ける。
 const PATHS: Record<IconName, string> = {
@@ -74,6 +78,16 @@ const PATHS: Record<IconName, string> = {
     <path d="M6.3 11.9 8 13.6l1.7-1.7"/>
     <path d="M4.1 6.3 2.4 8l1.7 1.7"/>
     <path d="M11.9 6.3 13.6 8l-1.7 1.7"/>`,
+  // サイコロ（1の目）。「ランダム」ボタン用
+  dice: `<rect x="2.2" y="2.2" width="11.6" height="11.6" rx="2.2"/>
+    <circle cx="8" cy="8" r="1.15" class="solid"/>`,
+  // 鎖の輪2つが斜めに重なる、一般的なハイパーリンクの記号。「共有リンク」ボタン用
+  share: `<path d="M6.67 8.67a3.33 3.33 0 0 0 5.03.36l2-2a3.33 3.33 0 0 0-4.71-4.71l-1.15 1.14"/>
+    <path d="M9.33 7.33a3.33 3.33 0 0 0-5.03-.36l-2 2a3.33 3.33 0 0 0 4.71 4.71l1.14-1.14"/>`,
+  // 赤丸（録画開始）
+  record: `<circle cx="8" cy="8" r="5.4" class="solid"/>`,
+  // 角丸四角（録画停止）
+  recordStop: `<rect x="3.4" y="3.4" width="9.2" height="9.2" rx="1.6" class="solid"/>`,
 };
 
 /** アイコン単体（SVG 要素）を作る */

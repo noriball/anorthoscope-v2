@@ -69,6 +69,11 @@ export const BG_STEP = 1;
 
 export const DEFAULT_BG_COLOR = "#000000";
 
+// 動画録画（MediaRecorder + canvas.captureStream）
+export const RECORD_FPS = 30;
+/** 録画時間の安全上限。長時間放置による巨大ファイル化を防ぐため自動停止する */
+export const RECORD_MAX_DURATION_MS = 60_000;
+
 // ペイント展開画像のPNG書き出し（印刷用）
 /** 印刷用PNG書き出しの解像度（1インチ=25.4mmあたりのピクセル数） */
 export const PRINT_DPI = 300;

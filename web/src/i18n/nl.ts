@@ -13,6 +13,7 @@ export const nl: Record<TranslationKey, string> = {
   "common.deleteConfirm": "“{name}” verwijderen?",
   "common.yes": "Aan",
   "common.no": "Uit",
+  "common.saveFailed": "Opslaan mislukt. De opslagruimte van de browser is mogelijk vol.",
 
   // ---- bedieningsgids ----
   "guide.subtitle": "Anorthoscope – bedieningsgids",
@@ -66,6 +67,11 @@ export const nl: Record<TranslationKey, string> = {
   "controls.slitCount": "Aantal",
   "controls.fullscreenTitle": "Volledig scherm",
   "controls.helpTitle": "Bedieningsgids",
+  "controls.randomTitle": "Verander snelheid, rotatieverhouding, aantal spleten en vervaging willekeurig",
+  "controls.shareTitle": "Kopieer een link die de huidige weergave reproduceert",
+  "controls.recordTitle": "Opnemen als video (druk nogmaals om te stoppen en op te slaan)",
+  "controls.recordStopTitle": "Opname stoppen en opslaan",
+  "controls.resetTitle": "Terug naar de basisinstellingen (de status bij het opstarten)",
   "controls.imageGroupLabel": "Afbeelding",
   "controls.slitGroupLabel": "Spleet",
 
@@ -153,4 +159,10 @@ export const nl: Record<TranslationKey, string> = {
 
   // ---- main.ts ----
   "main.untitled": "Naamloos",
+  "main.shareCopied": "Deellink gekopieerd",
+  "main.shareCopyFailed": "Kopiëren van deellink mislukt",
+  "main.shareImageUnavailableNote":
+    " (eigen tekeningen zijn niet beschikbaar in andere browsers, dus de afbeelding wordt niet meegenomen)",
+  "main.recordUnsupported": "Video-opname wordt niet ondersteund in deze browser",
+  "main.recordMaxDurationToast": "De opnamelimiet van 60 seconden is bereikt, dus is opgeslagen",
 } as const;

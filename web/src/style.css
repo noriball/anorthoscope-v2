@@ -220,7 +220,8 @@ body {
 
 /* ===== 下部コントロールバー ===== */
 #controls {
-  flex: 0 0 var(--bar-h);
+  flex: 0 0 auto;
+  min-height: var(--bar-h);
   display: flex;
   align-items: center;
   gap: 12px;
@@ -410,12 +411,19 @@ body {
 .bar-row-groups {
   flex: 1 1 0;
   justify-content: center;
+  /* ウィンドウが狭い時は素直に2行目へ折り返す（横に押し出されて見切れるのを防ぐ）。
+   * flex-basis 0 の子（例: .bar-row-sliders .field）と違い、ここに並ぶのは中身の
+   * 幅で決まる通常のグループなので、詰め込みすぎたら折り返す方が安全。 */
+  flex-wrap: wrap;
+  row-gap: 8px;
 }
 .bar-row-sliders {
   flex: 1 1 0;
   /* スライダー類はラベル分だけ背が高いので、中央揃えだとラベルの無い
      全画面・ガイドボタンが浮いて見える。下端で揃える。 */
   align-items: flex-end;
+  flex-wrap: wrap;
+  row-gap: 8px;
 }
 .bar-row-sliders .params-group {
   flex: 1 1 auto;
@@ -1097,9 +1105,13 @@ body {
   }
   .bar-row-sliders {
     order: -1;
+    /* スライダー群は自身の行いっぱいに広がる（flex-grow）ので影響しないが、
+       アイコン列（全画面・ガイド等）だけの行になったときはそれを中央寄せにする。 */
+    justify-content: center;
   }
-  /* スライダー3つ（速度・フェード・背景）で残り幅を均等配分し、
-     全画面・ガイドは固定サイズのまま右端に留める。 */
+  /* スライダー3つ（速度・フェード・背景）で残り幅を均等配分する。
+     アイコン列（ランダム・共有・録画・リセット・全画面・ガイド）は固定サイズのまま、
+     上の .bar-row-sliders の justify-content:center で自身の行の中央に置かれる。 */
   .bar-row-sliders .field {
     flex: 1 1 0;
     min-width: 0;

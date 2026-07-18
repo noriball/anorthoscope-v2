@@ -13,6 +13,7 @@ export const pt: Record<TranslationKey, string> = {
   "common.deleteConfirm": "Excluir “{name}”?",
   "common.yes": "Ativado",
   "common.no": "Desativado",
+  "common.saveFailed": "Falha ao salvar. O armazenamento do navegador pode estar cheio.",
 
   // ---- guia de operação ----
   "guide.subtitle": "Anorthoscope — Guia de operação",
@@ -66,6 +67,11 @@ export const pt: Record<TranslationKey, string> = {
   "controls.slitCount": "Quantidade",
   "controls.fullscreenTitle": "Tela cheia",
   "controls.helpTitle": "Guia de operação",
+  "controls.randomTitle": "Altera aleatoriamente a velocidade, a proporção de rotação, a quantidade de fendas e o esmaecimento",
+  "controls.shareTitle": "Copiar um link que reproduz a aparência atual",
+  "controls.recordTitle": "Gravar como vídeo (pressione novamente para parar e salvar)",
+  "controls.recordStopTitle": "Parar a gravação e salvar",
+  "controls.resetTitle": "Restaurar as configurações básicas (o estado na inicialização)",
   "controls.imageGroupLabel": "Imagem",
   "controls.slitGroupLabel": "Fenda",
 
@@ -153,4 +159,10 @@ export const pt: Record<TranslationKey, string> = {
 
   // ---- main.ts ----
   "main.untitled": "Sem título",
+  "main.shareCopied": "Link de compartilhamento copiado",
+  "main.shareCopyFailed": "Falha ao copiar o link de compartilhamento",
+  "main.shareImageUnavailableNote":
+    " (desenhos personalizados não estão disponíveis em outros navegadores, portanto a imagem não será incluída)",
+  "main.recordUnsupported": "A gravação de vídeo não é compatível com este navegador",
+  "main.recordMaxDurationToast": "O limite de gravação de 60 segundos foi atingido, então foi salvo",
 } as const;
