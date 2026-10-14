@@ -3,6 +3,7 @@ node_modules/
 *.log
 web/dist/
 *.zip
+kiosk-app/build/
 
 # 旧 Processing/p5.js 版（v2 では対象外）
 processing_Anorthoscope/
