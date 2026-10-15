@@ -32,8 +32,7 @@ const R0 = 8; // 中心側の開始半径（中心に小さな穴＝既定スリ
 const W = 6; // 線の太さ（一定・変わらない）
 const K = 200; // 外周での中心線の最大振れ幅。扇形(半角 atan(K/R)≈26°)に収まる包絡
 const N = 240; // 線を刻むステップ数
-const OUTPUT_DIR =
-  "/Volumes/DATA-20TB01/projects/Anorthoscpe_simulator/web/public/presets/slits";
+const OUTPUT_DIR = path.join(__dirname, "..", "public", "presets", "slits");
 
 if (!fs.existsSync(OUTPUT_DIR)) fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 
