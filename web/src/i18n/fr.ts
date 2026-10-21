@@ -71,7 +71,7 @@ export const fr: Record<TranslationKey, string> = {
   "controls.shareTitle": "Copier un lien qui reproduit l'apparence actuelle",
   "controls.recordTitle": "Enregistrer en vidéo (appuyez à nouveau pour arrêter et enregistrer)",
   "controls.recordStopTitle": "Arrêter l'enregistrement et sauvegarder",
-  "controls.resetTitle": "Revenir aux réglages de base (l'état au démarrage)",
+  "controls.resetTitle": "Revenir aux réglages de base (vitesse, rapport de rotation, nombre de fentes, fondu, image et forme de la fente)",
   "controls.imageGroupLabel": "Image",
   "controls.slitGroupLabel": "Fente",
 

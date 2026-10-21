@@ -71,7 +71,7 @@ export const es: Record<TranslationKey, string> = {
   "controls.shareTitle": "Copiar un enlace que reproduce el aspecto actual",
   "controls.recordTitle": "Grabar como vídeo (vuelve a pulsar para detener y guardar)",
   "controls.recordStopTitle": "Detener grabación y guardar",
-  "controls.resetTitle": "Restablecer la configuración básica (el estado al iniciar)",
+  "controls.resetTitle": "Restablecer la configuración básica (velocidad, relación de rotación, número de rendijas, desvanecimiento, imagen y forma de la rendija)",
   "controls.imageGroupLabel": "Imagen",
   "controls.slitGroupLabel": "Rendija",
 

@@ -71,7 +71,7 @@ export const ja = {
   "controls.shareTitle": "今の見え方を再現するリンクをコピー",
   "controls.recordTitle": "動画として録画（もう一度押すと停止して保存）",
   "controls.recordStopTitle": "録画を停止して保存",
-  "controls.resetTitle": "基本設定（起動時の状態）に戻す",
+  "controls.resetTitle": "基本設定（速度・回転比・スリット数・フェード・画像・スリット形状）に戻す",
   "controls.imageGroupLabel": "画像",
   "controls.slitGroupLabel": "スリット",
 

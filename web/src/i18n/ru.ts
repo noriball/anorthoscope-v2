@@ -71,7 +71,7 @@ export const ru: Record<TranslationKey, string> = {
   "controls.shareTitle": "Скопировать ссылку, воспроизводящую текущий вид",
   "controls.recordTitle": "Записать как видео (нажмите ещё раз, чтобы остановить и сохранить)",
   "controls.recordStopTitle": "Остановить запись и сохранить",
-  "controls.resetTitle": "Вернуть базовые настройки (состояние при запуске)",
+  "controls.resetTitle": "Вернуть базовые настройки (скорость, соотношение вращения, количество щелей, затухание, изображение и форму щели)",
   "controls.imageGroupLabel": "Изображение",
   "controls.slitGroupLabel": "Щель",
 

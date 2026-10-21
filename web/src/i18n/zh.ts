@@ -71,7 +71,7 @@ export const zh: Record<TranslationKey, string> = {
   "controls.shareTitle": "复制可重现当前效果的链接",
   "controls.recordTitle": "录制为视频（再次点击可停止并保存）",
   "controls.recordStopTitle": "停止录制并保存",
-  "controls.resetTitle": "恢复到基本设置（启动时的状态）",
+  "controls.resetTitle": "恢复到基本设置（速度、转速比、狭缝数量、淡出、图片和狭缝形状）",
   "controls.imageGroupLabel": "图片",
   "controls.slitGroupLabel": "狭缝",
 

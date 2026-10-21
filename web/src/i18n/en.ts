@@ -71,7 +71,7 @@ export const en: Record<TranslationKey, string> = {
   "controls.shareTitle": "Copy a link that reproduces the current look",
   "controls.recordTitle": "Record as video (press again to stop and save)",
   "controls.recordStopTitle": "Stop recording and save",
-  "controls.resetTitle": "Reset to default settings (the state at startup)",
+  "controls.resetTitle": "Reset to default settings (speed, rotation ratio, slit count, fade, image, and slit shape)",
   "controls.imageGroupLabel": "Image",
   "controls.slitGroupLabel": "Slit",
 

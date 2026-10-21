@@ -71,7 +71,7 @@ export const de: Record<TranslationKey, string> = {
   "controls.shareTitle": "Link kopieren, der das aktuelle Erscheinungsbild reproduziert",
   "controls.recordTitle": "Als Video aufnehmen (erneut drücken zum Stoppen und Speichern)",
   "controls.recordStopTitle": "Aufnahme stoppen und speichern",
-  "controls.resetTitle": "Auf Grundeinstellungen zurücksetzen (Zustand beim Start)",
+  "controls.resetTitle": "Auf Grundeinstellungen zurücksetzen (Geschwindigkeit, Drehzahlverhältnis, Schlitzanzahl, Ausblenden, Bild und Schlitzform)",
   "controls.imageGroupLabel": "Bild",
   "controls.slitGroupLabel": "Schlitz",
 

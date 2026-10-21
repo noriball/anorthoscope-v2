@@ -71,7 +71,7 @@ export const nl: Record<TranslationKey, string> = {
   "controls.shareTitle": "Kopieer een link die de huidige weergave reproduceert",
   "controls.recordTitle": "Opnemen als video (druk nogmaals om te stoppen en op te slaan)",
   "controls.recordStopTitle": "Opname stoppen en opslaan",
-  "controls.resetTitle": "Terug naar de basisinstellingen (de status bij het opstarten)",
+  "controls.resetTitle": "Terug naar de basisinstellingen (snelheid, rotatieverhouding, aantal spleten, vervaging, afbeelding en spleetvorm)",
   "controls.imageGroupLabel": "Afbeelding",
   "controls.slitGroupLabel": "Spleet",
 

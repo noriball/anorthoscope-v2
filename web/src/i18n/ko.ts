@@ -71,7 +71,7 @@ export const ko: Record<TranslationKey, string> = {
   "controls.shareTitle": "현재 모습을 재현하는 링크 복사",
   "controls.recordTitle": "동영상으로 녹화(다시 누르면 정지하고 저장)",
   "controls.recordStopTitle": "녹화 정지 및 저장",
-  "controls.resetTitle": "기본 설정(시작 시 상태)으로 되돌리기",
+  "controls.resetTitle": "기본 설정(속도・회전비・슬릿 개수・페이드・이미지・슬릿 모양)으로 되돌리기",
   "controls.imageGroupLabel": "이미지",
   "controls.slitGroupLabel": "슬릿",
 

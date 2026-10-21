@@ -71,7 +71,7 @@ export const pt: Record<TranslationKey, string> = {
   "controls.shareTitle": "Copiar um link que reproduz a aparência atual",
   "controls.recordTitle": "Gravar como vídeo (pressione novamente para parar e salvar)",
   "controls.recordStopTitle": "Parar a gravação e salvar",
-  "controls.resetTitle": "Restaurar as configurações básicas (o estado na inicialização)",
+  "controls.resetTitle": "Restaurar as configurações básicas (velocidade, proporção de rotação, quantidade de fendas, esmaecimento, imagem e forma da fenda)",
   "controls.imageGroupLabel": "Imagem",
   "controls.slitGroupLabel": "Fenda",
 
