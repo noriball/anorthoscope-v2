@@ -36,9 +36,16 @@ export class Guide {
           ([k, v]) => `<tr><td>${k}</td><td class="key">${v}</td></tr>`,
         ).join("")}</table>
         <div class="foot">${t("guide.footer")}</div>
+        <div class="credit">© Norihisa Hashimoto ·
+          <a href="https://zeroworks.jp" target="_blank" rel="noopener noreferrer">https://zeroworks.jp</a>
+        </div>
       </div>`;
     // パネル以外クリックで閉じる
-    this.root.addEventListener("click", () => this.hide());
+    this.root.addEventListener("click", (e) => {
+      // クレジットのリンクを押したときは、ガイドを閉じずにそのままリンク先を開く
+      if ((e.target as HTMLElement).closest(".credit a")) return;
+      this.hide();
+    });
     document.body.append(this.root);
   }
 

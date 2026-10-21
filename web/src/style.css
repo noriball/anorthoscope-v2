@@ -608,6 +608,21 @@ body {
   font-size: 11px;
   margin-top: 16px;
 }
+.guide-panel .credit {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 11px;
+  margin-top: 8px;
+  padding-top: 10px;
+  border-top: 1px solid #2c2c36;
+}
+.guide-panel .credit a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.guide-panel .credit a:hover {
+  text-decoration: underline;
+}
 
 /* ===== ペイントモード / 圧縮モード（共通の全画面エディタ） ===== */
 #paint,
