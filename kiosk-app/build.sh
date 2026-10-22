@@ -55,6 +55,24 @@ printf 'APPL????' > "$APP_DIR/Contents/PkgInfo"
 # docs/ の中身（index.html・assets・data・presets）をそのままリソースへ
 cp -R "$DOCS_DIR/." "$APP_DIR/Contents/Resources/site/"
 find "$APP_DIR/Contents/Resources/site" -name ".DS_Store" -delete
+# アプリには「自作の12枚（著作権の心配なし）」の後ろに「元の30枚」も続けて入れる（一覧は 42 枚）。
+# 元の画像は data/ に o01.png… の名前で合流させ、Web 版用の /original/ ページは同梱しない。
+python3 - "$APP_DIR/Contents/Resources/site" <<'PYEOF'
+import json, os, shutil, sys
+site = sys.argv[1]
+data, old = os.path.join(site, "data"), os.path.join(site, "data-original")
+new_list = json.load(open(os.path.join(data, "manifest.json")))["images"]
+old_list = json.load(open(os.path.join(old, "manifest.json")))["images"]
+merged = list(new_list)
+for f in old_list:
+    name = "o" + f
+    shutil.copy2(os.path.join(old, f), os.path.join(data, name))
+    merged.append(name)
+json.dump({"images": merged}, open(os.path.join(data, "manifest.json"), "w"), indent=2)
+shutil.rmtree(old)
+shutil.rmtree(os.path.join(site, "original"), ignore_errors=True)
+print(f"サンプル画像: 新 {len(new_list)} 枚 + 元 {len(old_list)} 枚 = {len(merged)} 枚")
+PYEOF
 
 echo "== 5/5: ad-hoc 署名 =="
 codesign --force --deep --sign - "$APP_DIR"

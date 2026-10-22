@@ -112,7 +112,7 @@ export const DEFAULT_PARAMS: Params = {
   speed: 1.0,
   imageRotFactor: -4, // 絵
   slitRotFactor: 1, // スリット
-  numSlits: ORIGINAL_SET ? 4 : 5, // 新サンプルは 5 分割用。/original/ の元サンプルは従来どおり 4
+  numSlits: 4,
   showImage: true,
   showGuideLines: true,
   slitPlate: false,
