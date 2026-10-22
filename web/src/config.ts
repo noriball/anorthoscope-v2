@@ -42,8 +42,13 @@ export const ZOOM_MIN = 1;
 export const ZOOM_MAX = 8;
 export const ZOOM_STEP_FACTOR = 1.2;
 
-/** 画像マニフェストのパス（public/data 配下） */
-export const DATA_DIR = "data";
+/** /original/ ページ（元の歴史的なサンプル 30 枚を見せる隠しページ）か。web/original/index.html が目印を付ける */
+export const ORIGINAL_SET = document.documentElement.dataset.sampleSet === "original";
+/** サイトのルートへの相対パス（/original/ は 1 階層下にあるので 1 つ上） */
+export const SITE_ROOT = ORIGINAL_SET ? "../" : "";
+
+/** 画像マニフェストのパス（public/data 配下。/original/ では data-original 配下） */
+export const DATA_DIR = `${SITE_ROOT}${ORIGINAL_SET ? "data-original" : "data"}`;
 export const MANIFEST_URL = `${DATA_DIR}/manifest.json`;
 
 // ペイントモード
@@ -107,7 +112,7 @@ export const DEFAULT_PARAMS: Params = {
   speed: 1.0,
   imageRotFactor: -4, // 絵
   slitRotFactor: 1, // スリット
-  numSlits: 4,
+  numSlits: ORIGINAL_SET ? 4 : 5, // 新サンプルは 5 分割用。/original/ の元サンプルは従来どおり 4
   showImage: true,
   showGuideLines: true,
   slitPlate: false,

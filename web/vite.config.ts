@@ -9,5 +9,9 @@ export default defineConfig({
   build: {
     outDir: resolve(__dirname, "../docs"),
     emptyOutDir: true,
+    rollupOptions: {
+      // 通常ページと、元のサンプルを見せる /original/ の 2 ページ
+      input: { main: resolve(__dirname, "index.html"), original: resolve(__dirname, "original/index.html") },
+    },
   },
 });

@@ -1,10 +1,11 @@
+import { SITE_ROOT } from "./config";
 import { t } from "./i18n";
 import type { SlitShape } from "./ui/SlitPicker";
 
 const OLD_KEY = "anortho.slitMask.v1"; // 旧：単一カスタム（移行用）
 const LIST_KEY = "anortho.slitShapes.v1"; // カスタムスリット一覧（複数）
 const SEL_KEY = "anortho.slitId.v1"; // 選択中の形状 id（プリセット id or カスタム id）
-const PRESETS_MANIFEST = "presets/slits/manifest.json";
+const PRESETS_MANIFEST = `${SITE_ROOT}presets/slits/manifest.json`;
 
 /** 保存済みの自作スリット1つ */
 export interface CustomSlit {
@@ -67,7 +68,7 @@ export async function loadSlitShapes(): Promise<SlitShape[]> {
     };
     const presets: SlitShape[] = await Promise.all(
       data.presets.map(async (p) => {
-        const fileRes = await fetch(`presets/slits/${p.file}`);
+        const fileRes = await fetch(`${SITE_ROOT}presets/slits/${p.file}`);
         if (!fileRes.ok) throw new Error(`Failed to load ${p.file}`);
         const blob = await fileRes.blob();
         return {
