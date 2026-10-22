@@ -115,6 +115,7 @@ export const zh: Record<TranslationKey, string> = {
   "compress.loadTabRight": "照片配置（加载到右）",
   "compress.pickFromList": "从图片列表中选择",
   "compress.pickFromFile": "＋从文件选择",
+  "compress.pickFromCamera": "＋用摄像头拍摄",
   "compress.outlineLabel": "圆周线",
   "compress.centerMarkLabel": "中心标记",
   "compress.diameterLabel": "直径",
@@ -161,4 +162,11 @@ export const zh: Record<TranslationKey, string> = {
   "main.shareImageUnavailableNote": "（自制的绘图在其他浏览器中不存在，因此图片不会一并共享）",
   "main.recordUnsupported": "此浏览器不支持视频录制",
   "main.recordMaxDurationToast": "已达到60秒的录制时长上限，已自动保存",
+
+  // ---- カメラ撮影 ----
+  "camera.shutter": "拍摄",
+  "camera.switch": "切换摄像头",
+  "camera.denied": "摄像头权限被拒绝，请检查浏览器设置。",
+  "camera.notFound": "未找到摄像头。",
+  "camera.error": "无法启动摄像头。",
 } as const;

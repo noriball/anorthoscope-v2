@@ -816,6 +816,20 @@ body {
   color: #fff;
   margin: 0;
 }
+/* カメラ撮影バー（ライブ映像を右の円に流している間、画面下に出す） */
+.camera-bar {
+  position: fixed;
+  left: 50%;
+  bottom: 56px;
+  transform: translateX(-50%);
+  z-index: 24;
+  display: flex;
+  gap: 10px;
+  padding: 10px 14px;
+  background: rgba(22, 22, 28, 0.92);
+  border: 1px solid #565660;
+  border-radius: 12px;
+}
 .export-row {
   display: flex;
   align-items: center;

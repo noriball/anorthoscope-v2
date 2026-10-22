@@ -115,6 +115,7 @@ export const nl: Record<TranslationKey, string> = {
   "compress.loadTabRight": "Fotoplaatsing (naar rechts)",
   "compress.pickFromList": "Kiezen uit afbeeldingenlijst",
   "compress.pickFromFile": "+ Uit een bestand",
+  "compress.pickFromCamera": "+ Met de camera",
   "compress.outlineLabel": "Omtreklijn",
   "compress.centerMarkLabel": "Middelpuntmarkering",
   "compress.diameterLabel": "Diameter",
@@ -165,4 +166,11 @@ export const nl: Record<TranslationKey, string> = {
     " (eigen tekeningen zijn niet beschikbaar in andere browsers, dus de afbeelding wordt niet meegenomen)",
   "main.recordUnsupported": "Video-opname wordt niet ondersteund in deze browser",
   "main.recordMaxDurationToast": "De opnamelimiet van 60 seconden is bereikt, dus is opgeslagen",
+
+  // ---- カメラ撮影 ----
+  "camera.shutter": "Opnemen",
+  "camera.switch": "Camera wisselen",
+  "camera.denied": "Cameratoegang is geweigerd. Controleer de browserinstellingen.",
+  "camera.notFound": "Geen camera gevonden.",
+  "camera.error": "De camera kon niet worden gestart.",
 } as const;

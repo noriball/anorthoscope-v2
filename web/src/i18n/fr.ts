@@ -115,6 +115,7 @@ export const fr: Record<TranslationKey, string> = {
   "compress.loadTabRight": "Placement de photo (vers la droite)",
   "compress.pickFromList": "Choisir dans la liste d'images",
   "compress.pickFromFile": "+ Depuis un fichier",
+  "compress.pickFromCamera": "+ Depuis la caméra",
   "compress.outlineLabel": "Ligne de contour",
   "compress.centerMarkLabel": "Marque centrale",
   "compress.diameterLabel": "Diamètre",
@@ -165,4 +166,11 @@ export const fr: Record<TranslationKey, string> = {
     " (les dessins personnalisés ne sont pas disponibles dans d'autres navigateurs, l'image ne sera donc pas transmise)",
   "main.recordUnsupported": "L'enregistrement vidéo n'est pas pris en charge par ce navigateur",
   "main.recordMaxDurationToast": "La limite d'enregistrement de 60 secondes a été atteinte, donc il a été enregistré",
+
+  // ---- カメラ撮影 ----
+  "camera.shutter": "Capturer",
+  "camera.switch": "Changer de caméra",
+  "camera.denied": "L'accès à la caméra a été refusé. Vérifiez les réglages du navigateur.",
+  "camera.notFound": "Aucune caméra détectée.",
+  "camera.error": "Impossible de démarrer la caméra.",
 } as const;

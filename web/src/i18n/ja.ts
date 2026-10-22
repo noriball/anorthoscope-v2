@@ -115,6 +115,7 @@ export const ja = {
   "compress.loadTabRight": "写真配置（右へ）",
   "compress.pickFromList": "画像一覧から選ぶ",
   "compress.pickFromFile": "＋ファイルから",
+  "compress.pickFromCamera": "＋カメラで撮影",
   "compress.outlineLabel": "円周ライン",
   "compress.centerMarkLabel": "中心マーク",
   "compress.diameterLabel": "直径",
@@ -162,6 +163,13 @@ export const ja = {
   "main.shareImageUnavailableNote": "（自作の絵は共有先のブラウザに無いため反映されません）",
   "main.recordUnsupported": "このブラウザでは動画の録画に対応していません",
   "main.recordMaxDurationToast": "録画時間の上限（60秒）に達したため保存しました",
+
+  // ---- カメラ撮影 ----
+  "camera.shutter": "撮影",
+  "camera.switch": "カメラ切替",
+  "camera.denied": "カメラの使用が許可されていません。ブラウザの設定を確認してください。",
+  "camera.notFound": "カメラが見つかりません。",
+  "camera.error": "カメラを起動できませんでした。",
 } as const;
 
 export type TranslationKey = keyof typeof ja;

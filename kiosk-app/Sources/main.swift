@@ -1,4 +1,5 @@
 import Cocoa
+import Network
 import WebKit
 
 /// LaunchAgent の登録状況が「完全キオスクの ON/OFF スイッチ」を兼ねる。
@@ -75,7 +76,7 @@ final class LocalSiteSchemeHandler: NSObject, WKURLSchemeHandler {
         // ローカルファイル読み出しのみで非同期処理は無いため、特に何もしない。
     }
 
-    private static func mimeType(for ext: String) -> String {
+    static func mimeType(for ext: String) -> String {
         switch ext.lowercased() {
         case "html": return "text/html"
         case "js", "mjs": return "text/javascript"
@@ -86,8 +87,88 @@ final class LocalSiteSchemeHandler: NSObject, WKURLSchemeHandler {
         case "svg": return "image/svg+xml"
         case "webm": return "video/webm"
         case "ico": return "image/x-icon"
+        case "woff2": return "font/woff2"
+        case "txt": return "text/plain"
         default: return "application/octet-stream"
         }
+    }
+}
+
+/// 同梱した web ビルドを 127.0.0.1 の小さな HTTP サーバで配信する（単体版のみ）。
+///
+/// カメラ（getUserMedia）は「安全なコンテキスト」でしか使えず、独自スキームはこれに当たらない。
+/// 一方 http://127.0.0.1 は安全なコンテキストとして扱われるので、カメラ撮影が使える。
+/// 外部からは届かないよう、ループバックにだけバインドする。
+final class LoopbackSiteServer {
+    private let root: URL
+    private let queue = DispatchQueue(label: "jp.noriball.anorthoscope.site-server")
+    private var listener: NWListener?
+    private(set) var port: UInt16 = 0
+
+    init(root: URL) { self.root = root.standardizedFileURL }
+
+    /// 優先ポートで待ち受けを試し、使用中なら空きポートにする（保存データのオリジンを安定させるため、まず固定ポート）。
+    func start(preferredPort: UInt16) -> Bool {
+        for candidate in [preferredPort, 0] {
+            if let l = listen(on: candidate) {
+                listener = l
+                port = l.port?.rawValue ?? candidate
+                return true
+            }
+        }
+        return false
+    }
+
+    private func listen(on portNumber: UInt16) -> NWListener? {
+        let params = NWParameters.tcp
+        params.requiredLocalEndpoint = .hostPort(host: "127.0.0.1", port: NWEndpoint.Port(rawValue: portNumber) ?? .any)
+        guard let l = try? NWListener(using: params) else { return nil }
+        let ready = DispatchSemaphore(value: 0)
+        var ok = false
+        l.stateUpdateHandler = { state in
+            switch state {
+            case .ready: ok = true; ready.signal()
+            case .failed, .cancelled: ready.signal()
+            default: break
+            }
+        }
+        l.newConnectionHandler = { [weak self] conn in self?.handle(conn) }
+        l.start(queue: queue)
+        _ = ready.wait(timeout: .now() + 3)
+        if !ok { l.cancel(); return nil }
+        return l
+    }
+
+    private func handle(_ conn: NWConnection) {
+        conn.start(queue: queue)
+        conn.receive(minimumIncompleteLength: 1, maximumLength: 65536) { [weak self] data, _, _, error in
+            guard let self, let data, error == nil,
+                  let head = String(data: data, encoding: .utf8),
+                  let line = head.components(separatedBy: "\r\n").first else { conn.cancel(); return }
+            let parts = line.split(separator: " ")
+            guard parts.count >= 2, parts[0] == "GET" || parts[0] == "HEAD" else {
+                self.send(conn, status: "405 Method Not Allowed", mime: "text/plain", body: Data(), head: false)
+                return
+            }
+            var path = String(parts[1]).components(separatedBy: "?")[0]
+            path = path.removingPercentEncoding ?? path
+            if path.isEmpty || path.hasSuffix("/") { path += "index.html" }
+            let fileURL = self.root.appendingPathComponent(path).standardizedFileURL
+            // サイトの外（../ など）は読ませない
+            guard fileURL.path.hasPrefix(self.root.path + "/"), let body = try? Data(contentsOf: fileURL) else {
+                self.send(conn, status: "404 Not Found", mime: "text/plain", body: Data("Not Found".utf8), head: parts[0] == "GET")
+                return
+            }
+            self.send(conn, status: "200 OK", mime: LocalSiteSchemeHandler.mimeType(for: fileURL.pathExtension),
+                      body: body, head: parts[0] == "GET")
+        }
+    }
+
+    private func send(_ conn: NWConnection, status: String, mime: String, body: Data, head withBody: Bool) {
+        var out = Data("HTTP/1.1 \(status)\r\nContent-Type: \(mime)\r\nContent-Length: \(body.count)\r\nCache-Control: no-cache\r\nConnection: close\r\n\r\n".utf8)
+        if withBody { out.append(body) }
+        conn.send(content: out, contentContext: .finalMessage, isComplete: true,
+                  completion: .contentProcessed { _ in conn.cancel() })
     }
 }
 
@@ -105,6 +186,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKUIDelegate, WKNaviga
     private let appTitle = "Anorthoscope Kiosk (通常モード・プレビュー)"
     #endif
     private let schemeHandler = LocalSiteSchemeHandler()
+    private var siteServer: LoopbackSiteServer?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1280, height: 800)
@@ -184,7 +266,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKUIDelegate, WKNaviga
             injectionTime: .atDocumentStart,
             forMainFrameOnly: true
         )
-        config.userContentController.addUserScript(fetchPolyfill)
+        // 単体版は 127.0.0.1 の HTTP で配信する（カメラが使えるように）。起動できなければ従来の独自スキームに戻す。
+        var startURL = URL(string: "\(LocalSiteSchemeHandler.scheme)://local/index.html")!
+        var servedByScheme = true
+        #if STANDALONE
+        if let siteRoot = Bundle.main.url(forResource: "site", withExtension: nil) {
+            let server = LoopbackSiteServer(root: siteRoot)
+            if server.start(preferredPort: 47931) {
+                siteServer = server
+                startURL = URL(string: "http://127.0.0.1:\(server.port)/index.html")!
+                servedByScheme = false
+            }
+        }
+        #endif
+        if servedByScheme { config.userContentController.addUserScript(fetchPolyfill) }
         webView = WKWebView(frame: window.contentView?.bounds ?? screenFrame, configuration: config)
         webView.uiDelegate = self
         webView.navigationDelegate = self
@@ -192,7 +287,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKUIDelegate, WKNaviga
         webView.setValue(false, forKey: "drawsBackground") // 読み込み中の白フラッシュを防ぐ
         window.contentView = webView
 
-        webView.load(URLRequest(url: URL(string: "\(LocalSiteSchemeHandler.scheme)://local/index.html")!))
+        webView.load(URLRequest(url: startURL))
 
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
@@ -201,6 +296,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKUIDelegate, WKNaviga
             enterKioskPresentation()
             installEscapeHatch()
         }
+    }
+
+    /// カメラ撮影：このアプリ自身のページ（127.0.0.1）にだけカメラを許可する。
+    /// 初回は macOS 自身の「カメラへのアクセス」確認が出る。マイクは使わない。
+    @available(macOS 12.0, *)
+    func webView(
+        _ webView: WKWebView,
+        requestMediaCapturePermissionFor origin: WKSecurityOrigin,
+        initiatedByFrame frame: WKFrameInfo,
+        type: WKMediaCaptureType,
+        decisionHandler: @escaping (WKPermissionDecision) -> Void
+    ) {
+        decisionHandler(type == .camera && origin.host == "127.0.0.1" ? .grant : .deny)
     }
 
     private func enterKioskPresentation() {

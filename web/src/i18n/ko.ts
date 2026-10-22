@@ -115,6 +115,7 @@ export const ko: Record<TranslationKey, string> = {
   "compress.loadTabRight": "사진 배치(오른쪽으로)",
   "compress.pickFromList": "이미지 목록에서 선택",
   "compress.pickFromFile": "＋파일에서",
+  "compress.pickFromCamera": "＋카메라로 촬영",
   "compress.outlineLabel": "원둘레 선",
   "compress.centerMarkLabel": "중심 표시",
   "compress.diameterLabel": "지름",
@@ -161,4 +162,11 @@ export const ko: Record<TranslationKey, string> = {
   "main.shareImageUnavailableNote": "(직접 그린 그림은 다른 브라우저에는 없으므로 이미지는 반영되지 않습니다)",
   "main.recordUnsupported": "이 브라우저에서는 동영상 녹화를 지원하지 않습니다",
   "main.recordMaxDurationToast": "녹화 시간 상한(60초)에 도달하여 저장했습니다",
+
+  // ---- カメラ撮影 ----
+  "camera.shutter": "촬영",
+  "camera.switch": "카메라 전환",
+  "camera.denied": "카메라 사용이 허용되지 않았습니다. 브라우저 설정을 확인하세요.",
+  "camera.notFound": "카메라를 찾을 수 없습니다.",
+  "camera.error": "카메라를 시작할 수 없습니다.",
 } as const;

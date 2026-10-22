@@ -115,6 +115,7 @@ export const de: Record<TranslationKey, string> = {
   "compress.loadTabRight": "Fotoplatzierung (nach rechts)",
   "compress.pickFromList": "Aus der Bilderliste wählen",
   "compress.pickFromFile": "+ Aus einer Datei",
+  "compress.pickFromCamera": "+ Von der Kamera",
   "compress.outlineLabel": "Umrisslinie",
   "compress.centerMarkLabel": "Mittelpunktmarkierung",
   "compress.diameterLabel": "Durchmesser",
@@ -165,4 +166,11 @@ export const de: Record<TranslationKey, string> = {
     " (eigene Zeichnungen sind in anderen Browsern nicht vorhanden, daher wird das Bild nicht übernommen)",
   "main.recordUnsupported": "Videoaufnahme wird von diesem Browser nicht unterstützt",
   "main.recordMaxDurationToast": "Das Aufnahmelimit von 60 Sekunden wurde erreicht, daher wurde gespeichert",
+
+  // ---- カメラ撮影 ----
+  "camera.shutter": "Aufnehmen",
+  "camera.switch": "Kamera wechseln",
+  "camera.denied": "Der Kamerazugriff wurde verweigert. Prüfen Sie die Browsereinstellungen.",
+  "camera.notFound": "Keine Kamera gefunden.",
+  "camera.error": "Die Kamera konnte nicht gestartet werden.",
 } as const;

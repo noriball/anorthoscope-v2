@@ -24,6 +24,8 @@
 	<true/>
 	<key>NSSupportsAutomaticGraphicsSwitching</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>撮影した写真を、元画像として取り込むためにカメラを使います。</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.entertainment</string>
 </dict>

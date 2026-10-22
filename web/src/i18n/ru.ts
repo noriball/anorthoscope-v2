@@ -115,6 +115,7 @@ export const ru: Record<TranslationKey, string> = {
   "compress.loadTabRight": "Размещение фото (направо)",
   "compress.pickFromList": "Выбрать из списка изображений",
   "compress.pickFromFile": "+ Из файла",
+  "compress.pickFromCamera": "+ С камеры",
   "compress.outlineLabel": "Линия по окружности",
   "compress.centerMarkLabel": "Отметка центра",
   "compress.diameterLabel": "Диаметр",
@@ -165,4 +166,11 @@ export const ru: Record<TranslationKey, string> = {
     " (собственные рисунки недоступны в других браузерах, поэтому изображение не будет перенесено)",
   "main.recordUnsupported": "Запись видео не поддерживается в этом браузере",
   "main.recordMaxDurationToast": "Достигнут предел записи в 60 секунд, поэтому запись сохранена",
+
+  // ---- カメラ撮影 ----
+  "camera.shutter": "Снять",
+  "camera.switch": "Сменить камеру",
+  "camera.denied": "Доступ к камере запрещён. Проверьте настройки браузера.",
+  "camera.notFound": "Камера не найдена.",
+  "camera.error": "Не удалось запустить камеру.",
 } as const;

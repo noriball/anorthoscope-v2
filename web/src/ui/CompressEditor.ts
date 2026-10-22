@@ -14,6 +14,7 @@ import { saveDrawing, type Drawing } from "../gallery";
 import { loadFromFiles, pictureFromURL, type Picture } from "../images";
 import { t } from "../i18n";
 import { setIconLabel, type IconName } from "./icons";
+import { cameraAvailable, openCamera, type CameraSession } from "./CameraCapture";
 import { ImagePicker } from "./ImagePicker";
 import { showToast } from "./toast";
 
@@ -115,7 +116,14 @@ export class CompressEditor {
   // 右（扇形）に配置する写真（自分で描いた絵・撮影した画像）。移動・拡大縮小可、扇形にクリップ
   private readonly wedgePhoto = document.createElement("canvas");
   private readonly photoCtx: CanvasRenderingContext2D;
-  private photoBitmap: ImageBitmap | null = null;
+  private photoBitmap: CanvasImageSource | null = null; // 撮影前のライブ映像（video）も入る
+  // カメラのライブ表示（右の 1 ピースに映像を流し、各ピースへ繰り返して円を埋める）
+  private cam: CameraSession | null = null;
+  private camRaf = 0;
+  private camLastFrame = 0;
+  private camFitKey = ""; // 映像の大きさ・分割数が変わったら配置を取り直す
+  private photoAutoFit = false; // 撮影した写真を自動配置のまま（手で動かすまで）保っているか。分割数を変えても取り直す
+  private camBar: HTMLDivElement | null = null;
   private photoNaturalW = 0;
   private photoNaturalH = 0;
   private photoBaseScale = 1; // 読み込み時のフィット倍率
@@ -265,6 +273,8 @@ export class CompressEditor {
   }
 
   private resetState(d?: Drawing): void {
+    this.stopCameraLive();
+    this.photoAutoFit = false;
     this.fctx.clearRect(0, 0, PAINT_SIZE, PAINT_SIZE);
     this.wctx.clearRect(0, 0, PAINT_SIZE, PAINT_SIZE);
     this.sctx.clearRect(0, 0, PAINT_SIZE, PAINT_SIZE);
@@ -288,6 +298,7 @@ export class CompressEditor {
   }
 
   close(): void {
+    this.stopCameraLive();
     this.root.classList.add("hidden");
     this.onClose();
   }
@@ -316,6 +327,7 @@ export class CompressEditor {
   // 画像読み込み（右＝扇形の中に配置する写真。移動・拡大縮小が可能）
   // =========================================================
   private loadWedgePhoto(pic: Picture): void {
+    this.photoAutoFit = false;
     this.photoBitmap = pic.bitmap;
     this.photoNaturalW = pic.width;
     this.photoNaturalH = pic.height;
@@ -334,7 +346,114 @@ export class CompressEditor {
     if (pics.length > 0) this.loadWedgePhoto(pics[0]);
   }
 
+  // =========================================================
+  // カメラ撮影（右の 1 ピースだけに入れる。撮影前からライブ映像を各ピースへ繰り返して円を埋める）
+  // =========================================================
+  private async startCameraLive(): Promise<void> {
+    this.stopCameraLive();
+    const cam = await openCamera();
+    if (!cam) return;
+    this.cam = cam;
+    this.camFitKey = "";
+    this.photoBitmap = cam.video;
+    this.syncPhotoTool();
+    this.buildCameraBar();
+    document.addEventListener("keydown", this.onCameraKey, true);
+    const tick = (now: number) => {
+      if (!this.cam) return;
+      if (now - this.camLastFrame >= 66 && this.cam.video.videoWidth > 0) { // 約 15fps（展開の再計算が重いため）
+        this.camLastFrame = now;
+        this.fitCameraToWedge();
+        this.renderWedgePhoto();
+        this.wedgeDirty = true;
+        this.render();
+      }
+      this.camRaf = requestAnimationFrame(tick);
+    };
+    this.camRaf = requestAnimationFrame(tick);
+  }
+
+  /** 映像が扇形をすき間なく覆う最小の大きさで配置する（扇形がぎりぎり入る四角を映像で覆い、その中心に映像の中心を置く） */
+  private fitCameraToWedge(): void {
+    const v = this.cam?.video;
+    if (!v) return;
+    const key = `${v.videoWidth}x${v.videoHeight}/${this.divisions}`;
+    if (key === this.camFitKey) return;
+    this.camFitKey = key;
+    this.coverWedge(v.videoWidth, v.videoHeight);
+  }
+
+  /** 幅 w・高さ h の画像が、現在の分割数の扇形をすき間なく覆う最小の大きさになるよう配置する */
+  private coverWedge(w: number, h: number): void {
+    this.photoNaturalW = w;
+    this.photoNaturalH = h;
+    const boxW = 2 * R * Math.sin(Math.min(Math.PI / 2, this.wedgeAngle / 2));
+    // ぴったりだと扇形の縁（円弧の頂点など）に細いすき間や映像の縁が出るので、少し大きめに覆う
+    this.photoBaseScale = Math.max(boxW / w, R / h) * 1.06;
+    this.photoX = 0;
+    this.photoY = -R / 2;
+    this.photoScale = 1;
+  }
+
+  private readonly onCameraKey = (e: KeyboardEvent): void => {
+    if (e.key === "Escape") {
+      e.stopPropagation();
+      this.cancelCamera();
+    } else if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      e.stopPropagation();
+      void this.shootCamera();
+    }
+  };
+
+  private buildCameraBar(): void {
+    const bar = document.createElement("div");
+    bar.className = "camera-bar";
+    const shutter = pbtn(t("camera.shutter"), () => void this.shootCamera());
+    shutter.classList.add("on");
+    bar.append(pbtn(t("common.cancel"), () => this.cancelCamera()));
+    if (this.cam?.canSwitch) bar.append(pbtn(t("camera.switch"), () => void this.cam?.switchCamera()));
+    bar.append(shutter);
+    this.camBar = bar;
+    this.root.append(bar);
+  }
+
+  /** いまのフレームを静止画にして右の写真として残す（位置・大きさは「写真を移動」で調整できる） */
+  private async shootCamera(): Promise<void> {
+    const cam = this.cam;
+    if (!cam || !cam.video.videoWidth) return;
+    const bmp = await cam.capture();
+    this.stopCameraLive();
+    this.photoBitmap = bmp;
+    this.photoNaturalW = bmp.width;
+    this.photoNaturalH = bmp.height;
+    this.photoAutoFit = true;
+    this.renderWedgePhoto();
+    this.syncPhotoTool();
+    this.wedgeDirty = true;
+    this.render();
+  }
+
+  private cancelCamera(): void {
+    if (!this.cam) return;
+    this.stopCameraLive();
+    this.clearWedgePhoto();
+  }
+
+  /** ライブ映像を止める（写真の状態は触らない）。カメラが動いていなければ何もしない */
+  private stopCameraLive(): void {
+    if (!this.cam) return;
+    cancelAnimationFrame(this.camRaf);
+    document.removeEventListener("keydown", this.onCameraKey, true);
+    this.cam.stop();
+    if (this.photoBitmap === this.cam.video) this.photoBitmap = null;
+    this.cam = null;
+    this.camBar?.remove();
+    this.camBar = null;
+  }
+
   private clearWedgePhoto(): void {
+    this.photoAutoFit = false;
     this.photoBitmap = null;
     this.photoX = 0;
     this.photoY = 0;
@@ -359,6 +478,7 @@ export class CompressEditor {
 
   private zoomWedgePhoto(factor: number): void {
     if (!this.photoBitmap) return;
+    this.photoAutoFit = false;
     this.photoScale = Math.min(PHOTO_SCALE_MAX, Math.max(PHOTO_SCALE_MIN, this.photoScale * factor));
     this.renderWedgePhoto();
     this.wedgeDirty = true;
@@ -723,12 +843,21 @@ export class CompressEditor {
     // 形状が合わなくなる。まず「今、左に見えている絵」（fullArt ＋ 旧分割数での
     // 右の展開）をそのまま左画像として焼き込み、右の手描きレイヤー・写真は破棄する。
     // 新しい分割数での右側は、この左画像を基準に生成し直す。
+    // ライブ映像中・撮影したまま（自動配置）の写真は残し、新しい分割数の扇形に合わせて取り直す。
+    // その 1 コマ／写真は左へ焼き込まない（手描きだけを焼き込む）。
+    const live = this.cam;
+    const keep = live ? live.video : this.photoAutoFit ? this.photoBitmap : null;
+    if (keep) {
+      this.photoCtx.clearRect(0, 0, PAINT_SIZE, PAINT_SIZE);
+      this.wedgeDirty = true;
+    }
     this.snapshot(this.fctx);
     this.snapshot(this.wctx);
     if (this.wedgeDirty) this.computeExpand(); // 現在（旧）分割数での展開を最新化
     this.fctx.drawImage(this.expandWedge, 0, 0);
     this.wctx.clearRect(0, 0, PAINT_SIZE, PAINT_SIZE);
-    this.photoBitmap = null;
+    this.photoBitmap = keep;
+    if (!keep) this.photoAutoFit = false;
     this.photoX = 0;
     this.photoY = 0;
     this.photoScale = 1;
@@ -737,6 +866,11 @@ export class CompressEditor {
 
     this.divisions = next;
     this.divInput.value = String(this.divisions);
+    if (keep && !live) {
+      this.coverWedge(this.photoNaturalW, this.photoNaturalH);
+      this.renderWedgePhoto();
+    }
+    this.camFitKey = ""; // ライブ映像は次のコマで取り直す
     this.fullDirty = true;
     this.wedgeDirty = true;
     this.render();
@@ -821,6 +955,7 @@ export class CompressEditor {
     }
     if (this.tool === "photo") {
       if (!crossedBoundary) {
+        this.photoAutoFit = false;
         this.photoX += x - this.lastX;
         this.photoY += y - this.lastY;
         this.renderWedgePhoto();
@@ -1003,6 +1138,14 @@ export class CompressEditor {
       this.fileInput.click();
     });
     actionsRow.append(pickBtn, fileBtn);
+    if (cameraAvailable()) {
+      actionsRow.append(
+        pbtn(t("compress.pickFromCamera"), () => {
+          this.closeLoadModal();
+          void this.startCameraLive();
+        }),
+      );
+    }
 
     const closeRow = document.createElement("div");
     closeRow.className = "export-actions";
